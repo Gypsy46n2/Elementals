@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH = "user://settings.cfg"
 
-var selected_elemental_type: String = "fire" # "fire", "water", or "goat"
+var selected_actor_type: String = "fire" # "fire", "water", or "goat"
 var grid_width: int = 20
 var grid_height: int = 20
 var fire_count: int = 1
@@ -19,7 +19,7 @@ func _ready() -> void:
 func save_settings() -> void:
 	var config = ConfigFile.new()
 	
-	config.set_value("General", "selected_elemental_type", selected_elemental_type)
+	config.set_value("General", "selected_actor_type", selected_actor_type)
 	config.set_value("General", "grid_width", grid_width)
 	config.set_value("General", "grid_height", grid_height)
 	
@@ -41,7 +41,7 @@ func load_settings() -> void:
 	if err != OK:
 		return # No settings file exists yet, using defaults
 	
-	selected_elemental_type = config.get_value("General", "selected_elemental_type", selected_elemental_type)
+	selected_actor_type = config.get_value("General", "selected_actor_type", selected_actor_type)
 	grid_width = config.get_value("General", "grid_width", grid_width)
 	grid_height = config.get_value("General", "grid_height", grid_height)
 	

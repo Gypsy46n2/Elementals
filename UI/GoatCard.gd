@@ -36,15 +36,18 @@ func _update_ui() -> void:
 		name_edit.text = goat_data.goat_name
 	
 	var gender_str = "Doe" if goat_data.gender == GoatData.Gender.DOE else "Buck"
-	var stats_text = "%s - Age: %d" % [gender_str, goat_data.age_days]
+	var stats_text = "%s - Lvl: %d - Age: %d" % [gender_str, goat_data.level, goat_data.age_days]
 	
 	if goat_data.is_pregnant:
 		stats_text += "\n[Pregnant]"
 	if goat_data.is_exhausted:
 		stats_text += "\n[Exhausted]"
 		
-	stats_text += "\nStrength: %.1f\nToughness: %.1f\nSpeed: %.1f" % [
-		goat_data.strength, goat_data.toughness, goat_data.speed
+	stats_text += "\nSTR: %.1f | DEX: %.1f | CON: %.1f" % [
+		goat_data.strength, goat_data.dexterity, goat_data.constitution
+	]
+	stats_text += "\nINT: %.1f | WIS: %.1f | CHA: %.1f" % [
+		goat_data.intelligence, goat_data.wisdom, goat_data.charisma
 	]
 	
 	stats_label.text = stats_text

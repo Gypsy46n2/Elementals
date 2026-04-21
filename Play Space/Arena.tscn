@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://dy747yc6bbcs3"]
+[gd_scene load_steps=6 format=3 uid="uid://dy747yc6bbcs3"]
 
 [ext_resource type="Script" uid="uid://dnnypgaoo7j51" path="res://Play Space/Arena.gd" id="1"]
 [ext_resource type="Script" uid="uid://c0bx554q5f7gv" path="res://Player/CameraFollower.gd" id="2"]

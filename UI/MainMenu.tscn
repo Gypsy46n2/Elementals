@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://UI/MainMenu.gd" id="1_xxx"]
+[ext_resource type="Script" uid="uid://bw816jkoqith7" path="res://UI/MainMenu.gd" id="1_xxx"]
 [ext_resource type="PackedScene" path="res://UI/ControlsPanel.tscn" id="2_xxx"]
 [ext_resource type="Texture2D" uid="uid://bw0k7ch7tw2qr" path="res://assets/generated/fire_particle_1774823455.png" id="3_fire"]
 [ext_resource type="Texture2D" uid="uid://d34box3kcyf7u" path="res://assets/generated/magic_water_drop_frame_0_1774826822.png" id="4_water"]
@@ -39,7 +39,7 @@ theme_override_constants/separation = 20
 [node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 48
-text = "Elemental Arena"
+text = "Actor Arena"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="CenterContainer/VBoxContainer"]
@@ -53,38 +53,38 @@ text = "Character Selection"
 visible = false
 layout_mode = 2
 
-[node name="ElementalSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer"]
+[node name="ActorSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection"]
 layout_mode = 2
-text = "Select Starting Elemental:"
+text = "Select Starting Actor:"
 horizontal_alignment = 1
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection"]
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection"]
 layout_mode = 2
 alignment = 1
 
-[node name="FireButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection/HBoxContainer"]
+[node name="FireButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer"]
 custom_minimum_size = Vector2(180, 48)
 layout_mode = 2
 theme_override_constants/h_separation = 10
 toggle_mode = true
 button_pressed = true
-text = "Fire Elemental"
+text = "Fire Actor"
 icon = ExtResource("3_fire")
 expand_icon = true
 
-[node name="WaterButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection/HBoxContainer"]
+[node name="WaterButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer"]
 custom_minimum_size = Vector2(180, 48)
 layout_mode = 2
 theme_override_constants/h_separation = 10
 toggle_mode = true
-text = "Water Elemental"
+text = "Water Actor"
 icon = ExtResource("4_water")
 expand_icon = true
 
-[node name="GoatButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection/HBoxContainer"]
+[node name="GoatButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer"]
 custom_minimum_size = Vector2(180, 48)
 layout_mode = 2
 theme_override_constants/h_separation = 10
@@ -264,9 +264,9 @@ layout_mode = 2
 
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsButton" to="." method="_on_character_settings_button_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection/HBoxContainer/FireButton" to="." method="_on_fire_button_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection/HBoxContainer/WaterButton" to="." method="_on_water_button_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection/HBoxContainer/GoatButton" to="." method="_on_goat_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer/FireButton" to="." method="_on_fire_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer/WaterButton" to="." method="_on_water_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer/GoatButton" to="." method="_on_goat_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/MapSettingsButton" to="." method="_on_map_settings_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/PlayButton" to="." method="_on_play_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/RanchButton" to="." method="_on_ranch_button_pressed"]

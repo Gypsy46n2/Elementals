@@ -2,13 +2,16 @@ class_name ArenaGrid
 extends Node3D
 
 @export var tree_feature_scene: PackedScene = preload("res://Play Space/tree_feature.tscn")
+@export var house_feature_scene: PackedScene = preload("res://Play Space/house_feature.tscn")
+@export var fence_feature_scene: PackedScene = preload("res://Play Space/fence_feature.tscn")
+@export var farmer_actor_scene: PackedScene = preload("res://Actor/FarmerActor.tscn")
 @export var grid_width: int = 20
 @export var grid_height: int = 20
 @export var hex_size: float = 1.5
 @export_range(0.25, 3.0, 0.05) var tile_scale: float = 1.5
-@export var fire_elemental_scene: PackedScene = preload("res://Elemental/FireElemental.tscn")
-@export var water_elemental_scene: PackedScene = preload("res://Elemental/WaterElemental.tscn")
-@export var goat_elemental_scene: PackedScene = preload("res://Elemental/GoatElemental.tscn")
+@export var fire_actor_scene: PackedScene = preload("res://Actor/FireActor.tscn")
+@export var water_actor_scene: PackedScene = preload("res://Actor/WaterActor.tscn")
+@export var goat_actor_scene: PackedScene = preload("res://Actor/GoatActor.tscn")
 @export var noise: FastNoiseLite
 @export var height_step: float = 1.0
 @export var noise_scale: float = 1.0
@@ -17,7 +20,10 @@ const SQRT3: float = sqrt(3.0)
 
 # Data storage
 var tile_data_grid: Array[HexTileData] = []
-var elementals: Array[Node3D] = []
+var actors: Array[Node3D] = []
+var farmstead_interior_tiles: Array[HexTileData] = []
+var farmstead_perimeter_tiles: Array[HexTileData] = []
+var house_tile: HexTileData = null
 
 # Components
 var renderer: HexGridRenderer
@@ -36,25 +42,25 @@ var tile_counts: Dictionary = {}
 @onready var _options_button: Button = get_node_or_null("UI/OptionsButton")
 
 var current_target_index: int = 0
-var current_controlled_elemental: Elemental:
+var current_controlled_actor: Actor:
 	set(value):
-		if is_instance_valid(current_controlled_elemental):
-			current_controlled_elemental.is_controlled = false
-			if current_controlled_elemental.health_component:
-				if current_controlled_elemental.health_component.health_changed.is_connected(_on_elemental_hp_changed):
-					current_controlled_elemental.health_component.health_changed.disconnect(_on_elemental_hp_changed)
-			if current_controlled_elemental.mana_changed.is_connected(_on_elemental_mana_changed):
-				current_controlled_elemental.mana_changed.disconnect(_on_elemental_mana_changed)
+		if is_instance_valid(current_controlled_actor):
+			current_controlled_actor.is_controlled = false
+			if current_controlled_actor.health_component:
+				if current_controlled_actor.health_component.health_changed.is_connected(_on_actor_hp_changed):
+					current_controlled_actor.health_component.health_changed.disconnect(_on_actor_hp_changed)
+			if current_controlled_actor.mana_changed.is_connected(_on_actor_mana_changed):
+				current_controlled_actor.mana_changed.disconnect(_on_actor_mana_changed)
 		
-		current_controlled_elemental = value
+		current_controlled_actor = value
 		
-		if current_controlled_elemental:
-			current_controlled_elemental.is_controlled = true
-			if current_controlled_elemental.health_component:
-				current_controlled_elemental.health_component.health_changed.connect(_on_elemental_hp_changed)
-			current_controlled_elemental.mana_changed.connect(_on_elemental_mana_changed)
+		if current_controlled_actor:
+			current_controlled_actor.is_controlled = true
+			if current_controlled_actor.health_component:
+				current_controlled_actor.health_component.health_changed.connect(_on_actor_hp_changed)
+			current_controlled_actor.mana_changed.connect(_on_actor_mana_changed)
 			if reticle:
-				reticle.color = current_controlled_elemental.get_elemental_color()
+				reticle.color = current_controlled_actor.get_actor_color()
 			_update_ui()
 
 var reticle: Control
@@ -72,15 +78,16 @@ func _ready() -> void:
 	_setup_reticle()
 	_initialize_grid()
 	_setup_physics()
-	_spawn_elementals()
+	_spawn_actors()
+	_setup_farmstead()
 	_setup_ui_connections()
 	_setup_minimap()
 	add_to_group("arena")
 	
-	_select_initial_elemental()
+	_select_initial_actor()
 	
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
-	GameEvents.elemental_died.connect(_on_elemental_died)
+	GameEvents.actor_died.connect(_on_actor_died)
 
 func _setup_components() -> void:
 	renderer = HexGridRenderer.new()
@@ -99,22 +106,71 @@ func _setup_components() -> void:
 	physics.name = "ArenaPhysics"
 	add_child(physics)
 
-func _on_elemental_died(e: Node3D) -> void:
-	if elementals.has(e):
-		if e is GoatElemental:
-			elementals.erase(e)
+func _on_actor_died(e: Node3D) -> void:
+	if actors.has(e):
+		actors.erase(e)
 	
-	if e == current_controlled_elemental:
-		next_elemental()
+	if e == current_controlled_actor:
+		next_actor()
 	
 	var player_goats_left = false
-	for elemental in elementals:
-		if elemental is GoatElemental and elemental.goat_data:
+	for actor in actors:
+		if actor is GoatActor and actor.goat_data:
 			player_goats_left = true
 			break
 	
 	if not player_goats_left:
 		_handle_game_over()
+
+func _plan_farmstead() -> void:
+	var x = grid_width / 2
+	var y = grid_height / 2
+	var center_tile = get_tile_at_grid_coords(x, y)
+	if not center_tile: return
+	
+	farmstead_interior_tiles = []
+	var queue: Array[HexTileData] = [center_tile]
+	farmstead_interior_tiles.append(center_tile)
+	
+	var i = 0
+	while farmstead_interior_tiles.size() < 10 and i < farmstead_interior_tiles.size():
+		var current = farmstead_interior_tiles[i]
+		i += 1
+		var neighbors = _get_neighbors(current)
+		neighbors.shuffle() # Randomize the blob shape slightly
+		for n in neighbors:
+			if n not in farmstead_interior_tiles and n.current_state != TileConstants.State.STONE:
+				farmstead_interior_tiles.append(n)
+				if farmstead_interior_tiles.size() >= 10:
+					break
+	
+	farmstead_perimeter_tiles = []
+	for tile in farmstead_interior_tiles:
+		for n in _get_neighbors(tile):
+			if n not in farmstead_interior_tiles and n not in farmstead_perimeter_tiles:
+				if n.current_state != TileConstants.State.STONE:
+					farmstead_perimeter_tiles.append(n)
+	
+	if not farmstead_perimeter_tiles.is_empty():
+		# Randomly pick a perimeter tile for the house
+		var house_idx = randi() % farmstead_perimeter_tiles.size()
+		house_tile = farmstead_perimeter_tiles[house_idx]
+
+func _spawn_initial_trees() -> void:
+	for tile in tile_data_grid:
+		if tile.current_state == TileConstants.State.GRASS:
+			if tile in farmstead_interior_tiles or tile in farmstead_perimeter_tiles:
+				continue
+			if randf() < 0.05:
+				_spawn_tree(tile)
+
+func _spawn_tree(tile: HexTileData) -> void:
+	var tree = tree_feature_scene.instantiate()
+	add_child(tree)
+	tree.transform.origin = tile.position + Vector3(0, _get_tile_surface_y(tile), 0)
+	tile.feature = tree
+	if tree.has_method("set_tile"):
+		tree.set_tile(tile)
 
 func _initialize_grid() -> void:
 	var h = _grid_height_clamped()
@@ -165,17 +221,12 @@ func _initialize_grid() -> void:
 			tile_data_grid.append(tile)
 			tile_counts[state] += 1
 			
-			if state == TileConstants.State.GRASS and randf() < 0.05:
-				var tree = tree_feature_scene.instantiate()
-				add_child(tree)
-				tree.transform.origin = pos + Vector3(0, _get_tile_surface_y(tile), 0)
-				tile.feature = tree
-				if tree.has_method("set_tile"):
-					tree.set_tile(tile)
-			
 			renderer.add_tile(tile)
 			if state == TileConstants.State.FIRE:
 				renderer.update_fire_effect(tile, true)
+	
+	_plan_farmstead()
+	_spawn_initial_trees()
 	
 	for tile in tile_data_grid:
 		if tile.current_state == TileConstants.State.STONE:
@@ -185,9 +236,9 @@ func _initialize_grid() -> void:
 					max_neighbor_h = max(max_neighbor_h, float(n.height_level) * height_step)
 			
 			if max_neighbor_h > -10.0:
-				tile.set_meta("stone_height", max_neighbor_h + 3.0)
+				tile.set_meta("stone_height", max_neighbor_h + 2.0)
 			else:
-				tile.set_meta("stone_height", (float(tile.height_level) * height_step) + 3.0)
+				tile.set_meta("stone_height", (float(tile.height_level) * height_step) + 2.0)
 			
 			renderer.remove_tile(tile)
 			renderer.add_tile(tile)
@@ -201,7 +252,7 @@ func _get_tile_surface_y(tile: HexTileData) -> float:
 	if tile.current_state == TileConstants.State.STONE:
 		if tile.has_meta("stone_height"):
 			return tile.get_meta("stone_height")
-		return (float(tile.height_level) * height_step) + 3.0
+		return (float(tile.height_level) * height_step) + 2.0
 	return float(tile.height_level) * height_step
 
 func set_tile_state(tile: HexTileData, new_state: int) -> void:
@@ -234,8 +285,8 @@ func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 		
-	if current_controlled_elemental and reticle:
-		reticle.mana_value = current_controlled_elemental.get_main_action_progress()
+	if current_controlled_actor and reticle:
+		reticle.mana_value = current_controlled_actor.get_main_action_progress()
 	
 	tile_system.process_tiles(delta)
 
@@ -370,10 +421,10 @@ func _setup_reticle() -> void:
 func _setup_ui_connections() -> void:
 	if _prev_button:
 		_prev_button.focus_mode = Control.FOCUS_NONE
-		_prev_button.pressed.connect(previous_elemental)
+		_prev_button.pressed.connect(previous_actor)
 	if _next_button:
 		_next_button.focus_mode = Control.FOCUS_NONE
-		_next_button.pressed.connect(next_elemental)
+		_next_button.pressed.connect(next_actor)
 	if _options_button and _options_menu:
 		_options_button.focus_mode = Control.FOCUS_NONE
 		_options_button.pressed.connect(_options_menu.toggle)
@@ -397,28 +448,60 @@ func _handle_game_over() -> void:
 		_target_label.text = "ALL GOATS HAVE PERISHED!"
 		_target_label.modulate = Color.RED
 	
-	current_controlled_elemental = null
+	current_controlled_actor = null
 	var timer = get_tree().create_timer(3.0)
 	timer.timeout.connect(_on_finish_day_pressed)
 
-func _spawn_elementals() -> void:
-	elementals.clear()
-	var gs = get_node_or_null("/root/GameSettings")
-	
-	if not gs:
-		_spawn_type("fire", 1, 1)
-		_spawn_type("water", grid_width, grid_height)
-	else:
-		for i in gs.fire_count: _spawn_type("fire")
-		for i in gs.water_count: _spawn_type("water")
+func _spawn_actors() -> void:
+	actors.clear()
+	# Fire and Water elementals spawning disabled as requested
 	
 	if has_node("/root/GoatManager"):
 		var gm = get_node("/root/GoatManager")
 		for goat_data in gm.get_selected_goats():
 			_spawn_goat_from_data(goat_data)
 
+func _setup_farmstead() -> void:
+	if not house_tile:
+		return
+	
+	var house = house_feature_scene.instantiate()
+	add_child(house)
+	house.transform.origin = house_tile.position + Vector3(0, _get_tile_surface_y(house_tile), 0)
+	house_tile.feature = house
+	if house.has_method("set_tile"):
+		house.set_tile(house_tile)
+	
+	# Spawn Farmer in the center of the yard
+	var interior_center = farmstead_interior_tiles[0] if not farmstead_interior_tiles.is_empty() else house_tile
+	var farmer = farmer_actor_scene.instantiate()
+	add_child(farmer)
+	farmer.transform.origin = interior_center.position + Vector3(0, _get_tile_surface_y(interior_center) + 1.0, 0)
+	actors.append(farmer)
+	if farmer.has_node("DecisionComponent"):
+		var decision = farmer.get_node("DecisionComponent")
+		if "farm_center" in decision:
+			decision.farm_center = interior_center.position
+	
+	# Spawn Fences on the rest of the perimeter
+	var fences: Array[Node3D] = []
+	for n in farmstead_perimeter_tiles:
+		if n != house_tile and not n.feature:
+			var fence = fence_feature_scene.instantiate()
+			add_child(fence)
+			fence.transform.origin = n.position + Vector3(0, _get_tile_surface_y(n), 0)
+			n.feature = fence
+			if fence.has_method("set_tile"):
+				fence.set_tile(n)
+			fences.append(fence)
+	
+	# Update fence connections visually
+	for f in fences:
+		if f.has_method("update_connections"):
+			f.update_connections(self)
+
 func _spawn_goat_from_data(data: GoatData) -> void:
-	var goat = goat_elemental_scene.instantiate() as GoatElemental
+	var goat = goat_actor_scene.instantiate() as GoatActor
 	var x = randi_range(1, grid_width)
 	var y = randi_range(1, grid_height)
 	var pos_2d = _calculate_hex_position(x, y)
@@ -427,20 +510,24 @@ func _spawn_goat_from_data(data: GoatData) -> void:
 	if tile:
 		h_offset = _get_tile_surface_y(tile)
 	
+	if not goat:
+		push_error("Failed to instantiate goat actor!")
+		return
+	
 	goat.position = Vector3(pos_2d.x, 2.0 + h_offset, pos_2d.y)
 	add_child(goat)
-	elementals.append(goat)
+	actors.append(goat)
 	goat.goat_data = data
 
-func spawn_elemental(type: String) -> void:
+func spawn_actor(type: String) -> void:
 	_spawn_type(type)
 
 func _spawn_type(type: String, x: int = -1, y: int = -1) -> void:
-	var scene = fire_elemental_scene
-	if type == "water": scene = water_elemental_scene
-	elif type == "goat": scene = goat_elemental_scene
+	var scene = fire_actor_scene
+	if type == "water": scene = water_actor_scene
+	elif type == "goat": scene = goat_actor_scene
 	
-	var elemental = scene.instantiate()
+	var actor = scene.instantiate()
 	if x == -1:
 		x = randi_range(1, grid_width)
 		y = randi_range(1, grid_height)
@@ -451,16 +538,23 @@ func _spawn_type(type: String, x: int = -1, y: int = -1) -> void:
 	if tile:
 		h_offset = _get_tile_surface_y(tile)
 	
-	elemental.position = Vector3(pos_2d.x, 2.0 + h_offset, pos_2d.y)
-	add_child(elemental)
-	elementals.append(elemental)
+	actor.position = Vector3(pos_2d.x, 2.0 + h_offset, pos_2d.y)
+	add_child(actor)
+	actors.append(actor)
 
-func _select_initial_elemental() -> void:
-	if elementals.is_empty():
+func _select_initial_actor() -> void:
+	if actors.is_empty():
 		return
 	
-	for i in range(elementals.size()):
-		if elementals[i] is GoatElemental:
+	# Farmer is the default main character, pick them first if they exist
+	for i in range(actors.size()):
+		if actors[i] is FarmerActor:
+			current_target_index = i
+			_update_camera_target()
+			return
+	
+	for i in range(actors.size()):
+		if actors[i] is GoatActor:
 			current_target_index = i
 			_update_camera_target()
 			return
@@ -469,22 +563,22 @@ func _select_initial_elemental() -> void:
 	_update_camera_target()
 
 func _update_camera_target() -> void:
-	if elementals.is_empty(): return
-	var target = elementals[current_target_index % elementals.size()]
+	if actors.is_empty(): return
+	var target = actors[current_target_index % actors.size()]
 	if _camera_follower:
 		_camera_follower.set_target(target)
-		if target is GoatElemental:
+		if target is GoatActor:
 			_camera_follower.max_zoom = 10.0
 		else:
 			_camera_follower.max_zoom = 80.0
-	current_controlled_elemental = target as Elemental
+	current_controlled_actor = target as Actor
 	if _target_label: _target_label.text = "Following: " + target.name
 
-func next_elemental() -> void:
+func next_actor() -> void:
 	current_target_index += 1
 	_update_camera_target()
 
-func previous_elemental() -> void:
+func previous_actor() -> void:
 	current_target_index -= 1
 	_update_camera_target()
 
@@ -497,18 +591,18 @@ func _calculate_hex_position(column: int, row: int) -> Vector2:
 func _grid_width_clamped() -> int: return max(1, grid_width)
 func _grid_height_clamped() -> int: return max(1, grid_height)
 
-func _on_elemental_hp_changed(_hp: float, _m_hp: float) -> void: _update_ui()
-func _on_elemental_mana_changed(_m: float, _mm: float) -> void: _update_ui()
+func _on_actor_hp_changed(_hp: float, _m_hp: float) -> void: _update_ui()
+func _on_actor_mana_changed(_m: float, _mm: float) -> void: _update_ui()
 
 func _update_ui() -> void:
-	if not current_controlled_elemental or not _target_label: return
+	if not current_controlled_actor or not _target_label: return
 	var hp = 0.0
 	var m_hp = 0.0
-	if current_controlled_elemental.health_component:
-		hp = current_controlled_elemental.health_component.current_health
-		m_hp = current_controlled_elemental.health_component.max_health
-	_target_label.text = "Following: " + current_controlled_elemental.name + \
-		" HP: %d / %d | Mana: %d / %d" % [int(hp), int(m_hp), int(current_controlled_elemental.current_mana), int(current_controlled_elemental.max_mana)]
+	if current_controlled_actor.health_component:
+		hp = current_controlled_actor.health_component.current_health
+		m_hp = current_controlled_actor.health_component.max_health
+	_target_label.text = "Following: " + current_controlled_actor.name + \
+		" HP: %d / %d | Mana: %d / %d" % [int(hp), int(m_hp), int(current_controlled_actor.current_mana), int(current_controlled_actor.max_mana)]
 
 func _setup_minimap() -> void:
 	if not _minimap_viewport: return
@@ -535,13 +629,13 @@ func get_tiles_within_distance(world_position: Vector3, radius: float) -> Array[
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if current_controlled_elemental:
-			current_controlled_elemental.launch_projectile_at(_get_mouse_3d_position())
+		if current_controlled_actor:
+			current_controlled_actor.launch_projectile_at(_get_mouse_3d_position())
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_E: current_controlled_elemental.cycle_attack_pattern()
+		if event.keycode == KEY_E: current_controlled_actor.cycle_attack_pattern()
 		elif event.keycode == KEY_Q:
-			var p = (current_controlled_elemental.current_attack_pattern - 1 + Elemental.AttackPattern.size()) % Elemental.AttackPattern.size()
-			current_controlled_elemental.current_attack_pattern = p as Elemental.AttackPattern
+			var p = (current_controlled_actor.current_attack_pattern - 1 + Actor.AttackPattern.size()) % Actor.AttackPattern.size()
+			current_controlled_actor.current_attack_pattern = p as Actor.AttackPattern
 
 func _get_mouse_3d_position() -> Vector3:
 	var camera = get_viewport().get_camera_3d()

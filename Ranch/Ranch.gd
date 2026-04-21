@@ -10,6 +10,10 @@ extends Control
 @onready var back_button: Button = %BackButton
 @onready var gold_label: Label = %GoldLabel
 @onready var day_label: Label = %DayLabel
+@onready var cheat_button: Button = %CheatButton
+@onready var cheat_panel: Control = %CheatPanel
+@onready var max_level_goat_button: Button = %MaxLevelGoatButton
+@onready var close_cheat_button: Button = %CloseCheatButton
 
 var selected_doe: GoatData
 var selected_buck: GoatData
@@ -27,6 +31,10 @@ func _ready() -> void:
 	next_day_button.text = "Enter Arena"
 	next_day_button.pressed.connect(_on_enter_arena_pressed)
 	back_button.pressed.connect(_on_back_pressed)
+	
+	cheat_button.pressed.connect(func(): cheat_panel.visible = true)
+	close_cheat_button.pressed.connect(func(): cheat_panel.visible = false)
+	max_level_goat_button.pressed.connect(_on_max_level_goat_pressed)
 	
 	var gm = get_node("/root/GoatManager")
 	refresh_ui()
@@ -105,7 +113,7 @@ func _update_breeding_selection() -> void:
 func _on_enter_arena_pressed() -> void:
 	var gs = get_node_or_null("/root/GameSettings")
 	if gs:
-		gs.selected_elemental_type = "goat"
+		gs.selected_actor_type = "goat"
 	get_tree().change_scene_to_file("res://Play Space/Arena.tscn")
 
 func _on_breed_pressed() -> void:
@@ -128,3 +136,22 @@ func _on_gold_changed(amount: int) -> void:
 
 func _on_back_pressed() -> void:
 	get_tree().change_scene_to_file("res://UI/MainMenu.tscn")
+
+func _on_max_level_goat_pressed() -> void:
+	if not has_node("/root/GoatManager"): return
+	var gm = get_node("/root/GoatManager")
+	
+	var max_goat = GoatData.new()
+	max_goat.goat_name = "Mega Goat"
+	max_goat.level = 20
+	max_goat.gender = GoatData.Gender.BUCK if randf() < 0.5 else GoatData.Gender.DOE
+	max_goat.strength = 20.0
+	max_goat.dexterity = 20.0
+	max_goat.constitution = 20.0
+	max_goat.intelligence = 20.0
+	max_goat.wisdom = 20.0
+	max_goat.charisma = 20.0
+	
+	gm.add_goat(max_goat)
+	cheat_panel.visible = false
+	refresh_ui()

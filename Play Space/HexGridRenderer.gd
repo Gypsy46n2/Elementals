@@ -47,7 +47,7 @@ func _get_fire_particle_from_pool() -> GPUParticles3D:
 	if _fire_particles_container:
 		_fire_particles_container.add_child(p)
 	
-	Elemental.setup_gpu_particles(p, {
+	Actor.setup_gpu_particles(p, {
 		"amount": 10,
 		"lifetime": 0.8,
 		"velocity_min": 0.3,
@@ -174,5 +174,5 @@ func _get_tile_surface_y(tile: HexTileData) -> float:
 	if tile.current_state == TileConstants.State.STONE:
 		if tile.has_meta("stone_height"):
 			return tile.get_meta("stone_height")
-		return (float(tile.height_level) * height_step) + 3.0
+		return (float(tile.height_level) * height_step) + 2.0
 	return float(tile.height_level) * height_step

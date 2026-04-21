@@ -43,8 +43,8 @@ func toggle() -> void:
 
 func _update_goat_controls() -> void:
 	var arena = get_tree().get_first_node_in_group("arena")
-	if arena and "current_controlled_elemental" in arena:
-		var target = arena.current_controlled_elemental
+	if arena and "current_controlled_actor" in arena:
+		var target = arena.current_controlled_actor
 		var is_goat = (target and target.name.to_lower().contains("goat"))
 		$PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer.visible = is_goat
 		
@@ -58,8 +58,8 @@ func _update_goat_controls() -> void:
 
 func _on_color_slider_changed(_value: float) -> void:
 	var arena = get_tree().get_first_node_in_group("arena")
-	if arena and "current_controlled_elemental" in arena:
-		var target = arena.current_controlled_elemental
+	if arena and "current_controlled_actor" in arena:
+		var target = arena.current_controlled_actor
 		if target:
 			var gc = target.get_node_or_null("GeneticComponent")
 			if gc and gc.goat_data:

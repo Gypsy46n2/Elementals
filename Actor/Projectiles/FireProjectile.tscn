@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=3 uid="uid://c0dvim57am8kv"]
+
+[ext_resource type="Script" uid="uid://rgoqmhpn1xye" path="res://Actor/Projectiles/FireProjectile.gd" id="1"]
+
+[sub_resource type="StandardMaterial3D" id="3"]
+albedo_color = Color(1, 0.45, 0.1, 1)
+emission_enabled = true
+emission = Color(1, 0.2, 0, 1)
+
+[sub_resource type="SphereMesh" id="1"]
+radius = 0.28
+height = 0.7
+
+[sub_resource type="SphereShape3D" id="2"]
+radius = 0.3
+
+[node name="FireProjectile" type="Area3D"]
+script = ExtResource("1")
+element_type = "fire"
+
+[node name="ProjectileVisual" type="MeshInstance3D" parent="."]
+material_override = SubResource("3")
+mesh = SubResource("1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("2")
+
+[node name="TileRay" type="RayCast3D" parent="."]

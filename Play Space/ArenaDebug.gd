@@ -38,19 +38,19 @@ func _setup_spawn_buttons() -> void:
 	var fire_btn = Button.new()
 	fire_btn.text = "Spawn Fire"
 	fire_btn.focus_mode = Control.FOCUS_NONE
-	fire_btn.pressed.connect(func(): if arena: arena.spawn_elemental("fire"))
+	fire_btn.pressed.connect(func(): if arena: arena.spawn_actor("fire"))
 	spawn_buttons_container.add_child(fire_btn)
 	
 	var water_btn = Button.new()
 	water_btn.text = "Spawn Water"
 	water_btn.focus_mode = Control.FOCUS_NONE
-	water_btn.pressed.connect(func(): if arena: arena.spawn_elemental("water"))
+	water_btn.pressed.connect(func(): if arena: arena.spawn_actor("water"))
 	spawn_buttons_container.add_child(water_btn)
 	
 	var goat_btn = Button.new()
 	goat_btn.text = "Spawn Goat"
 	goat_btn.focus_mode = Control.FOCUS_NONE
-	goat_btn.pressed.connect(func(): if arena: arena.spawn_elemental("goat"))
+	goat_btn.pressed.connect(func(): if arena: arena.spawn_actor("goat"))
 	spawn_buttons_container.add_child(goat_btn)
 
 func _update_debug_info(counts: Dictionary = {}) -> void:
@@ -97,7 +97,7 @@ func _update_debug_info(counts: Dictionary = {}) -> void:
 	debug_label.text = text
 
 func _on_debug_checkbox_toggled(pressed: bool) -> void:
-	Elemental.debug_enabled = pressed
+	Actor.debug_enabled = pressed
 	_update_debug_info()
 
 # Replace _process with nothing or a simpler version if needed

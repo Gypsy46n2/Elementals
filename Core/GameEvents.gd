@@ -1,7 +1,7 @@
 extends Node
 
-# Elemental/Combat Signals
-signal elemental_died(elemental: Node3D)
+# Actor/Combat Signals
+signal actor_died(actor: Node3D)
 signal element_applied(target: Node, element: String, direction: Vector3)
 
 # Management/Economy Signals

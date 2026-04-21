@@ -4,7 +4,7 @@ var color: Color = Color.WHITE
 var mana_value: float = 1.0 # 0.0 to 1.0
 var _last_mana_value: float = -1.0
 
-var attack_pattern: int = 0: # Elemental.AttackPattern
+var attack_pattern: int = 0: # Actor.AttackPattern
 	set(value):
 		attack_pattern = value
 		queue_redraw()

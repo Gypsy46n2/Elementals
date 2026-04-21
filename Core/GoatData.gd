@@ -14,6 +14,11 @@ enum Gender { DOE, BUCK }
 		if goat_name == v: return
 		goat_name = v
 		stats_changed.emit()
+@export var level: int = 1:
+	set(v):
+		if level == v: return
+		level = v
+		stats_changed.emit()
 @export var gender: Gender = Gender.DOE:
 	set(v): 
 		if gender == v: return
@@ -47,22 +52,39 @@ enum Gender { DOE, BUCK }
 		pattern_color = v
 		stats_changed.emit()
 
-@export_group("Performance Stats")
-@export var strength: float = 1.0: # Influences charge/knockback
+@export_group("Ability Scores")
+@export var strength: float = 1.0: # Physical power, influences charge/knockback
 	set(v): 
 		if strength == v: return
 		strength = v
 		stats_changed.emit()
-@export var toughness: float = 1.0: # Influences HP
+@export var dexterity: float = 1.0: # Agility, influences move speed
 	set(v): 
-		if toughness == v: return
-		toughness = v
+		if dexterity == v: return
+		dexterity = v
 		stats_changed.emit()
-@export var speed: float = 1.0: # Influences move speed
+@export var constitution: float = 1.0: # Endurance, influences HP
 	set(v): 
-		if speed == v: return
-		speed = v
+		if constitution == v: return
+		constitution = v
 		stats_changed.emit()
+@export var intelligence: float = 1.0: # Reasoning and memory
+	set(v): 
+		if intelligence == v: return
+		intelligence = v
+		stats_changed.emit()
+@export var wisdom: float = 1.0: # Perception and insight
+	set(v): 
+		if wisdom == v: return
+		wisdom = v
+		stats_changed.emit()
+@export var charisma: float = 1.0: # Force of personality
+	set(v): 
+		if charisma == v: return
+		charisma = v
+		stats_changed.emit()
+
+@export_group("Performance Stats")
 @export var stamina_max: float = 100.0:
 	set(v): 
 		if stamina_max == v: return
@@ -73,6 +95,14 @@ enum Gender { DOE, BUCK }
 		if stamina_current == v: return
 		stamina_current = v
 		stats_changed.emit()
+
+# Compatibility Aliases
+var toughness: float:
+	get: return constitution
+	set(v): constitution = v
+var speed: float:
+	get: return dexterity
+	set(v): dexterity = v
 
 @export_group("Lifecycle")
 @export var age_days: int = 0:
@@ -126,7 +156,10 @@ static func create_offspring(doe: GoatData, buck: GoatData) -> GoatData:
 	kid.body_type = doe.body_type if randf() < 0.5 else buck.body_type
 	
 	kid.strength = (doe.strength + buck.strength) * 0.5 * randf_range(0.9, 1.1)
-	kid.toughness = (doe.toughness + buck.toughness) * 0.5 * randf_range(0.9, 1.1)
-	kid.speed = (doe.speed + buck.speed) * 0.5 * randf_range(0.9, 1.1)
+	kid.dexterity = (doe.dexterity + buck.dexterity) * 0.5 * randf_range(0.9, 1.1)
+	kid.constitution = (doe.constitution + buck.constitution) * 0.5 * randf_range(0.9, 1.1)
+	kid.intelligence = (doe.intelligence + buck.intelligence) * 0.5 * randf_range(0.9, 1.1)
+	kid.wisdom = (doe.wisdom + buck.wisdom) * 0.5 * randf_range(0.9, 1.1)
+	kid.charisma = (doe.charisma + buck.charisma) * 0.5 * randf_range(0.9, 1.1)
 	
 	return kid

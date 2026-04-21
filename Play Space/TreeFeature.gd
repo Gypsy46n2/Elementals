@@ -192,6 +192,12 @@ func _push_pinecone(direction: Vector3) -> void:
 	var max_dot = -2.0
 	var best_neighbor = null
 	for n in arena._get_neighbors(tile):
+		# Pinecones cannot move onto tiles that have other features (fences, house) or are interior yard
+		if n.feature != null:
+			continue
+		if n in arena.farmstead_interior_tiles:
+			continue
+			
 		var dir_to_n = (n.position - tile.position).normalized()
 		var dot = push_dir.dot(dir_to_n)
 		if dot > max_dot:

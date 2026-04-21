@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="TreeSpecies" load_steps=13 format=3 uid="uid://dsrm8cy5ponwk"]
 
-[ext_resource type="Texture2D" uid="uid://q0wt5nblhtye" path="res://assets/generated/burnt_stump_simple_1774734102.png" id="1_burnt"]
+[ext_resource type="Texture2D" uid="uid://q0wt5nblhtye" path="res://assets/generated/burnt_stump_simple_1774734102.png" id="2_7x3dn"]
 [ext_resource type="Script" uid="uid://dcflkh02k7vhl" path="res://Play Space/TreeStates/TreeStateData.gd" id="2_statedata"]
 [ext_resource type="Texture2D" uid="uid://ci4x68ry88vmv" path="res://assets/generated/tree_simple_frame_0_1774919983.png" id="3_tree"]
 [ext_resource type="Texture2D" uid="uid://cc0lno6puwinx" path="res://assets/generated/pinecone_frame_0_1774919979.png" id="4_pinecone"]
@@ -10,7 +10,7 @@
 
 [sub_resource type="Resource" id="Resource_burnt"]
 script = ExtResource("2_statedata")
-texture = ExtResource("1_burnt")
+texture = ExtResource("2_7x3dn")
 scale = Vector3(1.5, 1.5, 1.5)
 sprite_y_offset = 0.5
 

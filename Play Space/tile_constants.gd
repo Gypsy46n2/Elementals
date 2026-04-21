@@ -10,7 +10,7 @@ const COLORS = {
 	State.MUD: Color.WHITE,
 	State.FIRE: Color(1.0, 0.4, 0.0),
 	State.PUDDLE: Color.WHITE,
-	State.STONE: Color.WHITE,
+	State.STONE: Color(0.35, 0.35, 0.4), # Slate grey
 }
 
 const TEXTURES = {
@@ -18,7 +18,7 @@ const TEXTURES = {
 	State.DIRT: preload("res://assets/generated/dirt_hex_tile_frame_0_1774844719.png"),
 	State.MUD: preload("res://assets/generated/mud_hex_tile_frame_0_1774844756.png"),
 	State.PUDDLE: preload("res://assets/generated/water_hex_tile_1774844916.png"),
-	State.STONE: preload("res://assets/generated/stone_hex_tile_frame_0_1774844738.png"),
+	State.STONE: null,
 	State.FIRE: preload("res://assets/generated/dirt_hex_tile_frame_0_1774844719.png"),
 }
 
@@ -27,7 +27,7 @@ const CLIFF_TEXTURES = {
 	State.DIRT: preload("res://assets/generated/dirt_cliff_face_frame_0_1776194866.png"),
 	State.MUD: preload("res://assets/generated/mud_cliff_face_frame_0_1776194867.png"),
 	State.PUDDLE: preload("res://assets/generated/waterfall_flow_side_frame_0_1776195242.png"),
-	State.STONE: preload("res://assets/generated/stone_cliff_face_frame_0_1776194867.png"),
+	State.STONE: null,
 	State.FIRE: preload("res://assets/generated/lava_cliff_face_frame_0_1776194867.png"),
 }
 

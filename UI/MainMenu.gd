@@ -1,8 +1,8 @@
 extends Control
 
-@onready var fire_button: Button = $CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection/HBoxContainer/FireButton
-@onready var water_button: Button = $CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection/HBoxContainer/WaterButton
-@onready var goat_button: Button = $CenterContainer/VBoxContainer/CharacterSettingsContainer/ElementalSelection/HBoxContainer/GoatButton
+@onready var fire_button: Button = $CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer/FireButton
+@onready var water_button: Button = $CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer/WaterButton
+@onready var goat_button: Button = $CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer/GoatButton
 @onready var fire_count_input: SpinBox = $CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection/FireNPCs/FireCount
 @onready var water_count_input: SpinBox = $CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection/WaterNPCs/WaterCount
 @onready var goat_count_input: SpinBox = $CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection/GoatNPCs/GoatCount
@@ -41,9 +41,9 @@ func _ready() -> void:
 		_on_scale_changed(scale_slider.value)
 		_on_height_changed(height_slider.value)
 		
-		if gs.selected_elemental_type == "fire":
+		if gs.selected_actor_type == "fire":
 			_on_fire_button_pressed()
-		elif gs.selected_elemental_type == "water":
+		elif gs.selected_actor_type == "water":
 			_on_water_button_pressed()
 		else:
 			_on_goat_button_pressed()
@@ -62,21 +62,21 @@ func _on_fire_button_pressed() -> void:
 	water_button.button_pressed = false
 	goat_button.button_pressed = false
 	var gs = get_node_or_null("/root/GameSettings")
-	if gs: gs.selected_elemental_type = "fire"
+	if gs: gs.selected_actor_type = "fire"
 
 func _on_water_button_pressed() -> void:
 	fire_button.button_pressed = false
 	water_button.button_pressed = true
 	goat_button.button_pressed = false
 	var gs = get_node_or_null("/root/GameSettings")
-	if gs: gs.selected_elemental_type = "water"
+	if gs: gs.selected_actor_type = "water"
 
 func _on_goat_button_pressed() -> void:
 	fire_button.button_pressed = false
 	water_button.button_pressed = false
 	goat_button.button_pressed = true
 	var gs = get_node_or_null("/root/GameSettings")
-	if gs: gs.selected_elemental_type = "goat"
+	if gs: gs.selected_actor_type = "goat"
 
 func _on_character_settings_button_pressed() -> void:
 	character_settings_container.visible = !character_settings_container.visible
