@@ -4,9 +4,11 @@ extends Actor
 @onready var _whack_player: AudioStreamPlayer3D = get_node_or_null("WhackPlayer")
 @onready var _swoosh_player: AudioStreamPlayer3D = get_node_or_null("SwooshPlayer")
 
+var _hitbox_visual: MeshInstance3D
+
 const THWAK_TEXTURE = preload("res://assets/generated/thwak_popup_frame_0_1774916398.png")
 const FARMER_IDLE = preload("res://assets/Characters/farmer_sprites/walk_down_1.png")
-const FARMER_SWING = preload("res://assets/Characters/farmer_sprites/swing_0.png")
+const FARMER_SWING = preload("res://assets/Characters/farmer_sprites/attack_down_0.png")
 
 var _club_cooldown: float = 0.0
 var _last_dir: StringName = &"down"
@@ -32,6 +34,22 @@ func _ready() -> void:
 	if health_component:
 		health_component.max_health = max_hp
 		health_component.current_health = max_hp
+	
+	_setup_hitbox_visual()
+
+func _setup_hitbox_visual() -> void:
+	_hitbox_visual = MeshInstance3D.new()
+	var plane = PlaneMesh.new()
+	plane.size = Vector2(1, 1)
+	_hitbox_visual.mesh = plane
+	_hitbox_visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	
+	var mat = preload("res://Actor/AttackHitboxMaterial.tres")
+	_hitbox_visual.material_override = mat
+	
+	add_child(_hitbox_visual)
+	_hitbox_visual.visible = false
+	_hitbox_visual.top_level = true # Position in world space independently
 
 func _setup_actor() -> void:
 	if _body is AnimatedSprite3D:
@@ -123,12 +141,27 @@ func _process(delta: float) -> void:
 	_update_sprite_animation()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if is_controlled and not is_stunned() and event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			var target_pos = _get_mouse_3d_position()
-			_swing_club(target_pos)
-			get_viewport().set_input_as_handled()
+func _show_hitbox_animation(dir: Vector3) -> void:
+	if not _hitbox_visual: return
+	
+	_hitbox_visual.global_position = global_position
+	_hitbox_visual.global_position.y += 0.05 # Just above floor
+	
+	# Rotate to face the attack direction
+	var angle = atan2(dir.x, dir.z)
+	_hitbox_visual.rotation = Vector3(0, angle, 0)
+	
+	_hitbox_visual.visible = true
+	_hitbox_visual.scale = Vector3.ZERO
+	
+	# Radius of the wedge is 0.5 in a 1x1 plane, so scale by CLUB_REACH * 2
+	var target_scale = CLUB_REACH * 2.0
+	
+	var tween = create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_hitbox_visual, "scale", Vector3(target_scale, 1.0, target_scale), 0.1)
+	tween.tween_property(_hitbox_visual, "scale", Vector3.ZERO, 0.2).set_delay(0.1)
+	tween.tween_callback(func(): _hitbox_visual.visible = false)
 
 func _swing_club(target_pos: Vector3) -> void:
 	if _club_cooldown > 0 or is_stunned():
@@ -136,13 +169,44 @@ func _swing_club(target_pos: Vector3) -> void:
 	
 	_club_cooldown = CLUB_COOLDOWN
 	
+	# Update direction for the swing
+	var dir = (target_pos - global_position).normalized()
+	dir.y = 0
+	
+	var camera = get_viewport().get_camera_3d()
+	if camera:
+		var cam_basis = camera.global_transform.basis
+		var cam_right = cam_basis.x
+		var cam_forward = -cam_basis.z
+		cam_forward.y = 0
+		cam_forward = cam_forward.normalized()
+		
+		var dot_right = dir.dot(cam_right)
+		var dot_forward = dir.dot(cam_forward)
+		
+		if abs(dot_right) > abs(dot_forward):
+			if dot_right > 0:
+				_last_dir = &"right"
+			else:
+				_last_dir = &"left"
+		else:
+			if dot_forward > 0:
+				_last_dir = &"up"
+			else:
+				_last_dir = &"down"
+	
 	if _swoosh_player:
 		_swoosh_player.play()
+	
+	_show_hitbox_animation(dir)
 	
 	# Visual swing animation
 	if _body is AnimatedSprite3D:
 		var sprite = _body as AnimatedSprite3D
-		sprite.play(&"swing")
+		var anim_name = "swing_" + _last_dir
+		if not sprite.sprite_frames.has_animation(anim_name):
+			anim_name = &"swing"
+		sprite.play(anim_name)
 		
 		var tween = create_tween()
 		tween.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
@@ -151,8 +215,6 @@ func _swing_club(target_pos: Vector3) -> void:
 		tween.tween_property(sprite, "rotation:z", 0.0, 0.2).set_delay(0.1)
 
 	# Small lunge
-	var dir = (target_pos - global_position).normalized()
-	dir.y = 0
 	if movement_component:
 		movement_component.apply_external_force(dir * 5.0)
 	
@@ -193,7 +255,6 @@ func _swing_club(target_pos: Vector3) -> void:
 					_show_thwak_visual(ray_hit.position)
 					hit_anything = true
 
-
 func _handle_club_hit(target: Actor) -> void:
 	var damage = _rng.randi_range(1, 4)
 	target.take_damage(damage)
@@ -230,16 +291,6 @@ func _show_thwak_visual(pos: Vector3) -> void:
 	tween.parallel().tween_property(sprite, "position:y", sprite.position.y + 0.4, 0.3).set_delay(0.2)
 	tween.parallel().tween_property(sprite, "modulate:a", 0.0, 0.3).set_delay(0.2)
 	tween.tween_callback(sprite.queue_free)
-
-func _get_mouse_3d_position() -> Vector3:
-	var camera = get_viewport().get_camera_3d()
-	if not camera: return Vector3.ZERO
-	var mouse_pos = get_viewport().get_mouse_position()
-	var ray_origin = camera.project_ray_origin(mouse_pos)
-	var ray_direction = camera.project_ray_normal(mouse_pos)
-	if abs(ray_direction.y) < 1e-6: return Vector3.ZERO
-	var t = -ray_origin.y / ray_direction.y
-	return ray_origin + ray_direction * t
 
 func herd_goat(goat: GoatActor) -> void:
 	if goat.has_method("_scream"):
