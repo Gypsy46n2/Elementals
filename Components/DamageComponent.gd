@@ -7,17 +7,16 @@ extends Node
 @export var element_type: String = "none"
 
 ## Attempts to deal damage to a target node if it has a HealthComponent.
-func deal_damage(target: Node) -> bool:
+func deal_damage(target: Node, direction: Vector3 = Vector3.ZERO) -> bool:
+	if target.has_method("take_damage"):
+		target.take_damage(damage_amount, element_type, direction)
+		return true
+		
 	var health = find_health_component(target)
 	if health:
 		health.take_damage(damage_amount, element_type)
 		return true
 	
-	# Fallback for legacy take_damage calls if HealthComponent isn't found
-	if target.has_method("take_damage"):
-		target.take_damage(damage_amount, element_type)
-		return true
-		
 	return false
 
 ## Helper to apply an element effect to a node, with optional direction.

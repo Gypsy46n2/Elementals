@@ -272,7 +272,7 @@ func _find_nearby_actor() -> Actor:
 	var possible_targets: Array[Actor] = []
 	
 	for other in actor._arena_grid.actors:
-		if not is_instance_valid(other) or other == actor or other is GoatActor:
+		if not is_instance_valid(other) or other == actor or (other is Actor and other.is_friendly):
 			continue
 		
 		# Only target enemies (non-goats)

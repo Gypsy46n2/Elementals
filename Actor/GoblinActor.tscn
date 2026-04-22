@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Actor/GoblinActor.gd" id="1_goblin"]
+[ext_resource type="SpriteFrames" path="res://Actor/goblin_sprite_frames.tres" id="2_goblin_frames"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.4
+height = 1.0
+
+[node name="GoblinActor" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("1_goblin")
+move_speed = 3.0
+
+[node name="Body" type="AnimatedSprite3D" parent="."]
+sprite_frames = ExtResource("2_goblin_frames")
+animation = &"walk_down"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="TileDetector" type="RayCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+target_position = Vector3(0, -1, 0)

@@ -14,9 +14,9 @@ extends BaseProjectile
 
 var visual_component: ChargeVisualComponent
 
-func initialize(arena: ArenaGrid, caster_position: Vector3, effect_range: float, direction: Vector3, velocity: float, max_charges: int, projectile_lifetime: float, projectile_max_range: float = 45.0) -> void:
+func initialize(arena: ArenaGrid, p_caster: Node3D, caster_position: Vector3, effect_range: float, direction: Vector3, velocity: float, max_charges: int, projectile_lifetime: float, projectile_max_range: float = 45.0) -> void:
 	# Call super.initialize first to set remaining_charges
-	super.initialize(arena, caster_position, effect_range, direction, velocity, max_charges, projectile_lifetime, projectile_max_range)
+	super.initialize(arena, p_caster, caster_position, effect_range, direction, velocity, max_charges, projectile_lifetime, projectile_max_range)
 	
 	# Hide the default sphere if it exists
 	var visual = get_node_or_null("ProjectileVisual")
@@ -45,6 +45,8 @@ func _setup_visual_component(count: int) -> void:
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
+	# Even if stuck, we might want to update visuals one last time or stop them.
+	# The base _physics_process returns early if stuck, so this won't be called.
 	_update_visuals(delta)
 
 func _update_visuals(delta: float) -> void:

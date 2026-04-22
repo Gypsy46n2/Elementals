@@ -1,10 +1,7 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=3 format=3 uid="uid://dhb07467qj840"]
 
 [ext_resource type="Script" uid="uid://bw816jkoqith7" path="res://UI/MainMenu.gd" id="1_xxx"]
 [ext_resource type="PackedScene" path="res://UI/ControlsPanel.tscn" id="2_xxx"]
-[ext_resource type="Texture2D" uid="uid://bw0k7ch7tw2qr" path="res://assets/generated/fire_particle_1774823455.png" id="3_fire"]
-[ext_resource type="Texture2D" uid="uid://d34box3kcyf7u" path="res://assets/generated/magic_water_drop_frame_0_1774826822.png" id="4_water"]
-[ext_resource type="Texture2D" uid="uid://x8iayihprmap" path="res://assets/Characters/CuteGoat.png" id="5_goat"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -45,101 +42,79 @@ horizontal_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="CharacterSettingsButton" type="Button" parent="CenterContainer/VBoxContainer"]
+[node name="CharacterTabButton" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 text = "Character Selection"
 
-[node name="CharacterSettingsContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="CharacterTabContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
 visible = false
 layout_mode = 2
 
-[node name="ActorSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer"]
+[node name="ActorSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/CharacterTabContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection"]
 layout_mode = 2
 text = "Select Starting Actor:"
 horizontal_alignment = 1
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection"]
+[node name="ActorButtons" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection"]
+unique_name_in_owner = true
 layout_mode = 2
 alignment = 1
 
-[node name="FireButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer"]
-custom_minimum_size = Vector2(180, 48)
+[node name="WeaponTabButton" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/h_separation = 10
-toggle_mode = true
-button_pressed = true
-text = "Fire Actor"
-icon = ExtResource("3_fire")
-expand_icon = true
+text = "Weapon Selection"
 
-[node name="WaterButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer"]
-custom_minimum_size = Vector2(180, 48)
-layout_mode = 2
-theme_override_constants/h_separation = 10
-toggle_mode = true
-text = "Water Actor"
-icon = ExtResource("4_water")
-expand_icon = true
-
-[node name="GoatButton" type="Button" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer"]
-custom_minimum_size = Vector2(180, 48)
-layout_mode = 2
-theme_override_constants/h_separation = 10
-toggle_mode = true
-text = "Goat"
-icon = ExtResource("5_goat")
-expand_icon = true
-
-[node name="NPCSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer"]
+[node name="WeaponTabContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection"]
+[node name="NPCSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection"]
 layout_mode = 2
 text = "NPC Counts:"
 horizontal_alignment = 1
 
-[node name="FireNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection"]
+[node name="FireNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection/FireNPCs"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/FireNPCs"]
 layout_mode = 2
 text = "Fire:"
 
-[node name="FireCount" type="SpinBox" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection/FireNPCs"]
+[node name="FireCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/FireNPCs"]
 layout_mode = 2
-min_value = 0.0
 max_value = 20.0
 value = 1.0
 
-[node name="WaterNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection"]
+[node name="WaterNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection/WaterNPCs"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/WaterNPCs"]
 layout_mode = 2
 text = "Water:"
 
-[node name="WaterCount" type="SpinBox" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection/WaterNPCs"]
+[node name="WaterCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/WaterNPCs"]
 layout_mode = 2
-min_value = 0.0
 max_value = 20.0
 value = 1.0
 
-[node name="GoatNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection"]
+[node name="GoatNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection"]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection/GoatNPCs"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/GoatNPCs"]
 layout_mode = 2
 text = "Goat:"
 
-[node name="GoatCount" type="SpinBox" parent="CenterContainer/VBoxContainer/CharacterSettingsContainer/NPCSelection/GoatNPCs"]
+[node name="GoatCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/GoatNPCs"]
 layout_mode = 2
-min_value = 0.0
 max_value = 20.0
 value = 1.0
 
@@ -162,7 +137,6 @@ horizontal_alignment = 1
 [node name="SizeInput" type="SpinBox" parent="CenterContainer/VBoxContainer/MapSettingsContainer/ArenaSize"]
 layout_mode = 2
 min_value = 10.0
-max_value = 100.0
 step = 10.0
 value = 20.0
 alignment = 1
@@ -262,11 +236,8 @@ theme_override_constants/margin_bottom = 20
 [node name="ControlsPanel" parent="ControlsPanel" instance=ExtResource("2_xxx")]
 layout_mode = 2
 
-
-[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsButton" to="." method="_on_character_settings_button_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer/FireButton" to="." method="_on_fire_button_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer/WaterButton" to="." method="_on_water_button_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterSettingsContainer/ActorSelection/HBoxContainer/GoatButton" to="." method="_on_goat_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterTabButton" to="." method="_on_character_tab_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/WeaponTabButton" to="." method="_on_weapon_tab_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/MapSettingsButton" to="." method="_on_map_settings_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/PlayButton" to="." method="_on_play_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/RanchButton" to="." method="_on_ranch_button_pressed"]

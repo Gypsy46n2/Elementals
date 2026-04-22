@@ -4,9 +4,9 @@ extends Node3D
 const BIRD_TEXTURE = preload("res://assets/generated/stun_bird_frame_0_1774946935.png")
 const STAR_TEXTURE = preload("res://assets/generated/stun_star_frame_0_1774946936.png")
 
-@export var radius: float = 1.0
+@export var radius: float = 0.3
 @export var rotation_speed: float = 6.0
-@export var bob_amplitude: float = 0.3
+@export var bob_amplitude: float = 0.1
 @export var bob_speed: float = 5.0
 
 var _time: float = 0.0
@@ -15,7 +15,7 @@ func _ready() -> void:
 	for i in range(6):
 		var sprite = Sprite3D.new()
 		sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		sprite.pixel_size = 0.06
+		sprite.pixel_size = 0.01 # Toned down from 0.02
 		sprite.texture = BIRD_TEXTURE if i % 2 == 0 else STAR_TEXTURE
 		sprite.no_depth_test = true # Make it visible through the head if it clips
 		sprite.render_priority = 10

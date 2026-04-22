@@ -12,6 +12,8 @@ extends Node3D
 @export var fire_actor_scene: PackedScene = preload("res://Actor/FireActor.tscn")
 @export var water_actor_scene: PackedScene = preload("res://Actor/WaterActor.tscn")
 @export var goat_actor_scene: PackedScene = preload("res://Actor/GoatActor.tscn")
+@export var goblin_actor_scene: PackedScene = preload("res://Actor/GoblinMinion.tscn")
+@export var scarecrow_dummy_scene: PackedScene = preload("res://Actor/ScarecrowDummy.tscn")
 @export var noise: FastNoiseLite
 @export var height_step: float = 1.0
 @export var noise_scale: float = 1.0
@@ -113,14 +115,16 @@ func _on_actor_died(e: Node3D) -> void:
 	if e == current_controlled_actor:
 		next_actor()
 	
-	var player_goats_left = false
-	for actor in actors:
-		if actor is GoatActor and actor.goat_data:
-			player_goats_left = true
-			break
-	
-	if not player_goats_left:
-		_handle_game_over()
+	# Only check for extinction if a friendly unit just died
+	if e is Actor and e.is_friendly:
+		var friendlies_left = false
+		for actor in actors:
+			if actor is Actor and actor.is_friendly:
+				friendlies_left = true
+				break
+		
+		if not friendlies_left:
+			_handle_game_over()
 
 func _plan_farmstead() -> void:
 	var x = grid_width / 2
@@ -445,7 +449,7 @@ func _on_finish_day_pressed() -> void:
 
 func _handle_game_over() -> void:
 	if _target_label:
-		_target_label.text = "ALL GOATS HAVE PERISHED!"
+		_target_label.text = "ALL FRIENDLIES HAVE DIED!"
 		_target_label.modulate = Color.RED
 	
 	current_controlled_actor = null
@@ -454,7 +458,10 @@ func _handle_game_over() -> void:
 
 func _spawn_actors() -> void:
 	actors.clear()
-	# Fire and Water elementals spawning disabled as requested
+	
+	# Spawn a test goblin minion
+	if goblin_actor_scene:
+		_spawn_type("goblin", grid_width / 2 + 3, grid_height / 2 + 3)
 	
 	if has_node("/root/GoatManager"):
 		var gm = get_node("/root/GoatManager")
@@ -472,14 +479,22 @@ func _setup_farmstead() -> void:
 	if house.has_method("set_tile"):
 		house.set_tile(house_tile)
 	
-	# Spawn Farmer in the center of the yard
+	# Spawn Selected Player Actor in the center of the yard
 	var interior_center = farmstead_interior_tiles[0] if not farmstead_interior_tiles.is_empty() else house_tile
-	var farmer = farmer_actor_scene.instantiate()
-	add_child(farmer)
-	farmer.transform.origin = interior_center.position + Vector3(0, _get_tile_surface_y(interior_center) + 1.0, 0)
-	actors.append(farmer)
-	if farmer.has_node("DecisionComponent"):
-		var decision = farmer.get_node("DecisionComponent")
+	var actor_scene = _get_selected_actor_scene()
+	var player = actor_scene.instantiate()
+	add_child(player)
+	player.transform.origin = interior_center.position + Vector3(0, _get_tile_surface_y(interior_center) + 1.0, 0)
+	
+	if player is GoatActor:
+		player.goat_data = GoatData.new()
+		player.goat_data.goat_name = "Player Goat"
+	
+	player.is_playable = true # Ensure the selected character is playable
+	actors.append(player)
+	
+	if player.has_node("DecisionComponent"):
+		var decision = player.get_node("DecisionComponent")
 		if "farm_center" in decision:
 			decision.farm_center = interior_center.position
 	
@@ -499,6 +514,30 @@ func _setup_farmstead() -> void:
 	for f in fences:
 		if f.has_method("update_connections"):
 			f.update_connections(self)
+	
+	# Spawn a scarecrow dummy just outside the yard
+	_spawn_scarecrow()
+
+func _spawn_scarecrow() -> void:
+	if not scarecrow_dummy_scene:
+		return
+		
+	# Pick a perimeter tile and find a neighbor that is outside the farmstead
+	var outer_tile: HexTileData = null
+	for p_tile in farmstead_perimeter_tiles:
+		for n in _get_neighbors(p_tile):
+			if n not in farmstead_interior_tiles and n not in farmstead_perimeter_tiles and n.current_state != TileConstants.State.STONE:
+				outer_tile = n
+				break
+		if outer_tile:
+			break
+	
+	if outer_tile:
+		var scarecrow = scarecrow_dummy_scene.instantiate()
+		add_child(scarecrow)
+		scarecrow.transform.origin = outer_tile.position + Vector3(0, _get_tile_surface_y(outer_tile) + 1.0, 0)
+		scarecrow.name = "ScarecrowDummy"
+		actors.append(scarecrow)
 
 func _spawn_goat_from_data(data: GoatData) -> void:
 	var goat = goat_actor_scene.instantiate() as GoatActor
@@ -522,10 +561,14 @@ func _spawn_goat_from_data(data: GoatData) -> void:
 func spawn_actor(type: String) -> void:
 	_spawn_type(type)
 
+func spawn_goblin() -> void:
+	_spawn_type("goblin")
+
 func _spawn_type(type: String, x: int = -1, y: int = -1) -> void:
 	var scene = fire_actor_scene
 	if type == "water": scene = water_actor_scene
 	elif type == "goat": scene = goat_actor_scene
+	elif type == "goblin": scene = goblin_actor_scene
 	
 	var actor = scene.instantiate()
 	if x == -1:
@@ -542,29 +585,29 @@ func _spawn_type(type: String, x: int = -1, y: int = -1) -> void:
 	add_child(actor)
 	actors.append(actor)
 
+func _get_selected_actor_scene() -> PackedScene:
+	var gs = get_node_or_null("/root/GameSettings")
+	if not gs: return farmer_actor_scene
+	
+	match gs.selected_actor_type:
+		"fire": return fire_actor_scene
+		"water": return water_actor_scene
+		"goat": return goat_actor_scene
+		"goblin": return goblin_actor_scene
+		"scarecrow": return scarecrow_dummy_scene
+		"farmer": return farmer_actor_scene
+	return farmer_actor_scene
+
 func _select_initial_actor() -> void:
-	if actors.is_empty():
-		return
-	
-	# Farmer is the default main character, pick them first if they exist
-	for i in range(actors.size()):
-		if actors[i] is FarmerActor:
-			current_target_index = i
-			_update_camera_target()
-			return
-	
-	for i in range(actors.size()):
-		if actors[i] is GoatActor:
-			current_target_index = i
-			_update_camera_target()
-			return
-			
-	current_target_index = 0
-	_update_camera_target()
+	var idx = _find_playable_actor(0, 1)
+	if idx != -1:
+		current_target_index = idx
+		_update_camera_target()
 
 func _update_camera_target() -> void:
 	if actors.is_empty(): return
 	var target = actors[current_target_index % actors.size()]
+	
 	if _camera_follower:
 		_camera_follower.set_target(target)
 		if target is GoatActor:
@@ -575,12 +618,29 @@ func _update_camera_target() -> void:
 	if _target_label: _target_label.text = "Following: " + target.name
 
 func next_actor() -> void:
-	current_target_index += 1
-	_update_camera_target()
+	var next_idx = _find_playable_actor(current_target_index + 1, 1)
+	if next_idx != -1:
+		current_target_index = next_idx
+		_update_camera_target()
 
 func previous_actor() -> void:
-	current_target_index -= 1
-	_update_camera_target()
+	var prev_idx = _find_playable_actor(current_target_index - 1, -1)
+	if prev_idx != -1:
+		current_target_index = prev_idx
+		_update_camera_target()
+
+func _find_playable_actor(start_index: int, step: int) -> int:
+	if actors.is_empty(): return -1
+	var n = actors.size()
+	for i in range(n):
+		# Correct wrapping for negative step
+		var idx = (start_index + i * step) % n
+		if idx < 0: idx += n
+		
+		var a = actors[idx]
+		if a is Actor and a.is_playable:
+			return idx
+	return -1
 
 func _calculate_hex_position(column: int, row: int) -> Vector2:
 	var offset = float(column % 2) * 0.5

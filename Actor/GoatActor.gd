@@ -74,7 +74,7 @@ func _on_goat_data_changed() -> void:
 	wisdom = goat_data.wisdom
 	charisma = goat_data.charisma
 
-	move_speed = 7.0 * dexterity
+	move_speed = 3.0 * dexterity
 	if movement_component:
 		movement_component.move_speed = move_speed
 		
@@ -359,7 +359,7 @@ func _handle_headbutt_hit(target: Actor, hit_pos: Vector3) -> void:
 		damage = int(max(1, strength))
 		knockback_strength *= strength
 
-	target.take_damage(damage)
+	target.take_damage(damage, "normal", (target.global_position - global_position).normalized())
 	target.stun(0.5)
 	_show_thwak_visual(hit_pos)
 	_play_whack()
@@ -381,7 +381,7 @@ func _show_thwak_visual(pos: Vector3) -> void:
 	
 	if texture:
 		sprite.texture = texture
-		sprite.pixel_size = 0.08 # Slightly larger than the scream bubble
+		sprite.pixel_size = 0.02 # Toned down from 0.04
 	else:
 		return
 		
@@ -392,13 +392,13 @@ func _show_thwak_visual(pos: Vector3) -> void:
 	else:
 		add_child(sprite)
 		
-	sprite.global_position = pos + Vector3(0, 1.2, 0) # Position slightly above the hit point
+	sprite.global_position = pos + Vector3(0, 0.5, 0) # Position slightly above the hit point
 	
 	# Animate: Pop in, slight shake, and fade out
 	sprite.scale = Vector3.ZERO
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(sprite, "scale", Vector3.ONE * 1.5, 0.1)
+	tween.tween_property(sprite, "scale", Vector3.ONE * 1.0, 0.1)
 	
 	# Brief shake
 	for i in range(3):
@@ -492,7 +492,7 @@ func _start_burning() -> void:
 
 func _take_fire_damage() -> void:
 	## Applies damage and visual/audio feedback for fire damage.
-	take_damage(1, "burning")
+	take_damage(1, "burning", Vector3.UP)
 	_scream()
 	_flash_red()
 	_damage_tick_timer = 1.0
@@ -505,7 +505,7 @@ func _on_damage_received(_amount: float, type: String) -> void:
 
 func hit_by_projectile(projectile: BaseProjectile) -> void:
 	# This might be called by legacy systems or if DamageComponent isn't used
-	take_damage(projectile.remaining_charges, projectile.element_type)
+	take_damage(projectile.remaining_charges, projectile.element_type, projectile._direction if "_direction" in projectile else Vector3.ZERO)
 
 func _flash_red() -> void:
 	## Briefly modulates the sprite red to indicate damage.
@@ -669,7 +669,7 @@ func _show_scream_visual() -> void:
 	
 	if texture:
 		sprite.texture = texture
-		sprite.pixel_size = 0.06
+		sprite.pixel_size = 0.04 # Toned down from 0.06
 	else:
 		# Fallback to text label if texture is missing
 		print("Warning: Scream bubble texture missing.")

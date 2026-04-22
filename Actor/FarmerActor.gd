@@ -4,16 +4,9 @@ extends Actor
 @onready var _whack_player: AudioStreamPlayer3D = get_node_or_null("WhackPlayer")
 @onready var _swoosh_player: AudioStreamPlayer3D = get_node_or_null("SwooshPlayer")
 
-var _hitbox_visual: MeshInstance3D
-
 const THWAK_TEXTURE = preload("res://assets/generated/thwak_popup_frame_0_1774916398.png")
 const FARMER_IDLE = preload("res://assets/Characters/farmer_sprites/walk_down_1.png")
 const FARMER_SWING = preload("res://assets/Characters/farmer_sprites/attack_down_0.png")
-
-var _club_cooldown: float = 0.0
-var _last_dir: StringName = &"down"
-const CLUB_REACH = 2.0
-const CLUB_COOLDOWN = 0.6
 
 func _init() -> void:
 	element_type = "farmer"
@@ -26,30 +19,28 @@ func _init() -> void:
 	wisdom = 1.0
 	charisma = 1.0
 	max_hp = 4
-	move_speed = 7.0
+	move_speed = 3.0
 
 func _ready() -> void:
 	super._ready()
+	_setup_weapon()
+	
 	# Farmer is the default character, ensure HP is correct
 	if health_component:
 		health_component.max_health = max_hp
 		health_component.current_health = max_hp
 	
-	_setup_hitbox_visual()
-
-func _setup_hitbox_visual() -> void:
-	_hitbox_visual = MeshInstance3D.new()
-	var plane = PlaneMesh.new()
-	plane.size = Vector2(1, 1)
-	_hitbox_visual.mesh = plane
-	_hitbox_visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	
-	var mat = preload("res://Actor/AttackHitboxMaterial.tres")
-	_hitbox_visual.material_override = mat
-	
-	add_child(_hitbox_visual)
-	_hitbox_visual.visible = false
-	_hitbox_visual.top_level = true # Position in world space independently
+	# Farmer specific: default to Club if no weapon equipped yet
+	var wl = get_node_or_null("/root/ItemsAutoload")
+	if not equipped_weapon:
+		if wl:
+			for w in wl.weapons:
+				if w.name == "Club":
+					_on_weapon_selected(w)
+					break
+		else:
+			# Fallback
+			_on_weapon_selected(WeaponData.new("Club", "1 sp", "1d4", "bludgeoning", 2, "Light"))
 
 func _setup_actor() -> void:
 	if _body is AnimatedSprite3D:
@@ -59,8 +50,6 @@ func _setup_actor() -> void:
 		sprite.play(&"idle")
 		# 48x48 frames
 		sprite.offset.y = 24
-
-
 
 func _setup_components() -> void:
 	# Movement Component
@@ -90,9 +79,12 @@ func _update_sprite_animation() -> void:
 	if not _body is AnimatedSprite3D: return
 	var sprite = _body as AnimatedSprite3D
 	
-	if _club_cooldown > 0:
+	if weapon and weapon.is_on_cooldown():
 		if sprite.animation != &"swing":
-			sprite.play(&"swing")
+			var anim_name = "swing_" + _last_dir
+			if not sprite.sprite_frames.has_animation(anim_name):
+				anim_name = &"swing"
+			sprite.play(anim_name)
 		return
 
 	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
@@ -136,161 +128,7 @@ func _update_sprite_animation() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
-	if _club_cooldown > 0:
-		_club_cooldown -= delta
 	_update_sprite_animation()
-
-
-func _show_hitbox_animation(dir: Vector3) -> void:
-	if not _hitbox_visual: return
-	
-	_hitbox_visual.global_position = global_position
-	_hitbox_visual.global_position.y += 0.05 # Just above floor
-	
-	# Rotate to face the attack direction
-	var angle = atan2(dir.x, dir.z)
-	_hitbox_visual.rotation = Vector3(0, angle, 0)
-	
-	_hitbox_visual.visible = true
-	_hitbox_visual.scale = Vector3.ZERO
-	
-	# Radius of the wedge is 0.5 in a 1x1 plane, so scale by CLUB_REACH * 2
-	var target_scale = CLUB_REACH * 2.0
-	
-	var tween = create_tween()
-	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(_hitbox_visual, "scale", Vector3(target_scale, 1.0, target_scale), 0.1)
-	tween.tween_property(_hitbox_visual, "scale", Vector3.ZERO, 0.2).set_delay(0.1)
-	tween.tween_callback(func(): _hitbox_visual.visible = false)
-
-func _swing_club(target_pos: Vector3) -> void:
-	if _club_cooldown > 0 or is_stunned():
-		return
-	
-	_club_cooldown = CLUB_COOLDOWN
-	
-	# Update direction for the swing
-	var dir = (target_pos - global_position).normalized()
-	dir.y = 0
-	
-	var camera = get_viewport().get_camera_3d()
-	if camera:
-		var cam_basis = camera.global_transform.basis
-		var cam_right = cam_basis.x
-		var cam_forward = -cam_basis.z
-		cam_forward.y = 0
-		cam_forward = cam_forward.normalized()
-		
-		var dot_right = dir.dot(cam_right)
-		var dot_forward = dir.dot(cam_forward)
-		
-		if abs(dot_right) > abs(dot_forward):
-			if dot_right > 0:
-				_last_dir = &"right"
-			else:
-				_last_dir = &"left"
-		else:
-			if dot_forward > 0:
-				_last_dir = &"up"
-			else:
-				_last_dir = &"down"
-	
-	if _swoosh_player:
-		_swoosh_player.play()
-	
-	_show_hitbox_animation(dir)
-	
-	# Visual swing animation
-	if _body is AnimatedSprite3D:
-		var sprite = _body as AnimatedSprite3D
-		var anim_name = "swing_" + _last_dir
-		if not sprite.sprite_frames.has_animation(anim_name):
-			anim_name = &"swing"
-		sprite.play(anim_name)
-		
-		var tween = create_tween()
-		tween.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-		# Pivot the sprite slightly for the swing
-		tween.tween_property(sprite, "rotation:z", deg_to_rad(-15) if not sprite.flip_h else deg_to_rad(15), 0.1)
-		tween.tween_property(sprite, "rotation:z", 0.0, 0.2).set_delay(0.1)
-
-	# Small lunge
-	if movement_component:
-		movement_component.apply_external_force(dir * 5.0)
-	
-	# Check for hits
-	var space_state = get_world_3d().direct_space_state
-	var query = PhysicsShapeQueryParameters3D.new()
-	var sphere = SphereShape3D.new()
-	sphere.radius = CLUB_REACH
-	query.shape = sphere
-	query.transform = global_transform.translated(dir * 1.0)
-	query.collision_mask = 2 # Actor layer
-	
-	var hits = space_state.intersect_shape(query)
-	var hit_anything = false
-	for hit in hits:
-		var collider = hit.collider
-		if collider != self and collider is Actor:
-			_handle_club_hit(collider)
-			hit_anything = true
-	
-	if not hit_anything:
-		# Check for features (trees etc)
-		var feature_query = PhysicsRayQueryParameters3D.create(global_position + Vector3(0, 0.5, 0), global_position + dir * CLUB_REACH + Vector3(0, 0.5, 0))
-		feature_query.collision_mask = 1 # Static layer
-		var ray_hit = space_state.intersect_ray(feature_query)
-		if not ray_hit.is_empty():
-			var collider = ray_hit.collider
-			var potential_feature = collider
-			while potential_feature and not potential_feature.has_method("apply_element"):
-				potential_feature = potential_feature.get_parent()
-				if potential_feature == get_tree().root:
-					potential_feature = null
-					break
-			
-			if potential_feature and potential_feature.has_method("apply_element"):
-				if potential_feature.apply_element("headbutt", dir): # Using "headbutt" for blunt damage
-					_play_whack()
-					_show_thwak_visual(ray_hit.position)
-					hit_anything = true
-
-func _handle_club_hit(target: Actor) -> void:
-	var damage = _rng.randi_range(1, 4)
-	target.take_damage(damage)
-	target.stun(0.3)
-	_play_whack()
-	_show_thwak_visual(target.global_position + Vector3(0, 1.0, 0))
-	
-	if target.movement_component:
-		var dir = (target.global_position - global_position).normalized()
-		dir.y = 0.2
-		target.movement_component.apply_external_force(dir * 8.0)
-
-func _play_whack() -> void:
-	if _whack_player:
-		_whack_player.play()
-
-func _show_thwak_visual(pos: Vector3) -> void:
-	var sprite = Sprite3D.new()
-	if THWAK_TEXTURE:
-		sprite.texture = THWAK_TEXTURE
-		sprite.pixel_size = 0.08
-	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	if get_parent():
-		get_parent().add_child(sprite)
-	else:
-		add_child(sprite)
-	sprite.global_position = pos
-	
-	sprite.scale = Vector3.ZERO
-	var tween = create_tween()
-	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(sprite, "scale", Vector3.ONE * 1.5, 0.1)
-	tween.set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN)
-	tween.parallel().tween_property(sprite, "position:y", sprite.position.y + 0.4, 0.3).set_delay(0.2)
-	tween.parallel().tween_property(sprite, "modulate:a", 0.0, 0.3).set_delay(0.2)
-	tween.tween_callback(sprite.queue_free)
 
 func herd_goat(goat: GoatActor) -> void:
 	if goat.has_method("_scream"):
@@ -300,11 +138,19 @@ func herd_goat(goat: GoatActor) -> void:
 		var push_dir = (center - goat.global_position).normalized()
 		goat.movement_component.apply_external_force(push_dir * 5.0)
 
-func launch_projectile_at(_target_position: Vector3) -> void:
-	# Farmer doesn't shoot projectiles normally, uses Club
-	_swing_club(_target_position)
+func launch_projectile_at(target_position: Vector3) -> void:
+	var was_swinging = weapon and weapon.is_on_cooldown()
+	super.launch_projectile_at(target_position)
+	
+	if weapon and weapon.is_on_cooldown() and not was_swinging:
+		# Visual swing animation rotation
+		if _body is AnimatedSprite3D:
+			var sprite = _body as AnimatedSprite3D
+			var tween = create_tween()
+			tween.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+			# Pivot the sprite slightly for the swing
+			tween.tween_property(sprite, "rotation:z", deg_to_rad(-15) if not sprite.flip_h else deg_to_rad(15), 0.1)
+			tween.tween_property(sprite, "rotation:z", 0.0, 0.2).set_delay(0.1)
 
 func get_main_action_progress() -> float:
-	if _club_cooldown > 0:
-		return 1.0 - (_club_cooldown / CLUB_COOLDOWN)
-	return 1.0
+	return super.get_main_action_progress()

@@ -7,14 +7,14 @@ var _total_distance: float
 var _horizontal_dir: Vector3
 var _landing_radius: float = 2.0
 
-func initialize_lob(arena: ArenaGrid, caster_position: Vector3, target_position: Vector3, velocity: float, max_charges: int, projectile_lifetime: float) -> void:
+func initialize_lob(arena: ArenaGrid, p_caster: Node3D, caster_position: Vector3, target_position: Vector3, velocity: float, max_charges: int, projectile_lifetime: float) -> void:
 	# BaseProjectile needs a direction, we'll give it the horizontal one
 	var dir = (target_position - caster_position)
 	dir.y = 0
 	var horizontal_dir = dir.normalized()
 	
 	# We call regular initialize but we'll override the movement
-	super.initialize(arena, caster_position, 0.0, horizontal_dir, velocity, max_charges, projectile_lifetime, caster_position.distance_to(target_position) + 1.0)
+	super.initialize(arena, p_caster, caster_position, 0.0, horizontal_dir, velocity, max_charges, projectile_lifetime, caster_position.distance_to(target_position) + 1.0)
 	
 	_target_position = target_position
 	_horizontal_dir = horizontal_dir
@@ -23,12 +23,7 @@ func initialize_lob(arena: ArenaGrid, caster_position: Vector3, target_position:
 	# Adjust peak height based on distance
 	_peak_height = max(2.0, _total_distance * 0.4)
 
-func _physics_process(delta: float) -> void:
-	_elapsed += delta
-	if _elapsed >= lifetime or remaining_charges <= 0:
-		_land()
-		return
-	
+func _move_projectile(delta: float) -> void:
 	var progress = (_elapsed * speed) / _total_distance
 	if progress >= 1.0:
 		_land()
@@ -42,8 +37,9 @@ func _physics_process(delta: float) -> void:
 	var arc_y = 4.0 * _peak_height * progress * (1.0 - progress)
 	
 	global_transform.origin = Vector3(current_horizontal_pos.x, _start_position.y + arc_y, current_horizontal_pos.z)
-	
-	_update_visuals(delta)
+
+func _on_expire() -> void:
+	_land()
 
 func _land() -> void:
 	if not _arena:
@@ -63,13 +59,13 @@ func _land() -> void:
 	sphere.radius = _landing_radius
 	query.shape = sphere
 	query.transform = global_transform
-	query.collision_mask = 1 # Assuming actors are on layer 1
+	query.collision_mask = 2 # Actors are on layer 2
 	
 	var results = space_state.intersect_shape(query)
 	for result in results:
 		var body = result.collider
 		if body is Actor and body.element_type != element_type:
-			body.take_damage(remaining_charges)
+			body.take_damage(remaining_charges, "normal", (body.global_position - global_position).normalized())
 			
 	queue_free()
 

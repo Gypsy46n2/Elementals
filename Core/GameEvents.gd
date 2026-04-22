@@ -13,3 +13,4 @@ signal day_finished()
 # UI/Interaction Signals
 signal goat_selection_toggled(goat: GoatData, is_selected: bool)
 signal request_ui_update()
+signal weapon_equipped(weapon: WeaponData)

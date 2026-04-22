@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3 uid="uid://c6f3j8k2m7l1n"]
+
+[ext_resource type="Script" path="res://Actor/ScarecrowDummy.gd" id="1_scarecrow"]
+[ext_resource type="Texture2D" uid="uid://b7l8j9k0m1n2p" path="res://assets/generated/scarecrow_dummy_frame_0_1776823787.png" id="2_texture"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_scare"]
+radius = 0.4
+height = 1.2
+
+[node name="ScarecrowDummy" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("1_scarecrow")
+
+[node name="Body" type="Sprite3D" parent="."]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0.6, 0)
+pixel_size = 0.02
+billboard = 2
+texture = ExtResource("2_texture")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("CapsuleShape3D_scare")
+
+[node name="TileDetector" type="RayCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+target_position = Vector3(0, -1.5, 0)

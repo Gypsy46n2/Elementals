@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://dy747yc6bbcs3"]
+[gd_scene load_steps=7 format=3 uid="uid://dy747yc6bbcs3"]
 
 [ext_resource type="Script" uid="uid://dnnypgaoo7j51" path="res://Play Space/Arena.gd" id="1"]
 [ext_resource type="Script" uid="uid://c0bx554q5f7gv" path="res://Player/CameraFollower.gd" id="2"]
 [ext_resource type="Script" uid="uid://dhnqvq2reqag0" path="res://Play Space/ArenaDebug.gd" id="3"]
 [ext_resource type="Script" path="res://Play Space/OptionsMenu.gd" id="4_xxx"]
 [ext_resource type="PackedScene" path="res://UI/ControlsPanel.tscn" id="5_xxx"]
+[ext_resource type="PackedScene" uid="uid://b0v6k5x7y8j1" path="res://UI/WeaponConsole.tscn" id="6_xxx"]
 
 [node name="Arena" type="Node3D"]
 script = ExtResource("1")
@@ -219,3 +220,5 @@ layout_mode = 2
 size_flags_horizontal = 3
 max_value = 1.0
 step = 0.01
+
+[node name="WeaponConsole" parent="." instance=ExtResource("6_xxx")]

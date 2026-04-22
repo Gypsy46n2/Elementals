@@ -3,11 +3,11 @@ extends Node
 
 @export var target: Node3D
 @export var is_controlled: bool = false
-@export var move_speed: float = 7.0
+@export var move_speed: float = 3.0
 @export var acceleration: float = 60.0
 @export var friction: float = 20.0
 @export var gravity: float = 9.8
-@export var jump_force: float = 8.0
+@export var jump_force: float = 4.0
 
 @export var auto_jump_on_wall: bool = true
 @export var auto_jump_timeout: float = 0.15

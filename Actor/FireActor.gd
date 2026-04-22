@@ -7,6 +7,7 @@ func _init() -> void:
 	projectile_scene = preload("res://Actor/Projectiles/FireProjectile.tscn")
 	lob_projectile_scene = preload("res://Actor/Projectiles/FireLobProjectile.tscn")
 	element_type = "fire"
+	is_playable = false
 
 func _setup_actor() -> void:
 	# Hide the body mesh so the actor is only represented by particles

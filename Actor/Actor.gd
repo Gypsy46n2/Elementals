@@ -2,14 +2,14 @@ class_name Actor
 extends CharacterBody3D
 
 @export_group("Movement")
-@export var move_speed: float = 7.0:
+@export var move_speed: float = 3.0:
 	set(v):
 		move_speed = v
 		if movement_component:
 			movement_component.move_speed = v
 @export var acceleration: float = 60.0
 @export var friction: float = 20.0
-@export var jump_force: float = 8.0
+@export var jump_force: float = 4.0
 @export var gravity: float = 9.8
 
 @export var roam_radius: float = 22.0
@@ -17,6 +17,8 @@ extends CharacterBody3D
 @export var bob_speed: float = 2.2
 @export_range(1.0, 10.0, 0.25) var trigger_range_in_tiles: float = 3.0
 @export var should_bob: bool = true
+@export var is_playable: bool = true
+@export var is_friendly: bool = true
 @export var projectile_interval: float = 1.0
 @export var projectile_speed: float = 14.0
 @export var projectile_lifetime: float = 5.0
@@ -55,11 +57,18 @@ var health_component: HealthComponent
 var movement_component: MovementComponent
 var decision_component: ActorDecisionComponent
 
+var weapon: Weapon
+var equipped_weapon: WeaponData
+var _last_dir: StringName = &"down"
+
 var is_controlled: bool = false:
 	set(value):
 		is_controlled = value
 		if is_controlled:
 			print(name, ": Controlled!")
+			var wl = get_node_or_null("/root/ItemsAutoload")
+			if wl and wl.selected_weapon:
+				_on_weapon_selected(wl.selected_weapon)
 		if decision_component:
 			decision_component.is_controlled = value
 		if movement_component:
@@ -138,7 +147,7 @@ func _setup_debug_label() -> void:
 func _setup_stun_visuals() -> void:
 	# StunVisual3D is the Looney Tunes style spinning birds and stars
 	_stun_visual = StunVisual3D.new()
-	_stun_visual.position = Vector3(0, 2.0, 0) # Higher up for effect
+	_stun_visual.position = Vector3(0, 1.2, 0) # Higher up for effect
 	_stun_visual.visible = false
 	_stun_visual.set_process(false)
 	add_child(_stun_visual)
@@ -154,6 +163,27 @@ func _setup_health_component() -> void:
 	health_component.bar_color = get_actor_color()
 	health_component.bar_offset = Vector3(0, 1.5, 0) # Adjust as needed
 	health_component.health_depleted.connect(die)
+
+func _setup_weapon() -> void:
+	weapon = Weapon.new()
+	weapon.name = "Weapon"
+	add_child(weapon)
+	weapon.setup(self)
+	
+	var wl = get_node_or_null("/root/ItemsAutoload")
+	if wl:
+		wl.weapon_selected.connect(_on_global_weapon_selected)
+		if is_controlled and wl.selected_weapon:
+			_on_weapon_selected(wl.selected_weapon)
+
+func _on_global_weapon_selected(p_weapon: WeaponData) -> void:
+	if is_controlled:
+		_on_weapon_selected(p_weapon)
+
+func _on_weapon_selected(p_weapon: WeaponData) -> void:
+	equipped_weapon = p_weapon
+	if weapon:
+		weapon.weapon_data = p_weapon
 
 func _setup_components() -> void:
 	# Movement Component
@@ -188,14 +218,28 @@ func _setup_mana_visuals() -> void:
 func _get_mana_particle_texture() -> Texture2D:
 	return null
 
-func take_damage(amount: float, type: String = "normal") -> void:
+func take_damage(amount: float, type: String = "normal", direction: Vector3 = Vector3.ZERO) -> void:
 	if health_component:
 		health_component.take_damage(amount, type)
+	_show_damage_indicator(amount, direction)
 	print(name, " took ", amount, " damage (", type, ").")
+
+func _show_damage_indicator(amount: float, direction: Vector3) -> void:
+	var indicator = DamageIndicator.new()
+	var parent = get_parent()
+	if parent:
+		parent.add_child(indicator)
+		indicator.global_position = global_position + Vector3(0, 1.5, 0)
+	else:
+		add_child(indicator)
+		indicator.position = Vector3(0, 1.5, 0)
+	
+	indicator.setup(amount, direction)
 
 func hit_by_projectile(projectile: BaseProjectile) -> void:
 	## Default implementation for being hit by a projectile.
-	take_damage(projectile.remaining_charges)
+	var dir = projectile._direction if "_direction" in projectile else Vector3.ZERO
+	take_damage(projectile.remaining_charges, projectile.element_type, dir)
 
 func stun(duration: float) -> void:
 	_stun_timer = max(_stun_timer, duration)
@@ -367,10 +411,38 @@ func get_actor_color() -> Color:
 	return Color.WHITE
 
 func get_main_action_progress() -> float:
-	## Returns the progress (0.0 to 1.0) of the primary action (mana for projectiles, etc.).
+	## Returns the progress (0.0 to 1.0) of the primary action.
+	if weapon:
+		return weapon.get_cooldown_progress()
 	if max_mana > 0:
 		return current_mana / max_mana
 	return 1.0
+
+func _update_attack_direction(target_position: Vector3) -> void:
+	var dir = (target_position - global_position).normalized()
+	dir.y = 0
+	
+	var camera = get_viewport().get_camera_3d()
+	if camera:
+		var cam_basis = camera.global_transform.basis
+		var cam_right = cam_basis.x
+		var cam_forward = -cam_basis.z
+		cam_forward.y = 0
+		cam_forward = cam_forward.normalized()
+		
+		var dot_right = dir.dot(cam_right)
+		var dot_forward = dir.dot(cam_forward)
+		
+		if abs(dot_right) > abs(dot_forward):
+			if dot_right > 0:
+				_last_dir = &"right"
+			else:
+				_last_dir = &"left"
+		else:
+			if dot_forward > 0:
+				_last_dir = &"up"
+			else:
+				_last_dir = &"down"
 
 func cycle_attack_pattern() -> void:
 	current_attack_pattern = (current_attack_pattern + 1) % AttackPattern.size() as AttackPattern
@@ -380,6 +452,11 @@ func cycle_attack_pattern() -> void:
 
 func launch_projectile_at(target_position: Vector3) -> void:
 	if not _arena_grid:
+		return
+	
+	if weapon:
+		_update_attack_direction(target_position)
+		weapon.swing(target_position)
 		return
 	
 	match current_attack_pattern:
@@ -435,10 +512,10 @@ func _launch_lob_shot(target_position: Vector3) -> void:
 		var cluster_target = target_position + offset
 		
 		if projectile.has_method("initialize_lob"):
-			projectile.initialize_lob(_arena_grid, spawn_position, cluster_target, projectile_speed * 0.8, 1, projectile_lifetime)
+			projectile.initialize_lob(_arena_grid, self, spawn_position, cluster_target, projectile_speed * 0.8, 1, projectile_lifetime)
 		elif projectile.has_method("initialize"):
 			var dir = (cluster_target - spawn_position).normalized()
-			projectile.initialize(_arena_grid, spawn_position, 0.0, dir, projectile_speed, 1, projectile_lifetime)
+			projectile.initialize(_arena_grid, self, spawn_position, 0.0, dir, projectile_speed, 1, projectile_lifetime)
 
 func _do_launch_projectile(target_position: Vector3) -> void:
 	var spawn_position = global_transform.origin
@@ -453,7 +530,7 @@ func _do_launch_projectile_with_params(scene: PackedScene, spawn_pos: Vector3, d
 	parent.add_child(projectile)
 	projectile.global_transform = Transform3D(Basis(), spawn_pos)
 	if projectile.has_method("initialize"):
-		projectile.initialize(_arena_grid, spawn_pos, _effective_range_world(), direction, p_velocity, charges, p_lifetime, _projectile_max_range_world())
+		projectile.initialize(_arena_grid, self, spawn_pos, _effective_range_world(), direction, p_velocity, charges, p_lifetime, _projectile_max_range_world())
 
 func _handle_wandering(_delta: float) -> void:
 	pass # Handled by DecisionComponent
@@ -483,18 +560,18 @@ func _apply_ground_effects() -> void:
 func _check_tile_damage(tile: HexTileData) -> bool:
 	if element_type == "fire":
 		if tile.current_state == TileConstants.State.MUD:
-			take_damage(1)
+			take_damage(1, "normal", Vector3.UP)
 			if _arena_grid:
 				_arena_grid.set_tile_state(tile, TileConstants.State.DIRT)
 			return true
 		elif tile.current_state == TileConstants.State.PUDDLE:
-			take_damage(2)
+			take_damage(2, "normal", Vector3.UP)
 			if _arena_grid:
 				_arena_grid.set_tile_state(tile, TileConstants.State.DIRT)
 			return true
 	elif element_type == "water":
 		if tile.current_state == TileConstants.State.FIRE:
-			take_damage(1)
+			take_damage(1, "normal", Vector3.UP)
 			if _arena_grid:
 				_arena_grid.set_tile_state(tile, TileConstants.State.MUD)
 			return true
