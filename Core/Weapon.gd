@@ -58,6 +58,7 @@ func _update_weapon_model() -> void:
 				var dagger_model = dagger_instance.get_node("Model")
 				# Detach the model from the projectile and add to our container
 				dagger_instance.remove_child(dagger_model)
+				dagger_model.owner = null
 				_weapon_model.add_child(dagger_model)
 				dagger_instance.queue_free()
 				

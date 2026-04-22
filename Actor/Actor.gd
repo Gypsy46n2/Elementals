@@ -243,10 +243,6 @@ func hit_by_projectile(projectile: BaseProjectile) -> void:
 	## Default implementation for being hit by a projectile.
 	var dir = projectile._direction if "_direction" in projectile else Vector3.ZERO
 	take_damage(projectile.remaining_charges, projectile.element_type, dir)
-	
-	# If this is a retrievable weapon, add it to our "inventory" (current ammo)
-	if projectile.source_weapon_data:
-		add_weapon_ammo(projectile.source_weapon_data, 1)
 
 func stun(duration: float) -> void:
 	_stun_timer = max(_stun_timer, duration)
