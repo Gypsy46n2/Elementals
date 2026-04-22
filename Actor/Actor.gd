@@ -199,12 +199,15 @@ func _setup_components() -> void:
 	add_child(movement_component)
 	
 	# Decision Component
-	decision_component = ActorDecisionComponent.new()
+	decision_component = _create_decision_component()
 	decision_component.name = "DecisionComponent"
 	decision_component.movement_component = movement_component
 	decision_component.actor = self
 	decision_component.is_controlled = is_controlled
 	add_child(decision_component)
+
+func _create_decision_component() -> ActorDecisionComponent:
+	return ActorDecisionComponent.new()
 
 func _setup_mana_visuals() -> void:
 	_mana_particles_container = Node3D.new()
@@ -274,8 +277,12 @@ func _drop_inventory() -> void:
 	if not _arena_grid: return
 	
 	# Drop the current weapon and its remaining ammo
-	var arrow_scene = preload("res://Actor/Projectiles/ArrowProjectile.tscn")
-	var drop = arrow_scene.instantiate()
+	var projectile_path = "res://Actor/Projectiles/ArrowProjectile.tscn"
+	if equipped_weapon.name == "Dagger":
+		projectile_path = "res://Actor/Projectiles/DaggerProjectile.tscn"
+		
+	var proj_scene = load(projectile_path)
+	var drop = proj_scene.instantiate()
 	get_parent().add_child(drop)
 	drop.global_position = global_position + Vector3(0, 0.5, 0)
 	

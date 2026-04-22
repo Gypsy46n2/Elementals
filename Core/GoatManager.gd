@@ -10,19 +10,6 @@ var progression_manager: Node
 var save_manager: Node
 var breeding_manager: Node
 
-# Legacy Accessors for compatibility
-var herd: Array[GoatData]:
-	get:
-		return herd_manager.herd
-var gold: int:
-	get:
-		return economy_manager.gold
-	set(v):
-		economy_manager.gold = v
-var current_day: int:
-	get:
-		return progression_manager.current_day
-
 const MAX_TEAM_SIZE = 4
 
 func _ready() -> void:
@@ -69,7 +56,7 @@ func _connect_signals() -> void:
 	GameEvents.gold_changed.connect(func(_g): save_game())
 	herd_manager.herd_state_changed.connect(save_game)
 
-# --- Delegate Methods (Legacy Compatibility) ---
+# --- Delegate Methods ---
 
 func toggle_selection(goat: GoatData) -> bool:
 	return herd_manager.toggle_selection(goat)
@@ -84,17 +71,17 @@ func remove_goat(goat: GoatData) -> void:
 	herd_manager.remove_goat(goat)
 
 func sell_goat(goat: GoatData) -> void:
-	gold += goat.gold_value
+	economy_manager.gold += goat.gold_value
 	remove_goat(goat)
 
 func breed_goats(doe: GoatData, buck: GoatData) -> bool:
 	return breeding_manager.breed_goats(doe, buck)
 
 func next_day() -> void:
-	progression_manager.advance_day(herd)
+	progression_manager.advance_day(herd_manager.herd)
 	
 	# Process pregnancies
-	var new_kids: Array[GoatData] = breeding_manager.process_pregnancy(herd)
+	var new_kids: Array[GoatData] = breeding_manager.process_pregnancy(herd_manager.herd)
 	for kid in new_kids:
 		add_goat(kid)
 	
@@ -102,4 +89,4 @@ func next_day() -> void:
 	GameEvents.herd_updated.emit()
 
 func save_game() -> void:
-	save_manager.save_game(herd, gold, current_day)
+	save_manager.save_game(herd_manager.herd, economy_manager.gold, progression_manager.current_day)

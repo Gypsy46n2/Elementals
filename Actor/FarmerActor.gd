@@ -51,26 +51,8 @@ func _setup_actor() -> void:
 		# 48x48 frames
 		sprite.offset.y = 24
 
-func _setup_components() -> void:
-	# Movement Component
-	movement_component = MovementComponent.new()
-	movement_component.name = "MovementComponent"
-	movement_component.target = self
-	movement_component.move_speed = move_speed
-	movement_component.acceleration = acceleration
-	movement_component.friction = friction
-	movement_component.gravity = gravity
-	movement_component.jump_force = jump_force
-	movement_component.is_controlled = is_controlled
-	add_child(movement_component)
-	
-	# Decision Component - specialized for Farmer
-	decision_component = FarmerDecisionComponent.new()
-	decision_component.name = "DecisionComponent"
-	decision_component.movement_component = movement_component
-	decision_component.actor = self
-	decision_component.is_controlled = is_controlled
-	add_child(decision_component)
+func _create_decision_component() -> ActorDecisionComponent:
+	return FarmerDecisionComponent.new()
 
 func get_actor_color() -> Color:
 	return Color.YELLOW_GREEN

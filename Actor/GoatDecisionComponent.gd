@@ -113,18 +113,9 @@ func _choose_new_target() -> void:
 		return
 
 	var dist_to_player = actor.global_position.distance_to(player_goat.global_position)
-	var ground_y = actor._arena_grid._get_tile_surface_y(ground_tile)
 	
-	# Get valid neighbors
-	var neighbors = actor._arena_grid._get_neighbors(ground_tile).filter(func(t): 
-		if t == null or t.current_state == TileConstants.State.STONE: return false
-		if t.feature and t.feature is TreeFeature:
-			if t.feature.current_state in [TreeFeature.State.TREE, TreeFeature.State.STUMP, TreeFeature.State.BURNT_STUMP]:
-				return false
-		var ty = actor._arena_grid._get_tile_surface_y(t)
-		if ty > ground_y + 3.0: return false
-		return true
-	)
+	# Get valid neighbors using base class helper
+	var neighbors = _get_traversable_neighbors(ground_tile)
 	
 	if neighbors.is_empty():
 		super._choose_new_target()

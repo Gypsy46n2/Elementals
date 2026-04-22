@@ -124,28 +124,8 @@ func _choose_new_target() -> void:
 	var ground_tile = actor._ground_tile
 	
 	if ground_tile and actor._arena_grid:
-		var ground_y = actor._arena_grid._get_tile_surface_y(ground_tile)
-		
 		# Get neighbors and filter out Stone AND tiles with blocking trees AND cliffs that are too high
-		var neighbors = actor._arena_grid._get_neighbors(ground_tile).filter(func(t): 
-			if t == null or t.current_state == TileConstants.State.STONE:
-				return false
-			
-			# Check for blocking features (trees/stumps/fences)
-			if t.feature:
-				if t.feature is TreeFeature:
-					if t.feature.current_state in [TreeFeature.State.TREE, TreeFeature.State.STUMP, TreeFeature.State.BURNT_STUMP]:
-						return false
-				elif t.feature is FenceFeature:
-					return false
-			
-			# Check height difference
-			var ty = actor._arena_grid._get_tile_surface_y(t)
-			if ty > ground_y + 3.0: # Can't jump higher than 3.0 easily
-				return false
-					
-			return true
-		)
+		var neighbors = _get_traversable_neighbors(ground_tile)
 		
 		if neighbors.size() > 0:
 			var candidates = neighbors.filter(func(t): return t != _previous_tile)
@@ -172,3 +152,19 @@ func _choose_new_target() -> void:
 		_movement_target = actor.global_transform.origin + Vector3(cos(heading), 0.0, sin(heading)) * 3.0
 	
 	_movement_target.y = actor.global_position.y
+
+func _get_traversable_neighbors(tile: HexTileData, max_step_up: float = 3.0) -> Array[HexTileData]:
+	if not tile or not actor or not actor._arena_grid: return []
+	var ground_y = actor._arena_grid._get_tile_surface_y(tile)
+	return actor._arena_grid._get_neighbors(tile).filter(func(t):
+		if t == null or t.current_state == TileConstants.State.STONE: return false
+		if t.feature:
+			if t.feature is TreeFeature:
+				if t.feature.current_state in [TreeFeature.State.TREE, TreeFeature.State.STUMP, TreeFeature.State.BURNT_STUMP]:
+					return false
+			elif t.feature is FenceFeature:
+				return false
+		var ty = actor._arena_grid._get_tile_surface_y(t)
+		if ty > ground_y + max_step_up: return false
+		return true
+	)

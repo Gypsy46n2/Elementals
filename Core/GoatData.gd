@@ -96,14 +96,6 @@ enum Gender { DOE, BUCK }
 		stamina_current = v
 		stats_changed.emit()
 
-# Compatibility Aliases
-var toughness: float:
-	get: return constitution
-	set(v): constitution = v
-var speed: float:
-	get: return dexterity
-	set(v): dexterity = v
-
 @export_group("Lifecycle")
 @export var age_days: int = 0:
 	set(v): 

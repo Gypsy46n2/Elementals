@@ -8,11 +8,13 @@ var weapon_data: WeaponData:
 	set(v):
 		weapon_data = v
 		_setup_hitbox_visual()
+		_update_weapon_model()
 		if weapon_data:
 			current_ammo = weapon_data.max_ammo
 
 var _cooldown: float = 0.0
 var _hitbox_visual: MeshInstance3D
+var _weapon_model: Node3D
 var _owner_actor: Actor
 var current_ammo: int = -1
 
@@ -25,10 +27,89 @@ func setup(actor: Actor) -> void:
 		_whack_player = _owner_actor.get_node_or_null("WhackPlayer")
 	if not _swoosh_player:
 		_swoosh_player = _owner_actor.get_node_or_null("SwooshPlayer")
+	
+	_update_weapon_model()
 
 func _ready() -> void:
 	if weapon_data:
 		_setup_hitbox_visual()
+		_update_weapon_model()
+
+func _update_weapon_model() -> void:
+	if not is_inside_tree(): return
+	
+	if _weapon_model:
+		_weapon_model.queue_free()
+		_weapon_model = null
+	
+	if not weapon_data:
+		return
+		
+	# All melee weapons (including thrown ones when held) get the universal rectangle shape
+	if not weapon_data.is_ranged or weapon_data.is_thrown:
+		_weapon_model = Node3D.new()
+		_weapon_model.name = "WeaponModel"
+		
+		# Special Case: Dagger uses its custom model
+		if weapon_data.name == "Dagger":
+			var dagger_scene = load("res://Actor/Projectiles/DaggerProjectile.tscn")
+			if dagger_scene:
+				var dagger_instance = dagger_scene.instantiate()
+				var dagger_model = dagger_instance.get_node("Model")
+				# Detach the model from the projectile and add to our container
+				dagger_instance.remove_child(dagger_model)
+				_weapon_model.add_child(dagger_model)
+				dagger_instance.queue_free()
+				
+				# The dagger model in the scene is pointed up (Y) and rotated 90 deg around X
+				# to point Z. Its center is roughly at origin.
+				# We want Handle at origin, Tip at -Z.
+				# In the scene: Handle is at Y=-0.25, Tip at Y=0.275.
+				# The Model node has a -90 deg X rotation.
+				# Let's reset its transform and manually orient it.
+				dagger_model.transform = Transform3D.IDENTITY
+				# Point it along -Z: Blade is along Y, so rotate -90 deg around X.
+				# This makes original Y -> -Z.
+				dagger_model.rotation_degrees = Vector3(-90, 0, 0)
+				# Offset so handle (originally at Y=-0.25) is at origin (Z=0).
+				# After -90 deg X rotation: Z_new = -Y_old.
+				# Handle Z_new = -(-0.25) = 0.25.
+				# To move Handle to Z=0, we set position.z to -0.25.
+				dagger_model.position = Vector3(0, 0, -0.25)
+		else:
+			# Generic Melee Rectangle
+			var mesh_instance = MeshInstance3D.new()
+			var box = BoxMesh.new()
+			
+			# Proportions based on weapon properties
+			var length: float = 0.7
+			if weapon_data.is_heavy: length = 1.1
+			if weapon_data.is_light: length = 0.5
+			if weapon_data.reach > 2.5: length = 1.3 # Polearms etc
+			
+			# The "Rectangle Fill" look: thin but visible width
+			box.size = Vector3(0.02, 0.12, length)
+			mesh_instance.mesh = box
+			
+			# Pivot at the handle (back of the box)
+			mesh_instance.position = Vector3(0, 0, -length / 2.0)
+			
+			# Stylized Material
+			var mat = StandardMaterial3D.new()
+			mat.albedo_color = Color(0.9, 0.9, 1.0)
+			mat.emission_enabled = true
+			mat.emission = Color(0.2, 0.2, 0.3)
+			mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+			mesh_instance.material_override = mat
+			
+			_weapon_model.add_child(mesh_instance)
+		
+		add_child(_weapon_model)
+		_weapon_model.visible = true
+	
+	# If it's a specific named weapon like Dagger and we have a custom projectile model,
+	# we might still use that for the actual PROJECTILE, but for the HELD weapon, 
+	# we are now using the universal rectangle.
 
 func _setup_hitbox_visual() -> void:
 	if not is_inside_tree() or not weapon_data: return
@@ -54,6 +135,44 @@ func _setup_hitbox_visual() -> void:
 func _process(delta: float) -> void:
 	if _cooldown > 0:
 		_cooldown -= delta
+	
+	_update_idle_animation(delta)
+
+func _update_idle_animation(_delta: float) -> void:
+	if not _weapon_model or _cooldown > 0: return
+	
+	# Get mouse direction and point dagger towards it
+	var mouse_pos = get_viewport().get_mouse_position()
+	var camera = get_viewport().get_camera_3d()
+	if not camera: return
+	
+	var ray_origin = camera.project_ray_origin(mouse_pos)
+	var ray_dir = camera.project_ray_normal(mouse_pos)
+	var plane = Plane(Vector3.UP, _owner_actor.global_position.y)
+	var target_3d = plane.intersects_ray(ray_origin, ray_dir)
+	
+	if target_3d:
+		var actor_pos = _owner_actor.global_position
+		var dir = (target_3d - actor_pos).normalized()
+		dir.y = 0
+		if dir.length() < 0.01: 
+			dir = -_owner_actor.global_transform.basis.z
+		
+		var orbit_dist = 0.7
+		var float_height = 1.1
+		var t = Time.get_ticks_msec() * 0.002
+		var bob = sin(t) * 0.04
+		
+		# Position: Orbit the actor towards the mouse
+		var target_pos = dir * orbit_dist + Vector3(0, float_height + bob, 0)
+		_weapon_model.position = target_pos
+		
+		# Orientation: Handle towards actor, tip towards target
+		# Since the model is oriented Tip -> -Z, look_at(pos + dir) points Tip at target
+		_weapon_model.look_at(_weapon_model.global_position + dir, Vector3.UP)
+		
+		# Point it "upward" as well (rotate around local X)
+		_weapon_model.rotate_object_local(Vector3.RIGHT, deg_to_rad(30))
 
 func is_on_cooldown() -> bool:
 	return _cooldown > 0
@@ -79,10 +198,60 @@ func swing(target_pos: Vector3) -> bool:
 	
 	if weapon_data.is_ranged:
 		_launch_ranged_weapon(target_pos, dir)
+		_animate_throw(dir)
 	else:
 		_swing_melee(target_pos, dir)
+		_animate_swing(dir)
 	
 	return true
+
+func _animate_swing(dir: Vector3) -> void:
+	if not _weapon_model: return
+	
+	var orbit_dist: float = 0.7
+	var float_height: float = 1.1
+	
+	# Helper to update weapon position and orientation radially
+	var update_weapon: Callable = func(params: Vector2) -> void:
+		var angle_offset: float = params.x
+		var dist_mult: float = params.y
+		
+		# Current radial direction relative to the attack direction
+		var current_dir: Vector3 = dir.rotated(Vector3.UP, deg_to_rad(angle_offset))
+		
+		# Position relative to actor
+		var target_pos: Vector3 = current_dir * (orbit_dist * dist_mult) + Vector3(0, float_height, 0)
+		_weapon_model.position = target_pos
+		
+		# Orientation: Point Tip away from actor (Tip is -Z in model)
+		# We use global_position + current_dir because look_at uses world coordinates
+		var look_target: Vector3 = _weapon_model.global_position + current_dir
+		_weapon_model.look_at(look_target, Vector3.UP)
+		
+		# Match the idle tilt (30 degrees "up" around local X)
+		_weapon_model.rotate_object_local(Vector3.RIGHT, deg_to_rad(30))
+
+	var tween: Tween = create_tween()
+	# Wind up: Pull back 60 degrees, shrink orbit slightly
+	tween.tween_method(update_weapon, Vector2(0, 1.0), Vector2(60, 0.7), 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	
+	# The swing: Arc from 60 to -60 degrees, extend orbit
+	tween.tween_method(update_weapon, Vector2(60, 0.7), Vector2(-60, 1.3), 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	
+	# Return to neutral (0 degrees, 1.0 orbit)
+	tween.tween_method(update_weapon, Vector2(-60, 1.3), Vector2(0, 1.0), 0.1).set_trans(Tween.TRANS_SINE)
+
+func _animate_throw(_dir: Vector3) -> void:
+	if not _weapon_model: return
+	
+	var tween = create_tween()
+	# Scale down/disappear then reappear
+	tween.tween_property(_weapon_model, "scale", Vector3.ZERO, 0.1)
+	# Only reappear if we still have ammo
+	if current_ammo > 0:
+		tween.tween_property(_weapon_model, "scale", Vector3.ONE * 0.8, 0.1).set_delay(weapon_data.cooldown * 0.8)
+	else:
+		tween.tween_callback(func(): _weapon_model.visible = false)
 
 func secondary_attack(target_pos: Vector3, forced: bool = false) -> bool:
 	if not _owner_actor or is_on_cooldown() or _owner_actor.is_stunned():
@@ -164,12 +333,16 @@ func _launch_ranged_weapon(target_position: Vector3, _dir: Vector3) -> void:
 	var spawn_pos = _owner_actor.global_position + Vector3(0, 1.2, 0)
 	var direction = (target_position - spawn_pos).normalized()
 	
-	var arrow_scene = preload("res://Actor/Projectiles/ArrowProjectile.tscn")
-	var arrow = arrow_scene.instantiate()
+	var projectile_path = "res://Actor/Projectiles/ArrowProjectile.tscn"
+	if weapon_data and weapon_data.name == "Dagger":
+		projectile_path = "res://Actor/Projectiles/DaggerProjectile.tscn"
+		
+	var proj_scene = load(projectile_path)
+	var proj = proj_scene.instantiate()
 	var parent = _owner_actor.get_parent() if _owner_actor.get_parent() else _owner_actor.get_tree().get_current_scene()
-	parent.add_child(arrow)
+	parent.add_child(proj)
 	
-	arrow.global_transform.origin = spawn_pos
+	proj.global_transform.origin = spawn_pos
 	
 	var damage = weapon_data.roll_damage()
 	var hex_size = _owner_actor._arena_grid.hex_size if _owner_actor._arena_grid else 1.5
@@ -177,9 +350,9 @@ func _launch_ranged_weapon(target_position: Vector3, _dir: Vector3) -> void:
 	if proj_range <= 0:
 		proj_range = _owner_actor.projectile_max_range_in_tiles * hex_size * 1.5 # Fallback
 	
-	arrow.initialize(_owner_actor._arena_grid, _owner_actor, _owner_actor.global_position, 0.0, direction, _owner_actor.projectile_speed, damage, _owner_actor.projectile_lifetime, proj_range)
-	if "source_weapon_data" in arrow:
-		arrow.source_weapon_data = weapon_data
+	proj.initialize(_owner_actor._arena_grid, _owner_actor, _owner_actor.global_position, 0.0, direction, _owner_actor.projectile_speed, damage, _owner_actor.projectile_lifetime, proj_range)
+	if "source_weapon_data" in proj:
+		proj.source_weapon_data = weapon_data
 
 func _handle_melee_hit(target: Actor, _dir: Vector3) -> void:
 	var damage = weapon_data.roll_damage()

@@ -64,26 +64,8 @@ func _ready() -> void:
 		# Fallback if ItemsAutoload not ready or dagger not found
 		_on_weapon_selected(WeaponData.new("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 10/30), ammo 5"))
 
-func _setup_components() -> void:
-	# Movement Component
-	movement_component = MovementComponent.new()
-	movement_component.name = "MovementComponent"
-	movement_component.target = self
-	movement_component.move_speed = move_speed
-	movement_component.acceleration = acceleration
-	movement_component.friction = friction
-	movement_component.gravity = gravity
-	movement_component.jump_force = jump_force
-	movement_component.is_controlled = is_controlled
-	add_child(movement_component)
-	
-	# Decision Component - specialized for Goblin
-	decision_component = GoblinDecisionComponent.new()
-	decision_component.name = "DecisionComponent"
-	decision_component.movement_component = movement_component
-	decision_component.actor = self
-	decision_component.is_controlled = is_controlled
-	add_child(decision_component)
+func _create_decision_component() -> ActorDecisionComponent:
+	return GoblinDecisionComponent.new()
 
 func _setup_actor() -> void:
 	if _body is AnimatedSprite3D:

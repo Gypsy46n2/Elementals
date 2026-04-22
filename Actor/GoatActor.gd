@@ -191,26 +191,8 @@ const FIRE_TEXTURE = preload("res://assets/generated/fire_particle_1774823455.pn
 const THWAK_TEXTURE = preload("res://assets/generated/thwak_popup_frame_0_1774916398.png")
 const SCREAM_TEXTURE = preload("res://assets/generated/scream_bubble_frame_0_1774821924.png")
 
-func _setup_components() -> void:
-	# Movement Component
-	movement_component = MovementComponent.new()
-	movement_component.name = "MovementComponent"
-	movement_component.target = self
-	movement_component.move_speed = move_speed
-	movement_component.acceleration = acceleration
-	movement_component.friction = friction
-	movement_component.gravity = gravity
-	movement_component.jump_force = jump_force
-	movement_component.is_controlled = is_controlled
-	add_child(movement_component)
-	
-	# Decision Component - specialized for goats
-	decision_component = GoatDecisionComponent.new()
-	decision_component.name = "DecisionComponent"
-	decision_component.movement_component = movement_component
-	decision_component.actor = self
-	decision_component.is_controlled = is_controlled
-	add_child(decision_component)
+func _create_decision_component() -> ActorDecisionComponent:
+	return GoatDecisionComponent.new()
 
 signal screamed(pos: Vector3)
 
