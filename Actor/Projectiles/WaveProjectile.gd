@@ -45,8 +45,11 @@ func _setup_visual_component(count: int) -> void:
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
-	# Even if stuck, we might want to update visuals one last time or stop them.
-	# The base _physics_process returns early if stuck, so this won't be called.
+	
+	# If we are stuck and not falling, don't update visuals (keep them static)
+	if _is_stuck and not _is_falling:
+		return
+		
 	_update_visuals(delta)
 
 func _update_visuals(delta: float) -> void:

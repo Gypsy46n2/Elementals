@@ -688,14 +688,21 @@ func get_tiles_within_distance(world_position: Vector3, radius: float) -> Array[
 	return results
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if current_controlled_actor:
-			current_controlled_actor.launch_projectile_at(_get_mouse_3d_position())
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if current_controlled_actor:
+				current_controlled_actor.launch_projectile_at(_get_mouse_3d_position())
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			if current_controlled_actor:
+				current_controlled_actor.secondary_attack_at(_get_mouse_3d_position())
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_E: current_controlled_actor.cycle_attack_pattern()
 		elif event.keycode == KEY_Q:
 			var p = (current_controlled_actor.current_attack_pattern - 1 + Actor.AttackPattern.size()) % Actor.AttackPattern.size()
 			current_controlled_actor.current_attack_pattern = p as Actor.AttackPattern
+		elif event.keycode == KEY_T:
+			if current_controlled_actor:
+				current_controlled_actor.throw_weapon_at(_get_mouse_3d_position())
 
 func _get_mouse_3d_position() -> Vector3:
 	var camera = get_viewport().get_camera_3d()

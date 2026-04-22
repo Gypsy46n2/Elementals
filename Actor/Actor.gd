@@ -240,6 +240,10 @@ func hit_by_projectile(projectile: BaseProjectile) -> void:
 	## Default implementation for being hit by a projectile.
 	var dir = projectile._direction if "_direction" in projectile else Vector3.ZERO
 	take_damage(projectile.remaining_charges, projectile.element_type, dir)
+	
+	# If this is a retrievable weapon, add it to our "inventory" (current ammo)
+	if projectile.source_weapon_data:
+		add_weapon_ammo(projectile.source_weapon_data, 1)
 
 func stun(duration: float) -> void:
 	_stun_timer = max(_stun_timer, duration)
@@ -248,6 +252,7 @@ func is_stunned() -> bool:
 	return _stun_timer > 0.0
 
 func die() -> void:
+	_drop_inventory()
 	GameEvents.actor_died.emit(self)
 
 	# Respawns at the original position provided by ArenaGrid
@@ -261,6 +266,26 @@ func die() -> void:
 	
 	# Ensure physics is reset
 	force_update_transform()
+
+func _drop_inventory() -> void:
+	if not weapon or not equipped_weapon or equipped_weapon.name == "Unarmed strike":
+		return
+		
+	if not _arena_grid: return
+	
+	# Drop the current weapon and its remaining ammo
+	var arrow_scene = preload("res://Actor/Projectiles/ArrowProjectile.tscn")
+	var drop = arrow_scene.instantiate()
+	get_parent().add_child(drop)
+	drop.global_position = global_position + Vector3(0, 0.5, 0)
+	
+	drop.initialize(_arena_grid, self, global_position, 0.0, Vector3.FORWARD, 0.0, 1, 100.0)
+	drop.source_weapon_data = equipped_weapon
+	drop.remaining_charges = weapon.current_ammo
+	drop._stick() # Make it a pickup
+	
+	# Revert to unarmed after dropping
+	unequip_weapon()
 
 func _setup_actor() -> void:
 	# Virtual method for subclasses to configure their specific visuals/particles
@@ -466,6 +491,50 @@ func launch_projectile_at(target_position: Vector3) -> void:
 			_launch_spread_shot(target_position)
 		AttackPattern.LOB:
 			_launch_lob_shot(target_position)
+
+func secondary_attack_at(target_position: Vector3) -> void:
+	if not _arena_grid:
+		return
+	
+	if weapon:
+		_update_attack_direction(target_position)
+		weapon.secondary_attack(target_position)
+
+func throw_weapon_at(target_position: Vector3) -> void:
+	if not _arena_grid:
+		return
+	
+	if weapon:
+		_update_attack_direction(target_position)
+		weapon.secondary_attack(target_position, true)
+
+func add_weapon_ammo(p_weapon_data: WeaponData, amount: int) -> void:
+	if equipped_weapon == p_weapon_data:
+		if weapon:
+			weapon.current_ammo = min(weapon.current_ammo + amount, p_weapon_data.max_ammo)
+	elif equipped_weapon.name == "Unarmed strike":
+		# Check if we have this weapon in our "inventory" or if it matches the one we just picked up
+		# For now, if we are unarmed, we just take it.
+		_on_weapon_selected(p_weapon_data)
+		if weapon:
+			weapon.current_ammo = amount
+
+func apply_pickup_penalty() -> void:
+	if movement_component:
+		movement_component.speed_multiplier = 0.5
+		var timer := get_tree().create_timer(0.5)
+		timer.timeout.connect(func():
+			if movement_component:
+				movement_component.speed_multiplier = 1.0
+		)
+
+func unequip_weapon() -> void:
+	var wl = get_node_or_null("/root/ItemsAutoload")
+	if wl:
+		for w in wl.weapons:
+			if w.name == "Unarmed strike":
+				_on_weapon_selected(w)
+				break
 
 func _launch_single_shot(target_position: Vector3) -> void:
 	if not projectile_scene or current_mana < shot_mana_cost:

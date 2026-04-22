@@ -8,13 +8,18 @@ var weapon_data: WeaponData:
 	set(v):
 		weapon_data = v
 		_setup_hitbox_visual()
+		if weapon_data:
+			current_ammo = weapon_data.max_ammo
 
 var _cooldown: float = 0.0
 var _hitbox_visual: MeshInstance3D
 var _owner_actor: Actor
+var current_ammo: int = -1
 
 func setup(actor: Actor) -> void:
 	_owner_actor = actor
+	if weapon_data:
+		current_ammo = weapon_data.max_ammo
 	# Try to find audio players on the owner if not on self
 	if not _whack_player:
 		_whack_player = _owner_actor.get_node_or_null("WhackPlayer")
@@ -79,12 +84,40 @@ func swing(target_pos: Vector3) -> bool:
 	
 	return true
 
+func secondary_attack(target_pos: Vector3, forced: bool = false) -> bool:
+	if not _owner_actor or is_on_cooldown() or _owner_actor.is_stunned():
+		return false
+	
+	if not weapon_data: return false
+	
+	# If not forced, check if it's naturally thrown
+	if not forced and not weapon_data.is_thrown: return false
+	
+	if current_ammo == 0:
+		return false
+		
+	_cooldown = weapon_data.cooldown
+	
+	var dir = (target_pos - _owner_actor.global_position).normalized()
+	dir.y = 0
+	
+	if _swoosh_player:
+		_swoosh_player.play()
+	
+	_launch_ranged_weapon(target_pos, dir)
+	
+	if current_ammo > 0:
+		current_ammo -= 1
+		if current_ammo == 0:
+			_owner_actor.unequip_weapon()
+			
+	return true
+
 func _swing_melee(_target_pos: Vector3, dir: Vector3) -> void:
 	_show_hitbox_animation(_owner_actor.global_position, dir)
 	
-	# Small lunge
-	if _owner_actor.movement_component:
-		_owner_actor.movement_component.apply_external_force(dir * 5.0)
+	if current_ammo == 0:
+		return
 	
 	# Check for hits in a cone
 	var space_state = _owner_actor.get_world_3d().direct_space_state
@@ -139,7 +172,14 @@ func _launch_ranged_weapon(target_position: Vector3, _dir: Vector3) -> void:
 	arrow.global_transform.origin = spawn_pos
 	
 	var damage = weapon_data.roll_damage()
-	arrow.initialize(_owner_actor._arena_grid, _owner_actor, _owner_actor.global_position, 0.0, direction, _owner_actor.projectile_speed, damage, _owner_actor.projectile_lifetime)
+	var hex_size = _owner_actor._arena_grid.hex_size if _owner_actor._arena_grid else 1.5
+	var proj_range = float(weapon_data.range_max) * hex_size * 1.5
+	if proj_range <= 0:
+		proj_range = _owner_actor.projectile_max_range_in_tiles * hex_size * 1.5 # Fallback
+	
+	arrow.initialize(_owner_actor._arena_grid, _owner_actor, _owner_actor.global_position, 0.0, direction, _owner_actor.projectile_speed, damage, _owner_actor.projectile_lifetime, proj_range)
+	if "source_weapon_data" in arrow:
+		arrow.source_weapon_data = weapon_data
 
 func _handle_melee_hit(target: Actor, _dir: Vector3) -> void:
 	var damage = weapon_data.roll_damage()

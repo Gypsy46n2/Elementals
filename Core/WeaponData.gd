@@ -24,6 +24,7 @@ extends Resource
 @export var reach: float = 2.0
 @export var cone_width: float = 90.0
 @export var cooldown: float = 0.6
+@export var max_ammo: int = -1 # -1 means infinite
 
 func _init(p_name: String = "", p_cost: String = "", p_damage: String = "", p_type: String = "", p_weight: float = 0.0, p_notes: String = "") -> void:
 	name = p_name
@@ -45,10 +46,24 @@ func _parse_notes() -> void:
 	is_loading = "loading" in n
 	is_heavy = "heavy" in n
 	
-	if "reach" in n:
+	if "reach " in n:
+		var reach_start = n.find("reach ")
+		var sub = n.substr(reach_start + 6)
+		var end = sub.find(",")
+		if end == -1: end = sub.find(" ")
+		if end == -1: end = sub.length()
+		reach = float(sub.substr(0, end))
+	elif "reach" in n:
 		reach = 3.5
 	
-	if is_light:
+	if "cone " in n:
+		var cone_start = n.find("cone ")
+		var sub = n.substr(cone_start + 5)
+		var end = sub.find(",")
+		if end == -1: end = sub.find(" ")
+		if end == -1: end = sub.length()
+		cone_width = float(sub.substr(0, end))
+	elif is_light:
 		cooldown = 0.4
 		cone_width = 110.0
 	elif is_heavy:
@@ -56,7 +71,10 @@ func _parse_notes() -> void:
 		cone_width = 70.0
 	
 	if "range" in n:
-		is_ranged = true
+		# If it's a thrown melee weapon, we don't set it as ranged primarily
+		if not is_thrown:
+			is_ranged = true
+		
 		# Simple regex-ish parsing for (range X/Y)
 		var start = n.find("range ")
 		if start != -1:
@@ -68,6 +86,19 @@ func _parse_notes() -> void:
 				if parts.size() >= 2:
 					range_min = int(parts[0])
 					range_max = int(parts[1])
+	
+	if "ammo " in n:
+		var ammo_start = n.find("ammo ")
+		var sub = n.substr(ammo_start + 5)
+		var end = sub.find(",")
+		if end == -1: end = sub.find(" ")
+		if end == -1: end = sub.length()
+		max_ammo = int(sub.substr(0, end))
+	elif name != "Unarmed strike":
+		if is_ranged:
+			max_ammo = 20
+		else:
+			max_ammo = 1
 	
 	if is_versatile:
 		var v_start = n.find("versatile (")

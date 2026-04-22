@@ -62,7 +62,7 @@ func _ready() -> void:
 	
 	if not equipped_weapon:
 		# Fallback if ItemsAutoload not ready or dagger not found
-		_on_weapon_selected(WeaponData.new("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 20/60)"))
+		_on_weapon_selected(WeaponData.new("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 10/30), ammo 5"))
 
 func _setup_components() -> void:
 	# Movement Component
