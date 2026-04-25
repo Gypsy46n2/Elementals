@@ -44,13 +44,12 @@ func _init() -> void:
 
 func _ready() -> void:
 	super._ready()
-	_setup_weapon()
 	
 	# Roll HP: 2d6
 	var rolled_hp = _rng.randi_range(1, 6) + _rng.randi_range(1, 6)
 	if health_component:
-		health_component.max_health = rolled_hp
-		health_component.current_health = rolled_hp
+		health_component.max_health = float(rolled_hp)
+		health_component.current_health = float(rolled_hp)
 	
 	# Load Dagger weapon - overrides the default if found
 	var wl = get_node_or_null("/root/ItemsAutoload")
@@ -213,7 +212,7 @@ func _perform_stealth_check() -> void:
 			var roll = _rng.randi_range(1, 20)
 			var dex_val = int(dexterity * 10)
 			var wis_val = int(actor.wisdom * 10)
-			var modifier = dex_val - wis_val
+			var modifier = wis_val - dex_val # Observer's Wisdom vs Goblin's Dexterity
 			
 			if roll + modifier >= 10:
 				# Success for the OBSERVER, they see the goblin

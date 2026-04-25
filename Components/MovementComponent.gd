@@ -28,9 +28,16 @@ func _ready() -> void:
 		if parent is Node3D:
 			target = parent
 
+func apply_external_force(force: Vector3) -> void:
+	external_velocity += force
+
 func _physics_process(delta: float) -> void:
 	if not target:
 		return
+	
+	if target is CharacterBody3D and external_velocity.length_squared() > 0.001:
+		target.velocity += external_velocity
+		external_velocity = Vector3.ZERO
 		
 	if _is_interpolating:
 		_process_interpolation(delta)
@@ -119,16 +126,18 @@ func jump() -> void:
 			
 		# print("Jumping/Scrambling: ", cb.name)
 
-func apply_external_force(force: Vector3) -> void:
-	if not target:
-		return
-	
-	if target is CharacterBody3D:
-		target.velocity += force
-	else:
-		# Maybe push it for a duration?
-		# For now just jump there
-		move_to(target.global_position + force)
+func apply_pickup_penalty() -> void:
+	speed_multiplier = 0.5
+	var timer := get_tree().create_timer(0.5)
+	timer.timeout.connect(func():
+		speed_multiplier = 1.0
+	)
+
+func get_move_speed() -> float:
+	return move_speed
+
+func get_jump_force() -> float:
+	return jump_force
 
 func stop(delta: float) -> void:
 	if target is CharacterBody3D:

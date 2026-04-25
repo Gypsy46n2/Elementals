@@ -102,7 +102,7 @@ func _on_goat_data_changed() -> void:
 			if body_sprite.texture == null:
 				body_sprite.texture = preload("res://assets/Characters/GruffGoat.png")
 			_update_sprite_offsets()
-
+	
 func _update_sprite_offsets() -> void:
 	var sprites: Array[Sprite3D] = [_body as Sprite3D, pattern_sprite, horns_sprite]
 	for s in sprites:
@@ -269,6 +269,13 @@ func _physics_process(delta: float) -> void:
 	
 	super._physics_process(delta)
 	
+	# Handle water sinking visual after BobComponent has set the position
+	if _is_in_water and _body:
+		var sprite: Sprite3D = _body as Sprite3D
+		if sprite:
+			var sink_offset = -SINK_OFFSET_PIXELS * sprite.pixel_size * sprite.scale.y
+			_body.position.y += sink_offset
+	
 	if _is_charging:
 		# Check for collisions with other actors during the charge
 		for i in get_slide_collision_count():
@@ -395,7 +402,8 @@ func _show_thwak_visual(pos: Vector3) -> void:
 
 func _update_water_effect(delta: float) -> void:
 	## Monitors if the goat is standing in water (puddle) and triggers splash effects.
-	if _ground_tile and _ground_tile.tile_type == TileConstants.Type.PUDDLE:
+	var ground_tile = tile_interaction_component.get_ground_tile() if tile_interaction_component else null
+	if ground_tile and ground_tile.tile_type == TileConstants.Type.PUDDLE:
 		if not _is_in_water:
 			_is_in_water = true
 			_splash_timer = 0.0 # Trigger immediate splash upon entry
@@ -420,26 +428,6 @@ func _play_swoosh() -> void:
 	if _swoosh_player and _swoosh_player.stream:
 		_swoosh_player.play()
 
-func _apply_bob(delta: float) -> void:
-	## Custom bobbing logic for the goat, including a sinking effect when in water.
-	var bob_offset: float = 0.0
-	if should_bob:
-		var goat_bob_speed: float = 1.5
-		var goat_bob_amplitude: float = 0.15
-		
-		_bob_phase += goat_bob_speed * delta
-		bob_offset = sin(_bob_phase) * goat_bob_amplitude
-	
-	if _body:
-		var sprite: Sprite3D = _body as Sprite3D
-		var sink_offset: float = 0.0
-		if _is_in_water and sprite:
-			# Calculate sinking depth based on visual pixel size and scale
-			sink_offset = -SINK_OFFSET_PIXELS * sprite.pixel_size * sprite.scale.y
-		
-		# Combine base position, sinusoidal bobbing, and water sink offset
-		_body.position.y = _base_visual_y + bob_offset + sink_offset
-
 func _update_burning(delta: float) -> void:
 	## Handles the logic for when the goat is on fire, including damage over time.
 	if _burning_time_left > 0:
@@ -462,7 +450,7 @@ func _check_tile_damage(tile: HexTileData) -> bool:
 	if tile.tile_type == TileConstants.Type.FIRE:
 		_start_burning()
 		return true
-	return super._check_tile_damage(tile)
+	return false
 
 func _start_burning() -> void:
 	## Initiates the burning state.
@@ -528,10 +516,11 @@ func _do_tile_effect(_tile: HexTileData) -> void:
 
 func _get_speed_multiplier() -> float:
 	## Returns a movement speed multiplier based on the current terrain tile.
-	if not _ground_tile:
+	var ground_tile = tile_interaction_component.get_ground_tile() if tile_interaction_component else null
+	if not ground_tile:
 		return 1.0
 		
-	match _ground_tile.tile_type:
+	match ground_tile.tile_type:
 		TileConstants.Type.MUD:
 			return 0.5
 		TileConstants.Type.PUDDLE:
@@ -581,8 +570,9 @@ func _start_charge(target_pos: Vector3) -> void:
 		_play_swoosh()
 		
 		# Send pinecones on the present tile rolling in the direction of the headbutt
-		if _ground_tile and _arena_grid:
-			_arena_grid.apply_element_to_tile(_ground_tile, "headbutt")
+		var ground_tile = tile_interaction_component.get_ground_tile() if tile_interaction_component else null
+		if ground_tile and _arena_grid:
+			_arena_grid.apply_element_to_tile(ground_tile, "headbutt")
 
 func ai_start_charge(target_pos: Vector3) -> void:
 	## AI-triggered charge attack.

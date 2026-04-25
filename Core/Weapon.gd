@@ -17,11 +17,19 @@ var _hitbox_visual: MeshInstance3D
 var _weapon_model: Node3D
 var _owner_actor: Actor
 var current_ammo: int = -1
+var _last_dir: StringName = &"down"
 
 func setup(actor: Actor) -> void:
 	_owner_actor = actor
 	if weapon_data:
 		current_ammo = weapon_data.max_ammo
+	
+	var wl = get_node_or_null("/root/ItemsAutoload")
+	if wl:
+		wl.weapon_selected.connect(_on_global_weapon_selected)
+		if _owner_actor.is_controlled and wl.selected_weapon:
+			_on_weapon_selected(wl.selected_weapon)
+	
 	# Try to find audio players on the owner if not on self
 	if not _whack_player:
 		_whack_player = _owner_actor.get_node_or_null("WhackPlayer")
@@ -29,6 +37,76 @@ func setup(actor: Actor) -> void:
 		_swoosh_player = _owner_actor.get_node_or_null("SwooshPlayer")
 	
 	_update_weapon_model()
+
+func _on_global_weapon_selected(p_weapon: WeaponData) -> void:
+	if _owner_actor.is_controlled:
+		_on_weapon_selected(p_weapon)
+
+func _on_weapon_selected(p_weapon: WeaponData) -> void:
+	weapon_data = p_weapon
+
+func add_weapon_ammo(p_weapon_data: WeaponData, amount: int) -> void:
+	if weapon_data == p_weapon_data:
+		current_ammo = min(current_ammo + amount, p_weapon_data.max_ammo)
+	elif weapon_data.name == "Unarmed strike":
+		_on_weapon_selected(p_weapon_data)
+		current_ammo = amount
+
+func unequip_weapon() -> void:
+	var wl = get_node_or_null("/root/ItemsAutoload")
+	if wl:
+		for w in wl.weapons:
+			if w.name == "Unarmed strike":
+				_on_weapon_selected(w)
+				break
+
+func drop_inventory() -> void:
+	if not weapon_data or weapon_data.name == "Unarmed strike":
+		return
+		
+	if not _owner_actor._arena_grid: return
+	
+	var projectile_path = "res://Actor/Projectiles/ArrowProjectile.tscn"
+	if weapon_data.name == "Dagger":
+		projectile_path = "res://Actor/Projectiles/DaggerProjectile.tscn"
+		
+	var proj_scene = load(projectile_path)
+	var drop = proj_scene.instantiate()
+	_owner_actor.get_parent().add_child(drop)
+	drop.global_position = _owner_actor.global_position + Vector3(0, 0.5, 0)
+	
+	drop.initialize(_owner_actor._arena_grid, _owner_actor, _owner_actor.global_position, 0.0, Vector3.FORWARD, 0.0, 1, 100.0)
+	drop.source_weapon_data = weapon_data
+	drop.remaining_charges = current_ammo
+	drop._stick() # Make it a pickup
+	
+	unequip_weapon()
+
+func update_attack_direction(target_position: Vector3) -> void:
+	var dir = (target_position - _owner_actor.global_position).normalized()
+	dir.y = 0
+	
+	var camera = get_viewport().get_camera_3d()
+	if camera:
+		var cam_basis = camera.global_transform.basis
+		var cam_right = cam_basis.x
+		var cam_forward = -cam_basis.z
+		cam_forward.y = 0
+		cam_forward = cam_forward.normalized()
+		
+		var dot_right = dir.dot(cam_right)
+		var dot_forward = dir.dot(cam_forward)
+		
+		if abs(dot_right) > abs(dot_forward):
+			if dot_right > 0:
+				_last_dir = &"right"
+			else:
+				_last_dir = &"left"
+		else:
+			if dot_forward > 0:
+				_last_dir = &"up"
+			else:
+				_last_dir = &"down"
 
 func _ready() -> void:
 	if weapon_data:

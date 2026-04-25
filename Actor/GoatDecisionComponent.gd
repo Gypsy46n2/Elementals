@@ -63,7 +63,7 @@ func _physics_process(delta: float) -> void:
 func _update_debug_visuals() -> void:
 	if not _debug_line: return
 	
-	var should_show = Actor.debug_enabled and not is_controlled
+	var should_show = DebugComponent.debug_enabled and not is_controlled
 	_debug_line.visible = should_show
 	
 	if not should_show: return
@@ -106,8 +106,8 @@ func _choose_new_target() -> void:
 		super._choose_new_target()
 		return
 		
-	actor._update_tile_below()
-	var ground_tile = actor._ground_tile
+	actor.tile_interaction_component.update_tile_below()
+	var ground_tile = actor.tile_interaction_component.get_ground_tile()
 	if not ground_tile:
 		super._choose_new_target()
 		return

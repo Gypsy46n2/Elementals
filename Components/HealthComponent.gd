@@ -91,9 +91,28 @@ func _update_hp_bar() -> void:
 	if _hp_sprite:
 		_hp_sprite.visible = bar_visible_always or (current_health < max_health and current_health > 0)
 
-func take_damage(amount: float, type: String = "normal") -> void:
+func take_damage(amount: float, type: String = "normal", direction: Vector3 = Vector3.ZERO) -> void:
 	current_health -= amount
 	damage_received.emit(amount, type)
+	_show_damage_indicator(amount, direction)
+
+func _show_damage_indicator(amount: float, direction: Vector3) -> void:
+	var indicator = DamageIndicator.new()
+	var parent = get_parent()
+	if parent:
+		# If our parent is the Actor, we might want to add it to the Actor's parent (the Arena)
+		var grand_parent = parent.get_parent()
+		if grand_parent:
+			grand_parent.add_child(indicator)
+			indicator.global_position = parent.global_position + Vector3(0, 1.5, 0)
+		else:
+			parent.add_child(indicator)
+			indicator.position = Vector3(0, 1.5, 0)
+	else:
+		add_child(indicator)
+		indicator.position = Vector3(0, 1.5, 0)
+	
+	indicator.setup(amount, direction)
 
 func heal(amount: float) -> void:
 	current_health += amount

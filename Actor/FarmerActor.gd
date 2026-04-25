@@ -23,12 +23,6 @@ func _init() -> void:
 
 func _ready() -> void:
 	super._ready()
-	_setup_weapon()
-	
-	# Farmer is the default character, ensure HP is correct
-	if health_component:
-		health_component.max_health = max_hp
-		health_component.current_health = max_hp
 	
 	# Farmer specific: default to Club if no weapon equipped yet
 	var wl = get_node_or_null("/root/ItemsAutoload")

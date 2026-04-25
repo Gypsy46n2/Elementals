@@ -17,7 +17,7 @@ func process_tiles(delta: float) -> void:
 				tile.fire_duration += delta
 				if tile.fire_duration >= 4.0 and not tile.fire_spread_triggered:
 					tile.fire_spread_triggered = true
-					arena._spread_fire(tile)
+					arena.tile_interaction.spread_fire(tile)
 				if tile.fire_duration >= 5.0:
 					tile.fire_duration = 0.0
 					tile.fire_spread_triggered = false

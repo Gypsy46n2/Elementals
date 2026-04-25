@@ -56,8 +56,9 @@ func _get_obstacle_avoidance_vector() -> Vector3:
 		
 	var my_pos = actor.global_position
 	var ground_y = 0.0
-	if actor._ground_tile:
-		ground_y = actor._arena_grid._get_tile_surface_y(actor._ground_tile)
+	var ground_tile = actor.tile_interaction_component.get_ground_tile()
+	if ground_tile:
+		ground_y = actor._arena_grid._get_tile_surface_y(ground_tile)
 	
 	# Check a radius around the actor for obstacles
 	var nearby_tiles = actor._arena_grid.get_tiles_within_distance(my_pos, 3.5)
@@ -120,8 +121,8 @@ func _choose_new_target() -> void:
 	if not actor or not actor._arena_grid:
 		return
 		
-	actor._update_tile_below()
-	var ground_tile = actor._ground_tile
+	actor.tile_interaction_component.update_tile_below()
+	var ground_tile = actor.tile_interaction_component.get_ground_tile()
 	
 	if ground_tile and actor._arena_grid:
 		# Get neighbors and filter out Stone AND tiles with blocking trees AND cliffs that are too high
