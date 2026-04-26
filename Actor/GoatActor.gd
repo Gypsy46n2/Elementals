@@ -219,7 +219,7 @@ func _setup_actor() -> void:
 	_fire_particles.position = Vector3(0, 0, 0)
 	_fire_particles.emitting = false
 	
-	Actor.setup_gpu_particles(_fire_particles, {
+	ActorParticleComponent.setup_gpu_particles(_fire_particles, {
 		"amount": 15,
 		"lifetime": 0.5,
 		"velocity_min": 1.0,

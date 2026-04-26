@@ -8,7 +8,6 @@ func _init() -> void:
 func _ready() -> void:
 	max_hp = 999
 	move_speed = 0.0
-	shot_mana_cost = 999999.0
 	should_bob = false
 	
 	super._ready()

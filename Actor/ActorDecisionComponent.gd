@@ -1,7 +1,8 @@
 class_name ActorDecisionComponent
 extends DecisionComponent
 
-@export var actor: Actor
+@export var actor: Node3D
+@export var roam_radius: float = 22.0
 
 var _previous_tile: HexTileData
 var _movement_target: Vector3

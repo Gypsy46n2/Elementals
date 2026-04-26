@@ -23,6 +23,7 @@ const FALL_Y_THRESHOLD = -20.0 # Safety net
 @export_group("Combat")
 @export var element_type: String = "none"
 @export var charge_capacity: int = 5
+@export var damage_amount: float = 1.0
 	
 	# --- Internal State ---
 var caster: Node3D = null
@@ -64,7 +65,7 @@ func _ready() -> void:
 ## [param max_charges] Number of tile interactions before expiration.
 ## [param projectile_lifetime] Maximum time in seconds before sticking/expiring.
 ## [param projectile_max_range] Maximum distance before sticking.
-func initialize(arena: ArenaGrid, p_caster: Node3D, p_caster_position: Vector3, _effect_range: float, direction: Vector3, velocity: float, max_charges: int, projectile_lifetime: float, projectile_max_range: float = 45.0) -> void:
+func initialize(arena: ArenaGrid, p_caster: Node3D, p_caster_position: Vector3, _effect_range: float, direction: Vector3, velocity: float, max_charges: int, projectile_lifetime: float, projectile_max_range: float = 45.0, p_damage: float = -1.0) -> void:
 	_arena = arena
 	caster = p_caster
 	_start_position = global_transform.origin
@@ -80,6 +81,12 @@ func initialize(arena: ArenaGrid, p_caster: Node3D, p_caster_position: Vector3, 
 	speed = velocity
 	charge_capacity = max_charges
 	remaining_charges = max_charges
+	if p_damage > 0:
+		damage_amount = p_damage
+	else:
+		# Fallback to charges if no damage specified (for legacy support)
+		damage_amount = float(max_charges)
+		
 	lifetime = projectile_lifetime
 	max_range = projectile_max_range
 	_elapsed = 0.0
@@ -89,13 +96,12 @@ func initialize(arena: ArenaGrid, p_caster: Node3D, p_caster_position: Vector3, 
 	_setup_damage_component()
 
 ## Creates and attaches a DamageComponent to the projectile.
-## The damage amount is scaled based on the remaining charges.
 func _setup_damage_component() -> void:
 	if damage_component:
 		damage_component.queue_free()
 	
 	damage_component = DamageComponent.new()
-	damage_component.damage_amount = float(remaining_charges)
+	damage_component.damage_amount = damage_amount
 	damage_component.element_type = element_type
 	add_child(damage_component)
 
@@ -166,7 +172,13 @@ func _pick_up(actor: Actor) -> void:
 
 	
 	if source_weapon_data:
-		actor.add_weapon_ammo(source_weapon_data, remaining_charges)
+		# If this is a weapon pickup, it usually represents 1 unit (e.g. 1 thrown dagger)
+		# Unless it was a dropped inventory stack (which we identify by remaining_charges > 1)
+		var amount_to_add = 1
+		if remaining_charges > 1:
+			amount_to_add = remaining_charges
+			
+		actor.add_weapon_ammo(source_weapon_data, amount_to_add)
 		if actor.has_method("apply_pickup_penalty"):
 			actor.apply_pickup_penalty()
 		
@@ -236,10 +248,10 @@ func _apply_hit_damage(body: Node3D) -> void:
 		return
 		
 	if damage_component:
-		damage_component.damage_amount = float(remaining_charges)
+		damage_component.damage_amount = damage_amount
 		damage_component.deal_damage(body, _direction)
 	elif body.has_method("take_damage"):
-		body.take_damage(float(remaining_charges), "normal", _direction)
+		body.take_damage(damage_amount, "normal", _direction)
 
 ## Transitions the projectile to a stuck state. 
 ## If a target is provided, the projectile will attempt to reparent to it.

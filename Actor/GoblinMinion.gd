@@ -151,7 +151,7 @@ func _update_sprite_animation() -> void:
 	if not _body is AnimatedSprite3D: return
 	var sprite = _body as AnimatedSprite3D
 	
-	if weapon and weapon.is_on_cooldown():
+	if weapon and weapon_component.is_on_cooldown():
 		if sprite.animation != &"attack":
 			sprite.play(&"attack")
 		return

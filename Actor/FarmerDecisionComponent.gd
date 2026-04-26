@@ -8,7 +8,7 @@ var current_state: State = State.PATROLLING
 @export var nudge_range: float = 3.0 # Distance to nudge a goat
 @export var farm_center: Vector3 = Vector3.ZERO
 
-var _target_goat: GoatActor = null
+var _target_goat: Node3D = null
 var _state_timer: float = 0.0
 
 func _ready() -> void:
@@ -16,7 +16,7 @@ func _ready() -> void:
 	_rng.randomize()
 
 func _handle_ai_logic(delta: float) -> void:
-	if not actor or not actor._arena_grid or is_controlled:
+	if not actor or not actor.get("_arena_grid") or is_controlled:
 		return
 
 	match current_state:
@@ -71,10 +71,13 @@ func _update_returning(delta: float) -> void:
 	if _state_timer <= 0:
 		current_state = State.PATROLLING
 
-func _find_stray_goat() -> GoatActor:
-	var strays: Array[GoatActor] = []
-	for e in actor._arena_grid.actors:
-		if e is GoatActor:
+func _find_stray_goat() -> Node3D:
+	var strays: Array[Node3D] = []
+	var arena_grid = actor.get("_arena_grid")
+	if not arena_grid: return null
+	
+	for e in arena_grid.get("actors"):
+		if e.get("element_type") == "goat":
 			if e.global_position.distance_to(farm_center) > herd_distance:
 				strays.append(e)
 	

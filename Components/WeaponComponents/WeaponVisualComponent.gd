@@ -1,17 +1,15 @@
-class_name WeaponVisualComponent
-extends Node3D
-
 ## Component responsible for the visual representation of a weapon.
 ## Handles model loading, idle animations, and specialized orientation.
+extends Node3D
 
-var _weapon: Weapon
+var _weapon: Node3D
 var _weapon_data: WeaponData
 var _weapon_model: Node3D
-var _owner_actor: Actor
+var _owner_actor: Node3D
 
-func setup(p_weapon: Weapon) -> void:
+func setup(p_weapon: Node3D) -> void:
 	_weapon = p_weapon
-	_owner_actor = p_weapon._owner_actor
+	_owner_actor = p_weapon.get("_owner_actor")
 
 func set_weapon_data(data: WeaponData) -> void:
 	_weapon_data = data

@@ -1,20 +1,18 @@
-class_name MeleeHitbox
-extends Node3D
-
 ## Component responsible for melee hit detection and impact effects.
 ## Separated from Weapon.gd to handle physics queries and damage application.
+extends Node3D
 
-var _owner_actor: Actor
+var _owner_actor: Node3D
 var _weapon_data: WeaponData
-var _weapon: Weapon
+var _weapon: Node3D
 var _whack_player: AudioStreamPlayer3D
 var _hitbox_visual: MeshInstance3D
 
 ## Initializes the component with its parent weapon.
-func setup(p_weapon: Weapon) -> void:
+func setup(p_weapon: Node3D) -> void:
 	_weapon = p_weapon
-	_owner_actor = p_weapon._owner_actor
-	_whack_player = p_weapon._whack_player
+	_owner_actor = p_weapon.get("_owner_actor")
+	_whack_player = p_weapon.get("_whack_player")
 
 ## Updates the weapon data used for reach and cone calculations.
 func set_weapon_data(data: WeaponData) -> void:
@@ -40,7 +38,7 @@ func perform_swing(dir: Vector3) -> void:
 	var hit_anything = false
 	for hit in hits:
 		var collider = hit.collider
-		if collider != _owner_actor and collider is Actor:
+		if collider != _owner_actor and collider.has_method("take_damage"):
 			var to_target = (collider.global_position - _owner_actor.global_position).normalized()
 			to_target.y = 0
 			var angle = rad_to_deg(dir.angle_to(to_target))
@@ -67,16 +65,23 @@ func perform_swing(dir: Vector3) -> void:
 					_play_whack()
 					_show_thwak_visual(ray_hit.position)
 
-func _handle_hit(target: Actor, _dir: Vector3) -> void:
+func _handle_hit(target: Node3D, _dir: Vector3) -> void:
 	# Determine relevant stat
-	var ability_score: float = _owner_actor.ability_scores_component.strength
+	var ability_scores = _owner_actor.get("ability_scores_component")
+	if not ability_scores: return
+	
+	var ability_score: float = ability_scores.strength
 	
 	# Handle Finesse weapons (use Dex if higher)
 	if _weapon_data and _weapon_data.is_finesse:
-		ability_score = max(_owner_actor.ability_scores_component.strength, _owner_actor.ability_scores_component.dexterity)
+		ability_score = max(ability_scores.strength, ability_scores.dexterity)
 	
 	# Perform the skill check using the new component
-	var result: Dictionary = _owner_actor.skill_check_component.perform_check(ability_score, target.armor_class, "Attack")
+	var skill_check = _owner_actor.get("skill_check_component")
+	if not skill_check: return
+	
+	var target_ac = target.get("armor_class") if target.get("armor_class") != null else 10
+	var result: Dictionary = skill_check.perform_check(ability_score, target_ac, "Attack")
 	
 	var impact_dir: Vector3 = (target.global_position - _owner_actor.global_position).normalized()
 	
@@ -84,17 +89,19 @@ func _handle_hit(target: Actor, _dir: Vector3) -> void:
 	if result.success:
 		var damage: float = _weapon_data.roll_damage()
 		target.take_damage(damage, "normal", impact_dir)
-		target.stun(0.3)
+		if target.has_method("stun"):
+			target.stun(0.3)
 		_play_whack()
 		_show_thwak_visual(target.global_position + Vector3(0, 1.0, 0))
 		
-		if target.movement_component:
+		var movement = target.get("movement_component")
+		if movement:
 			impact_dir.y = 0.2
-			target.movement_component.apply_external_force(impact_dir * 8.0)
+			movement.apply_external_force(impact_dir * 8.0)
 	else:
 		# Miss - "Bounces off the armor"
 		if target.has_method("show_miss"):
-			target.show_miss(impact_dir)
+			target.call("show_miss", impact_dir)
 
 func _play_whack() -> void:
 	if _whack_player:

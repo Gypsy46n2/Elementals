@@ -46,3 +46,21 @@ autowrap_mode = 2
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Equip"
+
+[node name="AmmoContainer" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+
+[node name="AmmoLabel" type="Label" parent="AmmoContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = "20/20"

@@ -19,14 +19,14 @@ var current_state: State = State.WANDERING
 @export var max_follow_distance: float = 5.0
 
 var _state_timer: float = 0.0
-var _target_actor: Actor = null
+var _target_actor: Node3D = null
 
 var _debug_line: MeshInstance3D
 var _debug_material: StandardMaterial3D
 
 func _ready() -> void:
 	_rng.randomize()
-	if not actor and get_parent() is Actor:
+	if not actor and get_parent().get("element_type") != null: # Duck typing check for Actor
 		actor = get_parent()
 	
 	if actor:
@@ -51,7 +51,7 @@ func _setup_debug_line() -> void:
 	add_child(_debug_line)
 
 func _physics_process(delta: float) -> void:
-	if actor and actor.is_stunned():
+	if actor and actor.has_method("is_stunned") and actor.is_stunned():
 		if movement_component:
 			movement_component.apply_gravity(delta)
 			movement_component.stop(delta)
@@ -89,16 +89,16 @@ func _update_debug_visuals() -> void:
 	mesh.surface_add_vertex(actor.to_local(player.global_position))
 	mesh.surface_end()
 
-func _get_player_goat() -> GoatActor:
-	if not actor or not actor._arena_grid:
+func _get_player_goat() -> Node3D:
+	if not actor or not actor.get("_arena_grid"):
 		return null
-	var target = actor._arena_grid.current_controlled_actor
-	if is_instance_valid(target) and target is GoatActor and target != actor:
+	var target = actor.get("_arena_grid").get("current_controlled_actor")
+	if is_instance_valid(target) and target.get("element_type") == "goat" and target != actor:
 		return target
 	return null
 
 func _choose_new_target() -> void:
-	if not actor or not actor._arena_grid:
+	if not actor or not actor.get("_arena_grid"):
 		return
 		
 	var player_goat = _get_player_goat()
@@ -149,7 +149,7 @@ func _choose_new_target() -> void:
 		_movement_target.y = actor.global_position.y
 
 func _handle_ai_logic(delta: float) -> void:
-	if not actor or not actor._arena_grid or not movement_component:
+	if not actor or not actor.get("_arena_grid") or not movement_component:
 		return
 		
 	if is_controlled:
@@ -167,8 +167,9 @@ func _handle_ai_logic(delta: float) -> void:
 
 	# Social rowdiness: speed up if others are nearby
 	var rowdy_bonus = 1.0
-	for other in actor._arena_grid.actors:
-		if is_instance_valid(other) and other is GoatActor and other != actor:
+	var arena_grid = actor.get("_arena_grid")
+	for other in arena_grid.get("actors"):
+		if is_instance_valid(other) and other.get("element_type") == "goat" and other != actor:
 			if other.global_position.distance_to(actor.global_position) < 8.0:
 				rowdy_bonus += 0.25
 	
@@ -212,19 +213,18 @@ func _update_alert(delta: float) -> void:
 func _update_charging(delta: float) -> void:
 	# The GoatActor script handles the actual charge physics
 	# We just need to trigger it once
-	if not (actor as GoatActor)._is_charging:
+	if not actor.get("_is_charging"):
 		# If we aren't charging yet, start it
-		var goat = actor as GoatActor
 		var target_pos = _target_actor.global_position
 		
 		# Set the charge direction in the goat script
-		var dir = (target_pos - goat.global_position).normalized()
+		var dir = (target_pos - actor.global_position).normalized()
 		dir.y = 0
 		
 		# We use the internal charge method by simulating a mouse click or calling it directly
 		# GoatActor._start_charge() uses mouse position, so we should add an AI-friendly version
-		if goat.has_method("ai_start_charge"):
-			goat.ai_start_charge(target_pos)
+		if actor.has_method("ai_start_charge"):
+			actor.ai_start_charge(target_pos)
 		
 		_transition_to(State.COOLDOWN)
 
@@ -255,15 +255,16 @@ func get_debug_state() -> String:
 		return "CONTROLLED"
 	return State.keys()[current_state]
 
-func _find_nearby_actor() -> Actor:
-	if not actor or not actor._arena_grid:
+func _find_nearby_actor() -> Node3D:
+	if not actor or not actor.get("_arena_grid"):
 		return null
 		
 	var player_goat = _get_player_goat()
-	var possible_targets: Array[Actor] = []
+	var possible_targets: Array[Node3D] = []
 	
-	for other in actor._arena_grid.actors:
-		if not is_instance_valid(other) or other == actor or (other is Actor and other.is_friendly):
+	var arena_grid = actor.get("_arena_grid")
+	for other in arena_grid.get("actors"):
+		if not is_instance_valid(other) or other == actor or other.get("is_friendly") == true:
 			continue
 		
 		# Only target enemies (non-goats)
@@ -272,7 +273,7 @@ func _find_nearby_actor() -> Actor:
 	if possible_targets.is_empty():
 		return null
 		
-	var best_target: Actor = null
+	var best_target: Node3D = null
 	var min_score = 1e9
 	
 	for target in possible_targets:

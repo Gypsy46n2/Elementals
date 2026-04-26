@@ -14,9 +14,9 @@ extends BaseProjectile
 
 var visual_component: ChargeVisualComponent
 
-func initialize(arena: ArenaGrid, p_caster: Node3D, caster_position: Vector3, effect_range: float, direction: Vector3, velocity: float, max_charges: int, projectile_lifetime: float, projectile_max_range: float = 45.0) -> void:
+func initialize(arena: ArenaGrid, p_caster: Node3D, p_caster_position: Vector3, _effect_range: float, direction: Vector3, velocity: float, max_charges: int, projectile_lifetime: float, projectile_max_range: float = 45.0, p_damage: float = -1.0) -> void:
 	# Call super.initialize first to set remaining_charges
-	super.initialize(arena, p_caster, caster_position, effect_range, direction, velocity, max_charges, projectile_lifetime, projectile_max_range)
+	super.initialize(arena, p_caster, p_caster_position, _effect_range, direction, velocity, max_charges, projectile_lifetime, projectile_max_range, p_damage)
 	
 	# Hide the default sphere if it exists
 	var visual = get_node_or_null("ProjectileVisual")

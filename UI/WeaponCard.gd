@@ -7,6 +7,8 @@ signal equipped(weapon: WeaponData)
 @onready var icon_rect: TextureRect = $VBoxContainer/IconRect
 @onready var stats_label: Label = $VBoxContainer/StatsLabel
 @onready var equip_button: Button = $VBoxContainer/EquipButton
+@onready var ammo_label: Label = %AmmoLabel
+@onready var ammo_container: MarginContainer = %AmmoContainer
 
 var weapon_data: WeaponData:
 	set(v):
@@ -22,8 +24,23 @@ func _ready() -> void:
 	equip_button.pressed.connect(_on_equip_pressed)
 	gui_input.connect(_on_gui_input)
 
+func _process(_delta: float) -> void:
+	if not visible or not weapon_data: return
+	_update_ammo_display()
+
+func _update_ammo_display() -> void:
+	if not weapon_data: return
+	
+	if weapon_data.max_ammo <= 0:
+		ammo_container.visible = false
+		return
+	
+	ammo_container.visible = true
+	ammo_label.text = str(weapon_data.current_ammo) + "/" + str(weapon_data.max_ammo)
+
 func _update_ui() -> void:
 	if not weapon_data or not is_node_ready(): return
+	_update_ammo_display()
 	name_label.text = weapon_data.name
 	if weapon_data.icon:
 		icon_rect.texture = weapon_data.icon

@@ -5,16 +5,18 @@ enum AttackPattern { SINGLE, SPREAD, LOB }
 
 @export var projectile_speed: float = 14.0
 @export var projectile_lifetime: float = 5.0
-@export var projectile_max_range_in_tiles: float = 20.0
+@export var projectile_max_range: float = 45.0
 @export var projectile_charge_capacity: int = 5
+@export var projectile_interval: float = 1.0
+@export var trigger_range: float = 6.75
 @export var projectile_scene: PackedScene
 @export var lob_projectile_scene: PackedScene
 
 var current_attack_pattern: AttackPattern = AttackPattern.SINGLE
-var _actor: Actor
+var _actor: Node3D
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
-func setup(actor: Actor) -> void:
+func setup(actor: Node3D) -> void:
 	_actor = actor
 	_rng.randomize()
 
@@ -28,16 +30,18 @@ func prev_attack_pattern() -> void:
 
 func _on_pattern_changed() -> void:
 	print(_actor.name, " switched to ", AttackPattern.keys()[current_attack_pattern], " pattern.")
-	if _actor.is_controlled and _actor._arena_grid:
-		_actor._arena_grid._update_ui()
+	if _actor.get("is_controlled") and _actor.get("_arena_grid"):
+		_actor.get("_arena_grid").call("_update_ui")
 
 func launch_projectile_at(target_position: Vector3, mana_comp: ManaComponent = null) -> void:
-	if not _actor._arena_grid:
+	if not _actor.get("_arena_grid"):
 		return
 	
-	if _actor.weapon:
-		_actor._update_attack_direction(target_position)
-		_actor.weapon.swing(target_position)
+	if _actor.get("weapon"):
+		_actor.call("_update_attack_direction", target_position)
+		var w_comp = _actor.get("weapon_component")
+		if w_comp:
+			w_comp.call("swing", target_position)
 		return
 	
 	match current_attack_pattern:
@@ -87,10 +91,10 @@ func _launch_lob_shot(target_position: Vector3, mana_comp: ManaComponent) -> voi
 		var cluster_target = target_position + offset
 		
 		if projectile.has_method("initialize_lob"):
-			projectile.initialize_lob(_actor._arena_grid, _actor, spawn_position, cluster_target, projectile_speed * 0.8, 1, projectile_lifetime)
+			projectile.initialize_lob(_actor.get("_arena_grid"), _actor, spawn_position, cluster_target, projectile_speed * 0.8, 1, projectile_lifetime)
 		elif projectile.has_method("initialize"):
 			var dir = (cluster_target - spawn_position).normalized()
-			projectile.initialize(_actor._arena_grid, _actor, spawn_position, 0.0, dir, projectile_speed, 1, projectile_lifetime)
+			projectile.initialize(_actor.get("_arena_grid"), _actor, spawn_position, 0.0, dir, projectile_speed, 1, projectile_lifetime)
 
 func _do_launch_projectile(target_position: Vector3) -> void:
 	var spawn_position = _actor.global_transform.origin
@@ -105,14 +109,14 @@ func _do_launch_projectile_with_params(scene: PackedScene, spawn_pos: Vector3, d
 	parent.add_child(projectile)
 	projectile.global_transform = Transform3D(Basis(), spawn_pos)
 	if projectile.has_method("initialize"):
-		projectile.initialize(_actor._arena_grid, _actor, spawn_pos, _actor._effective_range_world(), direction, p_velocity, charges, p_lifetime, _actor._projectile_max_range_world())
+		projectile.initialize(_actor.get("_arena_grid"), _actor, spawn_pos, trigger_range, direction, p_velocity, charges, p_lifetime, projectile_max_range)
 
 func launch_projectile_ai(mana_comp: ManaComponent) -> void:
 	var patterns = [AttackPattern.SINGLE, AttackPattern.SPREAD, AttackPattern.LOB]
 	current_attack_pattern = patterns[_rng.randi_range(0, patterns.size() - 1)]
 	
 	var heading = _rng.randf_range(0.0, TAU)
-	var distance = _rng.randf_range(5.0, _actor._effective_range_world())
+	var distance = _rng.randf_range(5.0, trigger_range)
 	var target_position = _actor.global_transform.origin + Vector3(cos(heading), 0.0, sin(heading)) * distance
 	
 	launch_projectile_at(target_position, mana_comp)

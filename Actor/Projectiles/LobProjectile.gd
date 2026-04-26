@@ -7,14 +7,14 @@ var _total_distance: float
 var _horizontal_dir: Vector3
 var _landing_radius: float = 2.0
 
-func initialize_lob(arena: ArenaGrid, p_caster: Node3D, caster_position: Vector3, target_position: Vector3, velocity: float, max_charges: int, projectile_lifetime: float) -> void:
+func initialize_lob(arena: ArenaGrid, p_caster: Node3D, caster_position: Vector3, target_position: Vector3, velocity: float, max_charges: int, projectile_lifetime: float, p_damage: float = -1.0) -> void:
 	# BaseProjectile needs a direction, we'll give it the horizontal one
 	var dir = (target_position - caster_position)
 	dir.y = 0
 	var horizontal_dir = dir.normalized()
 	
 	# We call regular initialize but we'll override the movement
-	super.initialize(arena, p_caster, caster_position, 0.0, horizontal_dir, velocity, max_charges, projectile_lifetime, caster_position.distance_to(target_position) + 1.0)
+	super.initialize(arena, p_caster, caster_position, 0.0, horizontal_dir, velocity, max_charges, projectile_lifetime, caster_position.distance_to(target_position) + 1.0, p_damage)
 	
 	_target_position = target_position
 	_horizontal_dir = horizontal_dir
@@ -65,7 +65,7 @@ func _land() -> void:
 	for result in results:
 		var body = result.collider
 		if body is Actor and body.element_type != element_type:
-			body.take_damage(remaining_charges, "normal", (body.global_position - global_position).normalized())
+			body.take_damage(damage_amount, "normal", (body.global_position - global_position).normalized())
 			
 	queue_free()
 

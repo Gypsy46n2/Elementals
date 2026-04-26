@@ -210,6 +210,3 @@ func _push_pinecone(direction: Vector3) -> void:
 		var target_pos = target_tile.position
 		target_pos.y = global_position.y
 		movement_component.move_to(target_pos)
-
-func _handle_movement(delta: float) -> void:
-	pass # Handled by MovementComponent

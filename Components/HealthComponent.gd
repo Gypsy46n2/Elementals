@@ -10,6 +10,7 @@ signal damage_received(amount: float, type: String)
 @export_group("Stats")
 @export var max_health: float = 10.0: set = set_max_health
 @export var current_health: float = 10.0: set = set_current_health
+@export var armor_class: int = 10
 
 @export_group("Visuals")
 @export var bar_color: Color = Color.GREEN

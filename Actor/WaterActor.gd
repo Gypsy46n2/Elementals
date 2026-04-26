@@ -28,7 +28,7 @@ func _do_tile_effect(tile: HexTileData) -> void:
 			current_mana = min(current_mana + 1.0, max_mana)
 
 func _configure_particles(particles: GPUParticles3D) -> void:
-	Actor.setup_gpu_particles(particles, {
+	ActorParticleComponent.setup_gpu_particles(particles, {
 		"amount": 20,
 		"spread": 45.0,
 		"velocity_min": 1.0,
@@ -41,7 +41,7 @@ func _configure_particles(particles: GPUParticles3D) -> void:
 	})
 
 func _configure_drips(particles: GPUParticles3D) -> void:
-	Actor.setup_gpu_particles(particles, {
+	ActorParticleComponent.setup_gpu_particles(particles, {
 		"amount": 15,
 		"lifetime": 1.2,
 		"local_coords": false,

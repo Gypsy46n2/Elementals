@@ -51,11 +51,11 @@ func _init_weapons() -> void:
 
 	# Define weapons
 	_add("Club", "1 sp", "1d4", "bludgeoning", 2, "Light", club_icon, "res://Actor/Projectiles/ClubProjectile.tscn")
-	_add("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 20/60), reach 1.5, cone 110", dagger_icon)
+	_add("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 20/60), reach 1.5, cone 110, ammo 5", dagger_icon, "res://Actor/Projectiles/DaggerProjectile.tscn")
 	_add("Greatclub", "2 sp", "1d8", "bludgeoning", 10, "Two-handed", greatclub_icon, "res://Actor/Projectiles/ClubProjectile.tscn")
-	_add("Handaxe", "5 gp", "1d6", "slashing", 2, "Light, thrown (range 20/60)", handaxe_icon, "res://Actor/Projectiles/HandaxeProjectile.tscn")
-	_add("Javelin", "5 sp", "1d6", "piercing", 2, "Thrown (range 15/60), cone 30", javelin_icon, "res://Actor/Projectiles/JavelinProjectile.tscn")
-	_add("Light hammer", "2 gp", "1d4", "bludgeoning", 2, "Light, thrown (range 10/30)", light_hammer_icon)
+	_add("Handaxe", "5 gp", "1d6", "slashing", 2, "Light, thrown (range 20/60), ammo 3", handaxe_icon, "res://Actor/Projectiles/HandaxeProjectile.tscn")
+	_add("Javelin", "5 sp", "1d6", "piercing", 2, "Thrown (range 15/60), cone 30, ammo 5", javelin_icon, "res://Actor/Projectiles/JavelinProjectile.tscn")
+	_add("Light hammer", "2 gp", "1d4", "bludgeoning", 2, "Light, thrown (range 10/30), ammo 3", light_hammer_icon)
 	_add("Mace", "5 gp", "1d6", "bludgeoning", 4, "-", mace_icon)
 	_add("Quarterstaff", "2 sp", "1d6", "bludgeoning", 4, "Versatile (1d8)", quarterstaff_icon)
 	_add("Sickle", "1 gp", "1d4", "slashing", 2, "Light", sickle_icon)

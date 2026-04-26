@@ -47,7 +47,7 @@ func _get_fire_particle_from_pool() -> GPUParticles3D:
 	if _fire_particles_container:
 		_fire_particles_container.add_child(p)
 	
-	Actor.setup_gpu_particles(p, {
+	ActorParticleComponent.setup_gpu_particles(p, {
 		"amount": 10,
 		"lifetime": 0.8,
 		"velocity_min": 0.3,

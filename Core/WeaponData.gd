@@ -26,6 +26,7 @@ extends Resource
 @export var cone_width: float = 90.0
 @export var cooldown: float = 0.6
 @export var max_ammo: int = -1 # -1 means infinite
+@export var current_ammo: int = -1
 
 func _init(p_name: String = "", p_cost: String = "", p_damage: String = "", p_type: String = "", p_weight: float = 0.0, p_notes: String = "", p_proj_path: String = "") -> void:
 	name = p_name
@@ -37,6 +38,7 @@ func _init(p_name: String = "", p_cost: String = "", p_damage: String = "", p_ty
 	projectile_scene_path = p_proj_path
 	
 	_parse_notes()
+	current_ammo = max_ammo
 
 func _parse_notes() -> void:
 	var n = notes.to_lower()
@@ -96,11 +98,12 @@ func _parse_notes() -> void:
 		if end == -1: end = sub.find(" ")
 		if end == -1: end = sub.length()
 		max_ammo = int(sub.substr(0, end))
-	elif name != "Unarmed strike":
-		if is_ranged:
-			max_ammo = 20
-		else:
-			max_ammo = 1
+	elif is_ranged:
+		max_ammo = 20
+	elif is_thrown:
+		max_ammo = 5
+	else:
+		max_ammo = -1
 	
 	if is_versatile:
 		var v_start = n.find("versatile (")

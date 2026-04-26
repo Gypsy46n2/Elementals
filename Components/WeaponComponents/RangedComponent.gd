@@ -1,24 +1,24 @@
-class_name RangedComponent
-extends Node
-
 ## Component responsible for launching projectiles and managing ranged attack logic.
 ## Separated from Weapon.gd to handle projectile instantiation and initialization.
+extends Node
 
-var _weapon: Weapon
-var _owner_actor: Actor
+signal projectile_launched(is_secondary: bool)
+
+var _weapon: Node3D
+var _owner_actor: Node3D
 var _weapon_data: WeaponData
 
 ## Initializes the component with its parent weapon.
-func setup(p_weapon: Weapon) -> void:
+func setup(p_weapon: Node3D) -> void:
 	_weapon = p_weapon
-	_owner_actor = p_weapon._owner_actor
+	_owner_actor = p_weapon.get("_owner_actor")
 
 ## Updates the weapon data used for projectile calculations.
 func set_weapon_data(data: WeaponData) -> void:
 	_weapon_data = data
 
 ## Spawns and initializes a projectile for ranged attacks.
-func launch(target_position: Vector3, _dir: Vector3) -> void:
+func launch(target_position: Vector3, _dir: Vector3, is_secondary: bool = false) -> void:
 	if not _weapon_data or not _owner_actor: return
 	
 	var spawn_pos: Vector3 = _owner_actor.global_position + Vector3(0, 1.2, 0)
@@ -29,12 +29,10 @@ func launch(target_position: Vector3, _dir: Vector3) -> void:
 	
 	if _weapon_data.projectile_scene_path != "":
 		projectile_path = _weapon_data.projectile_scene_path
-	elif _weapon_data.name == "Dagger":
+	elif _weapon_data.name == "Dagger" or "Dagger" in _weapon_data.name:
 		projectile_path = "res://Actor/Projectiles/DaggerProjectile.tscn"
 	elif "Javelin" in _weapon_data.name:
-		# For now, Javelins use a slightly modified dagger or arrow. 
-		# We'll stick with Arrow for now as it's long, or Dagger if it looks better.
-		projectile_path = "res://Actor/Projectiles/ArrowProjectile.tscn"
+		projectile_path = "res://Actor/Projectiles/JavelinProjectile.tscn"
 	elif "Crossbow" in _weapon_data.name:
 		projectile_path = "res://Actor/Projectiles/ArrowProjectile.tscn"
 		
@@ -50,23 +48,47 @@ func launch(target_position: Vector3, _dir: Vector3) -> void:
 	proj.global_transform.origin = spawn_pos
 	
 	var damage: float = _weapon_data.roll_damage()
-	var hex_size: float = _owner_actor._arena_grid.hex_size if _owner_actor._arena_grid else 1.5
+	var arena_grid = _owner_actor.get("_arena_grid")
+	var hex_size: float = arena_grid.hex_size if arena_grid else 1.5
 	var proj_range: float = float(_weapon_data.range_max) * hex_size * 1.5
 	
 	if proj_range <= 0:
-		proj_range = _owner_actor.projectile_max_range_in_tiles * hex_size * 1.5 # Fallback
+		proj_range = _owner_actor.get("projectile_max_range") # Fallback
 	
-	if proj.has_method("initialize"):
+	# Determine how many tiles this projectile can affect.
+	# For physical weapons like Daggers/Arrows, this is usually 1.
+	# For elemental weapons, it might be more.
+	var max_charges: int = 1
+	var dtype = _weapon_data.damage_type.to_lower()
+	if dtype in ["fire", "water", "ice", "poison", "lightning", "acid"]:
+		max_charges = 5
+	
+	var p_speed: float = _owner_actor.get("projectile_speed") if _owner_actor.get("projectile_speed") != null else 14.0
+	var p_lifetime: float = _owner_actor.get("projectile_lifetime") if _owner_actor.get("projectile_lifetime") != null else 5.0
+	
+	if proj.has_method("initialize_lob") and is_secondary:
+		proj.call("initialize_lob", 
+			arena_grid, 
+			_owner_actor, 
+			_owner_actor.global_position, 
+			target_position,
+			p_speed, 
+			max_charges, 
+			p_lifetime,
+			damage
+		)
+	elif proj.has_method("initialize"):
 		proj.initialize(
-			_owner_actor._arena_grid, 
+			arena_grid, 
 			_owner_actor, 
 			_owner_actor.global_position, 
 			0.0, 
 			direction, 
-			_owner_actor.projectile_speed, 
-			damage, 
-			_owner_actor.projectile_lifetime, 
-			proj_range
+			p_speed, 
+			max_charges, 
+			p_lifetime, 
+			proj_range,
+			damage
 		)
 		
 	if "source_weapon_data" in proj:
@@ -75,3 +97,5 @@ func launch(target_position: Vector3, _dir: Vector3) -> void:
 	# Apply specific scaling for heavy weapons like Greatclub
 	if _weapon_data.name == "Greatclub":
 		proj.scale = Vector3(1.5, 1.5, 1.5)
+	
+	projectile_launched.emit(is_secondary)
