@@ -37,6 +37,7 @@ func get_selected_actor_scene() -> PackedScene:
 	
 	match type:
 		"farmer": return farmer_scene
+		"goblin": return goblin_scene
 		"fire": return fire_actor_scene
 		"water": return water_actor_scene
 		"goat": return goat_actor_scene

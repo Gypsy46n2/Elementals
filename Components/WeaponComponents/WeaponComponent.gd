@@ -83,6 +83,12 @@ func _on_global_weapon_selected(p_weapon: WeaponData) -> void:
 func _on_weapon_selected(p_weapon: WeaponData) -> void:
 	weapon_data = p_weapon
 
+func on_control_changed(controlled: bool) -> void:
+	if controlled:
+		var wl = get_node_or_null("/root/ItemsAutoload")
+		if wl and wl.selected_weapon:
+			_on_weapon_selected(wl.selected_weapon)
+
 ## Adds ammo to the current weapon or equips it if the actor is unarmed.
 func add_weapon_ammo(p_weapon_data: WeaponData, amount: int) -> void:
 	if weapon_data and weapon_data.name == p_weapon_data.name:

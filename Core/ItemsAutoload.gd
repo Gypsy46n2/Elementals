@@ -88,6 +88,11 @@ func _init_weapons() -> void:
 	_add("Crossbow, heavy", "50 gp", "1d10", "piercing", 18, "Ammunition (range 100/400), heavy, loading, two-handed, ammo 20", crossbow_heavy_icon)
 	_add("Longbow", "50 gp", "1d8", "piercing", 2, "Ammunition (range 150/600), heavy, two-handed, ammo 20", longbow_icon)
 	_add("Net", "1 gp", "-", "none", 3, "Thrown (range 5/15), special", net_icon)
+	
+	for w in weapons:
+		if w.name == "Unarmed strike":
+			selected_weapon = w
+			break
 
 func _add(p_name: String, p_cost: String, p_damage: String, p_type: String, p_weight: float, p_notes: String, p_icon: Texture2D, p_proj: String = "") -> void:
 	var w = WeaponData.new(p_name, p_cost, p_damage, p_type, p_weight, p_notes, p_proj)

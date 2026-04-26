@@ -128,20 +128,23 @@ func _process(delta: float) -> void:
 				_hide_check_timer = 0.0
 				_perform_stealth_check()
 
+## Periodically checks if the goblin is spotted by any other actors in the arena.
+## If a stealth check fails against an observer's passive perception, the goblin is revealed.
 func _perform_stealth_check() -> void:
-	var arena = _arena_grid
+	var arena: Node = _arena_grid
 	if not arena: return
 	
 	for actor_node in arena.actors:
 		if actor_node == self: continue
 		if actor_node is Actor:
-			var dex_val = ability_scores_component.dexterity * 10
-			var wis_val = actor_node.ability_scores_component.wisdom * 10
-			var modifier = wis_val - dex_val # Observer's Wisdom vs Goblin's Dexterity
+			var dex_val: float = ability_scores_component.dexterity
+			# We use the wisdom of the other actor (the observer) to determine their perception DC.
+			var wis_val: float = actor_node.ability_scores_component.wisdom
 			
-			var result = skill_check_component.perform_check(modifier, 10, "Stealth vs Perception")
-			if result.success:
-				# Success for the OBSERVER, they see the goblin
+			# Perform a Stealth check for the goblin against the viewer's passive perception (10 + Wis).
+			var result: Dictionary = skill_check_component.perform_check(dex_val, 10.0 + wis_val, "Stealth Check", actor_node)
+			if not result.success:
+				# If the goblin fails the check, they are seen by the observer.
 				is_hidden = false
 				break
 

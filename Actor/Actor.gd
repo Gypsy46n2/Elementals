@@ -78,6 +78,8 @@ var is_controlled: bool = false:
 		is_controlled = value
 		if decision_component: decision_component.is_controlled = value
 		if movement_component: movement_component.is_controlled = value
+		if weapon_component and weapon_component.has_method("on_control_changed"):
+			weapon_component.on_control_changed(value)
 
 var current_mana: float:
 	get: return mana_component.current_mana if mana_component else 0.0

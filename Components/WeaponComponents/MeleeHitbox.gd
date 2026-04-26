@@ -81,7 +81,7 @@ func _handle_hit(target: Node3D, _dir: Vector3) -> void:
 	if not skill_check: return
 	
 	var target_ac = target.get("armor_class") if target.get("armor_class") != null else 10
-	var result: Dictionary = skill_check.perform_check(ability_score, target_ac, "Attack")
+	var result: Dictionary = skill_check.perform_check(ability_score, target_ac, "Attack", target)
 	
 	var impact_dir: Vector3 = (target.global_position - _owner_actor.global_position).normalized()
 	
