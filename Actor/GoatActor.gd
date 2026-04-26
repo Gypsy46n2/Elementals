@@ -67,23 +67,23 @@ func _on_goat_data_changed() -> void:
 	_update_goat_visuals()
 	
 	# Performance Stats Scaling
-	strength = goat_data.strength
-	dexterity = goat_data.dexterity
-	constitution = goat_data.constitution
-	intelligence = goat_data.intelligence
-	wisdom = goat_data.wisdom
-	charisma = goat_data.charisma
+	ability_scores_component.strength = goat_data.strength
+	ability_scores_component.dexterity = goat_data.dexterity
+	ability_scores_component.constitution = goat_data.constitution
+	ability_scores_component.intelligence = goat_data.intelligence
+	ability_scores_component.wisdom = goat_data.wisdom
+	ability_scores_component.charisma = goat_data.charisma
 
-	move_speed = 3.0 * dexterity
+	move_speed = 3.0 * ability_scores_component.dexterity
 	if movement_component:
 		movement_component.move_speed = move_speed
 		
 	if health_component:
-		health_component.max_health = 10.0 * constitution
+		health_component.max_health = 10.0 * ability_scores_component.constitution
 		# Don't reset current health unless it's a fresh spawn
 	
-	charge_speed = 25.0 + (5.0 * strength)
-	charge_distance = 5.0 + (1.0 * strength)
+	charge_speed = 25.0 + (5.0 * ability_scores_component.strength)
+	charge_distance = 5.0 + (1.0 * ability_scores_component.strength)
 	
 	# Scale Body
 	var s = 1.5
@@ -345,8 +345,8 @@ func _handle_headbutt_hit(target: Actor, hit_pos: Vector3) -> void:
 	var knockback_strength = 12.0
 	
 	if goat_data:
-		damage = int(max(1, strength))
-		knockback_strength *= strength
+		damage = int(max(1, ability_scores_component.strength))
+		knockback_strength *= ability_scores_component.strength
 
 	target.take_damage(damage, "normal", (target.global_position - global_position).normalized())
 	target.stun(0.5)

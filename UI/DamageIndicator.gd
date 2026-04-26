@@ -16,6 +16,17 @@ func setup(amount: float, direction: Vector3) -> void:
 	if int(amount) <= 0:
 		text = "0"
 	
+	if amount >= 5:
+		modulate = Color.ORANGE
+		
+	_animate(direction)
+
+func setup_miss(direction: Vector3) -> void:
+	text = "Miss"
+	modulate = Color.LIGHT_GRAY
+	_animate(direction)
+
+func _animate(direction: Vector3) -> void:
 	# Initial random offset to avoid exact stacking
 	position += Vector3(randf_range(-0.1, 0.1), randf_range(-0.1, 0.1), randf_range(-0.1, 0.1))
 	
@@ -27,10 +38,6 @@ func setup(amount: float, direction: Vector3) -> void:
 	if move_dir.length() < 0.1:
 		var angle = randf() * TAU
 		move_dir = Vector3(cos(angle), 0, sin(angle))
-	
-	# Color based on amount
-	if amount >= 5:
-		modulate = Color.ORANGE
 	
 	# Move in direction + up
 	var target_pos = position + move_dir * 1.5 + Vector3.UP * 1.5

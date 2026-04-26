@@ -1,0 +1,34 @@
+[gd_scene load_steps=5 format=3 uid="uid://chrd4q1bo3ldd"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
+albedo_color = Color(0.392157, 0.262745, 0.141176, 1)
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_shaft"]
+material = SubResource("StandardMaterial3D_wood")
+top_radius = 0.02
+bottom_radius = 0.02
+height = 1.3
+radial_segments = 8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_stone"]
+albedo_color = Color(0.501961, 0.501961, 0.501961, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tip"]
+material = SubResource("StandardMaterial3D_stone")
+top_radius = 0.0
+bottom_radius = 0.04
+height = 0.2
+radial_segments = 6
+
+[node name="JavelinModel" type="Node3D"]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0)
+
+[node name="Shaft" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+mesh = SubResource("CylinderMesh_shaft")
+
+[node name="Tip" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+mesh = SubResource("CylinderMesh_tip")

@@ -96,6 +96,26 @@ func take_damage(amount: float, type: String = "normal", direction: Vector3 = Ve
 	damage_received.emit(amount, type)
 	_show_damage_indicator(amount, direction)
 
+func show_miss(direction: Vector3 = Vector3.ZERO) -> void:
+	var indicator = DamageIndicator.new()
+	var parent = get_parent()
+	if parent:
+		var grand_parent = parent.get_parent()
+		if grand_parent:
+			grand_parent.add_child(indicator)
+			indicator.global_position = parent.global_position + Vector3(0, 1.5, 0)
+		else:
+			parent.add_child(indicator)
+			indicator.position = Vector3(0, 1.5, 0)
+	else:
+		add_child(indicator)
+		indicator.position = Vector3(0, 1.5, 0)
+	
+	if indicator.has_method("setup_miss"):
+		indicator.setup_miss(direction)
+	else:
+		indicator.setup(0, direction)
+
 func _show_damage_indicator(amount: float, direction: Vector3) -> void:
 	var indicator = DamageIndicator.new()
 	var parent = get_parent()

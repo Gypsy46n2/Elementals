@@ -6,7 +6,6 @@ extends Actor
 ## Nimble Escape: Disengage (dodge) or Hide (invisibility)
 
 @export_group("Goblin Stats")
-@export var armor_class: int = 12
 @export var stealth_modifier: int = 6
 @export var passive_perception: int = 9
 
@@ -31,20 +30,21 @@ func _init() -> void:
 	should_bob = false
 	is_playable = false
 	is_friendly = false
-	
-	# D&D Stats mapping: 10 = 1.0
-	strength = 0.8  # 8
-	dexterity = 1.5 # 15
-	constitution = 1.0 # 10
-	intelligence = 1.0 # 10
-	wisdom = 0.8 # 8
-	charisma = 0.8 # 8
-	
+	armor_class = 12
 	move_speed = 3.0
 
-func _ready() -> void:
-	super._ready()
-	
+func _create_decision_component() -> ActorDecisionComponent:
+	return GoblinDecisionComponent.new()
+
+func _setup_actor() -> void:
+	# Stat bonuses
+	ability_scores_component.strength = -1
+	ability_scores_component.dexterity = 2.5
+	ability_scores_component.constitution = 0
+	ability_scores_component.intelligence = 0
+	ability_scores_component.wisdom = -1
+	ability_scores_component.charisma = -1
+
 	# Roll HP: 2d6
 	var rolled_hp = _rng.randi_range(1, 6) + _rng.randi_range(1, 6)
 	if health_component:
@@ -63,10 +63,6 @@ func _ready() -> void:
 		# Fallback if ItemsAutoload not ready or dagger not found
 		_on_weapon_selected(WeaponData.new("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 10/30), ammo 5"))
 
-func _create_decision_component() -> ActorDecisionComponent:
-	return GoblinDecisionComponent.new()
-
-func _setup_actor() -> void:
 	if _body is AnimatedSprite3D:
 		var sprite = _body as AnimatedSprite3D
 		sprite.pixel_size = 0.02
@@ -162,34 +158,19 @@ func _update_sprite_animation() -> void:
 
 	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
 	if horizontal_velocity.length() > 0.2:
-		var camera = get_viewport().get_camera_3d()
-		if not camera: return
+		_last_dir = get_cardinal_direction(horizontal_velocity.normalized())
 		
-		var cam_basis = camera.global_transform.basis
-		var cam_right = cam_basis.x
-		var cam_forward = -cam_basis.z # Camera looks towards -Z
-		cam_forward.y = 0
-		cam_forward = cam_forward.normalized()
-		
-		var move_dot_right = horizontal_velocity.dot(cam_right)
-		var move_dot_forward = horizontal_velocity.dot(cam_forward)
-		
-		if abs(move_dot_right) > abs(move_dot_forward):
-			if move_dot_right > 0:
-				sprite.play(&"walk_right")
-				sprite.flip_h = false
-				_last_dir = &"right"
-			else:
-				sprite.play(&"walk_left")
-				sprite.flip_h = false
-				_last_dir = &"left"
+		if _last_dir == &"right":
+			sprite.play(&"walk_right")
+			sprite.flip_h = false
+		elif _last_dir == &"left":
+			sprite.play(&"walk_left")
+			sprite.flip_h = false
+		elif _last_dir == &"up":
+			sprite.play(&"walk_up")
+			sprite.flip_h = false
 		else:
-			if move_dot_forward > 0:
-				sprite.play(&"walk_up") # Moving away from camera
-				_last_dir = &"up"
-			else:
-				sprite.play(&"walk_down") # Moving towards camera
-				_last_dir = &"down"
+			sprite.play(&"walk_down")
 			sprite.flip_h = false
 	else:
 		if sprite.sprite_frames.has_animation("idle_" + _last_dir):
@@ -210,8 +191,8 @@ func _perform_stealth_check() -> void:
 		if actor == self: continue
 		if actor is Actor:
 			var roll = _rng.randi_range(1, 20)
-			var dex_val = int(dexterity * 10)
-			var wis_val = int(actor.wisdom * 10)
+			var dex_val = int(ability_scores_component.dexterity * 10)
+			var wis_val = int(actor.ability_scores_component.wisdom * 10)
 			var modifier = wis_val - dex_val # Observer's Wisdom vs Goblin's Dexterity
 			
 			if roll + modifier >= 10:

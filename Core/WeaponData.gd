@@ -7,6 +7,7 @@ extends Resource
 @export var damage_type: String = ""
 @export var weight: float = 0.0
 @export var notes: String = ""
+@export_file("*.tscn") var projectile_scene_path: String = ""
 @export var icon: Texture2D
 
 @export_group("Combat Stats")
@@ -26,13 +27,14 @@ extends Resource
 @export var cooldown: float = 0.6
 @export var max_ammo: int = -1 # -1 means infinite
 
-func _init(p_name: String = "", p_cost: String = "", p_damage: String = "", p_type: String = "", p_weight: float = 0.0, p_notes: String = "") -> void:
+func _init(p_name: String = "", p_cost: String = "", p_damage: String = "", p_type: String = "", p_weight: float = 0.0, p_notes: String = "", p_proj_path: String = "") -> void:
 	name = p_name
 	cost = p_cost
 	damage = p_damage
 	damage_type = p_type
 	weight = p_weight
 	notes = p_notes
+	projectile_scene_path = p_proj_path
 	
 	_parse_notes()
 

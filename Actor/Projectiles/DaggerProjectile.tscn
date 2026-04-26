@@ -1,6 +1,6 @@
-[gd_scene load_steps=10 format=3 uid="uid://b8k9m0p1q2r3"]
+[gd_scene load_steps=9 format=3 uid="uid://b8lam0p1q2r3"]
 
-[ext_resource type="Script" path="res://Actor/Projectiles/BaseProjectile.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://b1uqxo8prdw7s" path="res://Actor/Projectiles/BaseProjectile.gd" id="1_script"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_handle"]
 albedo_color = Color(0.6, 0.4, 0.2, 1)
@@ -12,7 +12,6 @@ bottom_radius = 0.015
 height = 0.2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_metal"]
-albedo_color = Color(1, 1, 1, 1)
 metallic = 1.0
 roughness = 0.05
 emission_enabled = true
@@ -29,7 +28,6 @@ size = Vector3(0.04, 0.35, 0.01)
 
 [sub_resource type="PrismMesh" id="PrismMesh_tip"]
 material = SubResource("StandardMaterial3D_metal")
-left_to_right = 0.5
 size = Vector3(0.04, 0.1, 0.01)
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_collision"]
@@ -53,11 +51,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
 mesh = SubResource("BoxMesh_guard")
 
 [node name="Blade" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03564142, -6.276336e-10)
 mesh = SubResource("BoxMesh_blade")
 
 [node name="Tip" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.275, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.26064143, -6.2763394e-10)
 mesh = SubResource("PrismMesh_tip")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

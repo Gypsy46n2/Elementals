@@ -1,7 +1,13 @@
+## Base class for all projectiles in the game.
+##
+## BaseProjectile handles the core logic for movement, collision, and environmental interaction.
+## It supports "sticking" to targets or the ground, allowing for retrieval by players
+## if the projectile has associated WeaponData. It also manages elemental interactions
+## with the ArenaGrid tiles as it travels.
 class_name BaseProjectile
 extends Area3D
-	
-	# --- Signals ---
+
+# --- Signals ---
 signal expired
 	
 	# --- Constants ---
@@ -36,18 +42,28 @@ var _host_actor: Actor = null
 
 # --- Node References ---
 var damage_component: DamageComponent
-@onready var tile_ray: RayCast3D = $TileRay
 var _proximity_area: Area3D
 var _interaction_label: Label3D
 var _actor_in_range: Actor = null
 
 	# --- Initialization ---
 	
+## Initializes the projectile, setting up interaction nodes and connecting collision signals.
 func _ready() -> void:
 	_setup_interaction_nodes()
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 
+## Configures the projectile's initial state.
+## [param arena] The ArenaGrid this projectile interacts with.
+## [param p_caster] The node that fired the projectile.
+## [param p_caster_position] Starting world position.
+## [param _effect_range] (Unused in base, available for subclasses)
+## [param direction] Normalized travel direction.
+## [param velocity] Movement speed.
+## [param max_charges] Number of tile interactions before expiration.
+## [param projectile_lifetime] Maximum time in seconds before sticking/expiring.
+## [param projectile_max_range] Maximum distance before sticking.
 func initialize(arena: ArenaGrid, p_caster: Node3D, p_caster_position: Vector3, _effect_range: float, direction: Vector3, velocity: float, max_charges: int, projectile_lifetime: float, projectile_max_range: float = 45.0) -> void:
 	_arena = arena
 	caster = p_caster
@@ -71,10 +87,9 @@ func initialize(arena: ArenaGrid, p_caster: Node3D, p_caster_position: Vector3, 
 	
 	# Damage setup
 	_setup_damage_component()
-	
-	if tile_ray:
-		tile_ray.target_position = Vector3(0, -3.0, 0)
 
+## Creates and attaches a DamageComponent to the projectile.
+## The damage amount is scaled based on the remaining charges.
 func _setup_damage_component() -> void:
 	if damage_component:
 		damage_component.queue_free()
@@ -86,6 +101,7 @@ func _setup_damage_component() -> void:
 
 # --- Interaction Logic ---
 
+## Sets up the proximity detection and UI label used for projectile retrieval.
 func _setup_interaction_nodes() -> void:
 	# Proximity for pickup
 	_proximity_area = Area3D.new()
@@ -113,22 +129,26 @@ func _setup_interaction_nodes() -> void:
 	_interaction_label.visible = false
 	add_child(_interaction_label)
 
+## Triggered when an actor enters the pickup proximity.
 func _on_proximity_entered(body: Node3D) -> void:
 	if body is Actor and body.is_controlled:
 		_actor_in_range = body
 		_update_interaction_label()
 
+## Triggered when an actor leaves the pickup proximity.
 func _on_proximity_exited(body: Node3D) -> void:
 	if body == _actor_in_range:
 		_actor_in_range = null
 		_interaction_label.visible = false
 
+## Updates the text and visibility of the pickup interaction label.
 func _update_interaction_label() -> void:
 	if not _actor_in_range: return
 	var item_name = source_weapon_data.name if source_weapon_data else "item"
 	_interaction_label.text = "Press 'F' to pickup " + item_name
 	_interaction_label.visible = true
 
+## Handles input for projectile retrieval.
 func _input(event: InputEvent) -> void:
 	if not _is_stuck or _is_falling: return
 	if not _actor_in_range: return
@@ -136,6 +156,7 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept") or (event is InputEventKey and event.pressed and event.keycode == KEY_F):
 		_pick_up(_actor_in_range)
 
+## Finalizes the retrieval process, granting ammo to the actor and damaging the host if applicable.
 func _pick_up(actor: Actor) -> void:
 	# Deal \"ripping out\" damage to host if alive
 	if is_instance_valid(_host_actor) and _host_actor.is_inside_tree():
@@ -153,6 +174,7 @@ func _pick_up(actor: Actor) -> void:
 	
 	# --- Physics & Movement ---
 	
+## Main update loop for movement and physics state transitions.
 func _physics_process(delta: float) -> void:
 	if _is_stuck:
 		if _is_falling:
@@ -160,20 +182,20 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_elapsed += delta
-	if _elapsed >= lifetime or remaining_charges <= 0:
-		_stick()
-		return
+	var distance_traveled: float = global_transform.origin.distance_to(_start_position)
 	
-	if global_transform.origin.distance_to(_start_position) >= max_range:
+	if _elapsed >= lifetime or remaining_charges <= 0 or distance_traveled >= max_range:
 		_stick()
 		return
 		
 	_move_projectile(delta)
 	_apply_effect_to_tiles()
 
+## Translates the projectile forward in its current direction.
 func _move_projectile(delta: float) -> void:
 	global_translate(_direction * speed * delta)
 
+## Handles gravitational fall and ground collision, typically after a host dies.
 func _process_falling(delta: float) -> void:
 	_fall_velocity += GRAVITY * delta
 	global_position.y -= _fall_velocity * delta
@@ -195,32 +217,32 @@ func _process_falling(delta: float) -> void:
 
 	# --- Collision & Sticking ---
 	
+## Callback for projectile collision. Determines what the projectile hit and how to respond.
 func _on_body_entered(body: Node3D) -> void:
 	if _is_stuck or body == caster:
 		return
 	
-	if body is Actor:
-		_handle_actor_hit(body)
-	elif body.has_method("take_damage") or DamageComponent.find_health_component(body):
-		_handle_general_hit(body)
+	var can_damage: bool = body is Actor or body.has_method("take_damage") or DamageComponent.find_health_component(body)
+	if can_damage:
+		_apply_hit_damage(body)
+		_stick(body if body is Actor else null)
 	else:
 		_stick()
 
-func _handle_actor_hit(actor: Actor) -> void:
-	if actor.element_type != element_type:
-		if damage_component:
-			damage_component.damage_amount = float(remaining_charges)
-			damage_component.deal_damage(actor, _direction)
-		else:
-			actor.take_damage(float(remaining_charges), "normal", _direction)
-	_stick(actor)
-
-func _handle_general_hit(body: Node3D) -> void:
+## Internal helper to apply damage to a target upon impact.
+func _apply_hit_damage(body: Node3D) -> void:
+	# Check for elemental immunity
+	if body is Actor and body.element_type == element_type:
+		return
+		
 	if damage_component:
 		damage_component.damage_amount = float(remaining_charges)
 		damage_component.deal_damage(body, _direction)
-	_stick()
+	elif body.has_method("take_damage"):
+		body.take_damage(float(remaining_charges), "normal", _direction)
 
+## Transitions the projectile to a stuck state. 
+## If a target is provided, the projectile will attempt to reparent to it.
 func _stick(target: Node3D = null) -> void:
 	if _is_stuck: return
 	
@@ -255,12 +277,14 @@ func _stick(target: Node3D = null) -> void:
 		damage_component.queue_free()
 		damage_component = null
 
+## Safely reparents the projectile to a host node while maintaining world-space transform.
 func _reparent_to_host(host: Node3D, pos: Vector3, rot: Vector3) -> void:
 	if not is_instance_valid(host) or not host.is_inside_tree(): return
 	reparent(host)
 	global_position = pos
 	global_rotation = rot
 
+## Signal handler for when the host actor dies. Causes the projectile to drop to the ground.
 func _on_host_died(dead_actor: Node3D) -> void:
 	if dead_actor == _host_actor:
 		# Save world position before host teleports/removes
@@ -282,6 +306,7 @@ func _on_host_died(dead_actor: Node3D) -> void:
 		if arena:
 			_reparent_to_world.call_deferred(arena, world_pos, world_rot)
 
+## Safely reparents the projectile back to a world-level node (e.g., the Arena).
 func _reparent_to_world(new_parent: Node, pos: Vector3, rot: Vector3) -> void:
 	if not is_inside_tree(): return
 	top_level = false
@@ -291,8 +316,9 @@ func _reparent_to_world(new_parent: Node, pos: Vector3, rot: Vector3) -> void:
 
 # --- Environmental Interaction ---
 
+## Continuously checks the tile beneath the projectile and applies elemental effects.
 func _apply_effect_to_tiles() -> void:
-	if not _arena or remaining_charges <= 0: return
+	if not _arena: return
 		
 	var tile := _arena.get_tile_data_at_world_position(global_position)
 	if not tile: return
@@ -308,15 +334,13 @@ func _apply_effect_to_tiles() -> void:
 		remaining_tiles_effect_consumed()
 		_affected_tiles[tid] = true
 
+## Decrements the count of remaining charges.
 func remaining_tiles_effect_consumed() -> void:
 	remaining_charges -= 1
 
+## Core logic for applying the projectile's element to a specific tile and its features.
 func _do_projectile_effect(tile: HexTileData) -> bool:
 	var tile_handled = _arena.apply_element_to_tile(tile, element_type)
 	if tile.feature:
 		DamageComponent.apply_element(tile.feature, element_type, _direction)
 	return tile_handled
-
-func _get_tile_below() -> HexTileData:
-	if not _arena: return null
-	return _arena.get_tile_data_at_world_position(global_transform.origin)

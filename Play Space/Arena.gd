@@ -117,7 +117,7 @@ func _setup_components() -> void:
 	add_child(physics)
 	
 	tile_interaction = ArenaTileInteractionComponent.new()
-	tile_interaction.name = "TileInteractionComponent"
+	tile_interaction.name = "ArenaTileInteractionComponent"
 	tile_interaction.setup(self)
 	add_child(tile_interaction)
 
@@ -325,7 +325,7 @@ func _process(delta: float) -> void:
 	
 	tile_system.process_tiles(delta)
 
-# Proxies elemental application to the TileInteractionComponent.
+# Proxies elemental application to the ArenaTileInteractionComponent.
 # Should not be moved (Maintains backward compatibility for actors and projectiles).
 func apply_element_to_tile(tile: HexTileData, element: String, direction: Vector3 = Vector3.ZERO) -> bool:
 	if tile_interaction:

@@ -14,7 +14,7 @@ func _init_weapons() -> void:
 	var dagger_icon = load("res://assets/generated/dagger_icon_frame_0_1776824505.png")
 	var greatclub_icon = load("res://assets/generated/greatclub_icon_frame_0_1776824509.png")
 	var handaxe_icon = load("res://assets/generated/handaxe_icon_frame_0_1776824504.png")
-	var javelin_icon = load("res://assets/generated/javelin_icon_frame_0_1776824507.png")
+	var javelin_icon = load("res://assets/generated/javelin_icon_frame_0_1777161398.png")
 	var light_hammer_icon = load("res://assets/generated/light_hammer_icon_frame_0_1776824508.png")
 	var mace_icon = load("res://assets/generated/mace_icon_frame_0_1776824498.png")
 	var quarterstaff_icon = load("res://assets/generated/quarterstaff_icon_frame_0_1776824509.png")
@@ -50,11 +50,11 @@ func _init_weapons() -> void:
 	var net_icon = load("res://assets/generated/net_icon_frame_0_1776824573.png")
 
 	# Define weapons
-	_add("Club", "1 sp", "1d4", "bludgeoning", 2, "Light", club_icon)
-	_add("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 10/30), reach 1.5, cone 110", dagger_icon)
-	_add("Greatclub", "2 sp", "1d8", "bludgeoning", 10, "Two-handed", greatclub_icon)
-	_add("Handaxe", "5 gp", "1d6", "slashing", 2, "Light, thrown (range 10/30)", handaxe_icon)
-	_add("Javelin", "5 sp", "1d6", "piercing", 2, "Thrown (range 15/60)", javelin_icon)
+	_add("Club", "1 sp", "1d4", "bludgeoning", 2, "Light", club_icon, "res://Actor/Projectiles/ClubProjectile.tscn")
+	_add("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 20/60), reach 1.5, cone 110", dagger_icon)
+	_add("Greatclub", "2 sp", "1d8", "bludgeoning", 10, "Two-handed", greatclub_icon, "res://Actor/Projectiles/ClubProjectile.tscn")
+	_add("Handaxe", "5 gp", "1d6", "slashing", 2, "Light, thrown (range 20/60)", handaxe_icon, "res://Actor/Projectiles/HandaxeProjectile.tscn")
+	_add("Javelin", "5 sp", "1d6", "piercing", 2, "Thrown (range 15/60), cone 30", javelin_icon, "res://Actor/Projectiles/JavelinProjectile.tscn")
 	_add("Light hammer", "2 gp", "1d4", "bludgeoning", 2, "Light, thrown (range 10/30)", light_hammer_icon)
 	_add("Mace", "5 gp", "1d6", "bludgeoning", 4, "-", mace_icon)
 	_add("Quarterstaff", "2 sp", "1d6", "bludgeoning", 4, "Versatile (1d8)", quarterstaff_icon)
@@ -89,8 +89,8 @@ func _init_weapons() -> void:
 	_add("Longbow", "50 gp", "1d8", "piercing", 2, "Ammunition (range 150/600), heavy, two-handed, ammo 20", longbow_icon)
 	_add("Net", "1 gp", "-", "none", 3, "Thrown (range 5/15), special", net_icon)
 
-func _add(p_name: String, p_cost: String, p_damage: String, p_type: String, p_weight: float, p_notes: String, p_icon: Texture2D) -> void:
-	var w = WeaponData.new(p_name, p_cost, p_damage, p_type, p_weight, p_notes)
+func _add(p_name: String, p_cost: String, p_damage: String, p_type: String, p_weight: float, p_notes: String, p_icon: Texture2D, p_proj: String = "") -> void:
+	var w = WeaponData.new(p_name, p_cost, p_damage, p_type, p_weight, p_notes, p_proj)
 	w.icon = p_icon
 	weapons.append(w)
 

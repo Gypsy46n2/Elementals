@@ -11,32 +11,18 @@ const FARMER_SWING = preload("res://assets/Characters/farmer_sprites/attack_down
 func _init() -> void:
 	element_type = "farmer"
 	should_bob = false
-	# Commoner stats (10 = 1.0 multiplier)
-	strength = 1.0
-	dexterity = 1.0
-	constitution = 1.0
-	intelligence = 1.0
-	wisdom = 1.0
-	charisma = 1.0
 	max_hp = 4
 	move_speed = 3.0
 
-func _ready() -> void:
-	super._ready()
-	
-	# Farmer specific: default to Club if no weapon equipped yet
-	var wl = get_node_or_null("/root/ItemsAutoload")
-	if not equipped_weapon:
-		if wl:
-			for w in wl.weapons:
-				if w.name == "Club":
-					_on_weapon_selected(w)
-					break
-		else:
-			# Fallback
-			_on_weapon_selected(WeaponData.new("Club", "1 sp", "1d4", "bludgeoning", 2, "Light"))
-
 func _setup_actor() -> void:
+	# Commoner stats (1.0 = base multiplier)
+	ability_scores_component.strength = 1.0
+	ability_scores_component.dexterity = 1.0
+	ability_scores_component.constitution = 1.0
+	ability_scores_component.intelligence = 1.0
+	ability_scores_component.wisdom = 1.0
+	ability_scores_component.charisma = 1.0
+
 	if _body is AnimatedSprite3D:
 		var sprite = _body as AnimatedSprite3D
 		sprite.pixel_size = 0.02
@@ -65,39 +51,23 @@ func _update_sprite_animation() -> void:
 
 	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
 	if horizontal_velocity.length() > 0.2:
-		var camera = get_viewport().get_camera_3d()
-		if not camera: return
+		_last_dir = get_cardinal_direction(horizontal_velocity.normalized())
 		
-		var cam_basis = camera.global_transform.basis
-		var cam_right = cam_basis.x
-		var cam_forward = -cam_basis.z # Camera looks towards -Z
-		cam_forward.y = 0
-		cam_forward = cam_forward.normalized()
-		
-		var move_dot_right = horizontal_velocity.dot(cam_right)
-		var move_dot_forward = horizontal_velocity.dot(cam_forward)
-		
-		if abs(move_dot_right) > abs(move_dot_forward):
-			if move_dot_right > 0:
-				sprite.play(&"walk_right")
+		if _last_dir == &"right":
+			sprite.play(&"walk_right")
+			sprite.flip_h = false
+		elif _last_dir == &"left":
+			if sprite.sprite_frames.has_animation(&"walk_left"):
+				sprite.play(&"walk_left")
 				sprite.flip_h = false
-				_last_dir = &"right"
 			else:
-				# Using walk_left if available, or walk_right flipped
-				if sprite.sprite_frames.has_animation(&"walk_left"):
-					sprite.play(&"walk_left")
-					sprite.flip_h = false
-				else:
-					sprite.play(&"walk_right")
-					sprite.flip_h = true
-				_last_dir = &"left"
+				sprite.play(&"walk_right")
+				sprite.flip_h = true
+		elif _last_dir == &"up":
+			sprite.play(&"walk_up")
+			sprite.flip_h = false
 		else:
-			if move_dot_forward > 0:
-				sprite.play(&"walk_up") # Moving away from camera
-				_last_dir = &"up"
-			else:
-				sprite.play(&"walk_down") # Moving towards camera
-				_last_dir = &"down"
+			sprite.play(&"walk_down")
 			sprite.flip_h = false
 	else:
 		sprite.play("idle_" + _last_dir)

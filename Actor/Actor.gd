@@ -33,16 +33,12 @@ extends CharacterBody3D
 @export var projectile_scene: PackedScene
 @export var lob_projectile_scene: PackedScene
 
-@export_group("Ability Scores")
-@export var strength: float = 1.0
-@export var dexterity: float = 1.0
-@export var constitution: float = 1.0
-@export var intelligence: float = 1.0
-@export var wisdom: float = 1.0
-@export var charisma: float = 1.0
+var ability_scores_component: AbilityScoresComponent
+var skill_check_component: SkillCheckComponent
 
 @export_group("Stats")
 @export var max_hp: int = 10
+@export var armor_class: int = 10
 @export var max_mana: float = 100.0
 @export var mana_regen_rate: float = 20.0
 @export var shot_mana_cost: float = 20.0
@@ -56,7 +52,7 @@ var decision_component: ActorDecisionComponent
 var projectile_component: ProjectileComponent
 var stun_component: StunComponent
 var mana_component: ManaComponent
-var tile_interaction_component: TileInteractionComponent
+var tile_interaction_component: ActorTileInteractionComponent
 var bob_component: BobComponent
 var debug_component: DebugComponent
 
@@ -148,6 +144,20 @@ func _setup_components(base_visual_y: float) -> void:
 	decision_component.is_controlled = is_controlled
 	add_child(decision_component)
 
+	# Ability Scores Component
+	ability_scores_component = get_node_or_null("AbilityScoresComponent")
+	if not ability_scores_component:
+		ability_scores_component = AbilityScoresComponent.new()
+		ability_scores_component.name = "AbilityScoresComponent"
+		add_child(ability_scores_component)
+	ability_scores_component.setup(self)
+
+	# Skill Check Component
+	skill_check_component = SkillCheckComponent.new()
+	skill_check_component.name = "SkillCheckComponent"
+	add_child(skill_check_component)
+	skill_check_component.setup(self)
+
 	# Mana Component
 	mana_component = ManaComponent.new()
 	mana_component.max_mana = max_mana
@@ -163,7 +173,7 @@ func _setup_components(base_visual_y: float) -> void:
 	stun_component.setup(self)
 
 	# Tile Interaction Component
-	tile_interaction_component = TileInteractionComponent.new()
+	tile_interaction_component = ActorTileInteractionComponent.new()
 	add_child(tile_interaction_component)
 	tile_interaction_component.setup(self)
 
@@ -238,6 +248,12 @@ func take_damage(amount: float, type: String = "normal", direction: Vector3 = Ve
 		health_component.take_damage(amount, type, direction)
 	print(name, " took ", amount, " damage (", type, ").")
 
+func show_miss(direction: Vector3 = Vector3.ZERO) -> void:
+	if health_component and health_component.has_method("show_miss"):
+		health_component.show_miss(direction)
+	else:
+		print(name, " was missed.")
+
 func stun(duration: float) -> void:
 	stun_component.stun(duration)
 
@@ -270,12 +286,12 @@ func launch_projectile_at(target_position: Vector3) -> void:
 
 func secondary_attack_at(target_position: Vector3) -> void:
 	if weapon:
-		weapon.update_attack_direction(target_position)
+		_update_attack_direction(target_position)
 		weapon.secondary_attack(target_position)
 
 func throw_weapon_at(target_position: Vector3) -> void:
 	if weapon:
-		weapon.update_attack_direction(target_position)
+		_update_attack_direction(target_position)
 		weapon.secondary_attack(target_position, true)
 
 func add_weapon_ammo(p_weapon_data: WeaponData, amount: int) -> void:
@@ -311,8 +327,27 @@ func get_main_action_progress() -> float:
 	return 1.0
 
 func _update_attack_direction(target_position: Vector3) -> void:
-	if weapon:
-		weapon.update_attack_direction(target_position)
+	var dir: Vector3 = (target_position - global_position).normalized()
+	_last_dir = get_cardinal_direction(dir)
+
+## Returns the cardinal direction (up, down, left, right) from a direction vector based on the camera.
+func get_cardinal_direction(dir: Vector3) -> StringName:
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if not camera: return &"down"
+	
+	var cam_basis: Basis = camera.global_transform.basis
+	var cam_right: Vector3 = cam_basis.x
+	var cam_forward: Vector3 = -cam_basis.z
+	cam_forward.y = 0
+	cam_forward = cam_forward.normalized()
+	
+	var dot_right: float = dir.dot(cam_right)
+	var dot_forward: float = dir.dot(cam_forward)
+	
+	if abs(dot_right) > abs(dot_forward):
+		return &"right" if dot_right > 0 else &"left"
+	else:
+		return &"up" if dot_forward > 0 else &"down"
 
 func _effective_range_world() -> float:
 	var base_hex_size = _arena_grid.hex_size if _arena_grid else 1.0
