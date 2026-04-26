@@ -4,12 +4,57 @@
 class_name Actor
 extends CharacterBody3D
 
-@export_group("Components")
+@export_group("Identity")
 @export var is_playable: bool = true
 @export var is_friendly: bool = true
 @export var element_type: String = "none"
 
-@onready var tile_detector: RayCast3D = $TileDetector
+@export_group("Stats")
+@export var move_speed: float = 3.0:
+	set(v):
+		move_speed = v
+		if movement_component: movement_component.move_speed = v
+@export var max_hp: float = 10.0:
+	set(v):
+		max_hp = v
+		if health_component: health_component.max_health = v
+@export var max_mana: float = 100.0:
+	set(v):
+		max_mana = v
+		if mana_component: mana_component.max_mana = v
+@export var armor_class: int = 10:
+	set(v):
+		armor_class = v
+		if health_component: health_component.armor_class = v
+
+@export_group("Combat")
+@export var projectile_scene: PackedScene:
+	set(v):
+		projectile_scene = v
+		if projectile_component: projectile_component.projectile_scene = v
+@export var lob_projectile_scene: PackedScene:
+	set(v):
+		lob_projectile_scene = v
+		if projectile_component: projectile_component.lob_projectile_scene = v
+@export var projectile_speed: float = 14.0:
+	set(v):
+		projectile_speed = v
+		if projectile_component: projectile_component.projectile_speed = v
+@export var projectile_lifetime: float = 5.0:
+	set(v):
+		projectile_lifetime = v
+		if projectile_component: projectile_component.projectile_lifetime = v
+@export var projectile_max_range: float = 45.0:
+	set(v):
+		projectile_max_range = v
+		if projectile_component: projectile_component.projectile_max_range = v
+
+@export_group("Visuals")
+@export var should_bob: bool = false:
+	set(v):
+		should_bob = v
+		if bob_component: bob_component.should_bob = v
+
 @onready var _body: Node3D = get_node_or_null("Body")
 
 var health_component: HealthComponent
@@ -28,87 +73,19 @@ var particle_component: ActorParticleComponent
 var ability_scores_component: AbilityScoresComponent
 var skill_check_component: SkillCheckComponent
 
-# Pending stats set before components are ready
-var _pending_move_speed: float = 3.0
-var _pending_max_hp: float = 10.0
-var _pending_max_mana: float = 100.0
-var _pending_armor_class: int = 10
-var _pending_should_bob: bool = false
-var _pending_projectile_scene: PackedScene
-var _pending_lob_projectile_scene: PackedScene
-var _pending_projectile_speed: float = 14.0
-var _pending_projectile_lifetime: float = 5.0
-var _pending_projectile_max_range: float = 45.0
-
-# Delegates for compatibility
-var projectile_speed: float:
-	get: return projectile_component.projectile_speed if projectile_component else _pending_projectile_speed
-	set(v):
-		if projectile_component: projectile_component.projectile_speed = v
-		else: _pending_projectile_speed = v
-
-var projectile_lifetime: float:
-	get: return projectile_component.projectile_lifetime if projectile_component else _pending_projectile_lifetime
-	set(v):
-		if projectile_component: projectile_component.projectile_lifetime = v
-		else: _pending_projectile_lifetime = v
-
-var projectile_max_range: float:
-	get: return projectile_component.projectile_max_range if projectile_component else _pending_projectile_max_range
-	set(v):
-		if projectile_component: projectile_component.projectile_max_range = v
-		else: _pending_projectile_max_range = v
-
-# Delegates for compatibility
-var move_speed: float:
-	get: return movement_component.move_speed if movement_component else _pending_move_speed
-	set(v):
-		if movement_component: movement_component.move_speed = v
-		else: _pending_move_speed = v
-
-var max_hp: float:
-	get: return health_component.max_health if health_component else _pending_max_hp
-	set(v):
-		if health_component: health_component.max_health = v
-		else: _pending_max_hp = v
+var is_controlled: bool = false:
+	set(value):
+		is_controlled = value
+		if decision_component: decision_component.is_controlled = value
+		if movement_component: movement_component.is_controlled = value
 
 var current_mana: float:
 	get: return mana_component.current_mana if mana_component else 0.0
 	set(v): if mana_component: mana_component.current_mana = v
 
-var max_mana: float:
-	get: return mana_component.max_mana if mana_component else _pending_max_mana
-	set(v):
-		if mana_component: mana_component.max_mana = v
-		else: _pending_max_mana = v
-
-var armor_class: int:
-	get: return health_component.armor_class if health_component else _pending_armor_class
-	set(v):
-		if health_component: health_component.armor_class = v
-		else: _pending_armor_class = v
-
-var should_bob: bool:
-	get: return bob_component.should_bob if bob_component else _pending_should_bob
-	set(v):
-		if bob_component: bob_component.should_bob = v
-		else: _pending_should_bob = v
-
 var _last_dir: StringName:
 	get: return visual_component.last_dir if visual_component else &"down"
 	set(v): if visual_component: visual_component.last_dir = v
-
-var projectile_scene: PackedScene:
-	get: return projectile_component.projectile_scene if projectile_component else _pending_projectile_scene
-	set(v):
-		if projectile_component: projectile_component.projectile_scene = v
-		else: _pending_projectile_scene = v
-
-var lob_projectile_scene: PackedScene:
-	get: return projectile_component.lob_projectile_scene if projectile_component else _pending_lob_projectile_scene
-	set(v):
-		if projectile_component: projectile_component.lob_projectile_scene = v
-		else: _pending_lob_projectile_scene = v
 
 var weapon: WeaponData:
 	get: return equipped_weapon
@@ -116,12 +93,6 @@ var weapon: WeaponData:
 var equipped_weapon: WeaponData:
 	get: return weapon_component.weapon_data if weapon_component else null
 	set(v): if weapon_component: weapon_component.weapon_data = v
-
-var is_controlled: bool = false:
-	set(value):
-		is_controlled = value
-		if decision_component: decision_component.is_controlled = value
-		if movement_component: movement_component.is_controlled = value
 
 signal mana_changed(new_mana: float, max_mana: float)
 
@@ -135,7 +106,6 @@ func _ready() -> void:
 	_origin = global_transform.origin
 	
 	_setup_components()
-	_setup_actor()
 
 func _on_weapon_selected(p_weapon: WeaponData) -> void:
 	if weapon_component:
@@ -149,84 +119,80 @@ func _find_arena_grid() -> ArenaGrid:
 	return grid
 
 func _setup_components() -> void:
-	# 1. Visuals & Health
-	visual_component = ActorVisualComponent.new()
-	add_child(visual_component)
+	# 1. Visuals & Particles
+	visual_component = _add_comp(ActorVisualComponent.new())
 	visual_component.setup(self, _body)
 	
-	particle_component = ActorParticleComponent.new()
-	add_child(particle_component)
+	particle_component = _add_comp(ActorParticleComponent.new())
 	particle_component.setup(self)
 	
+	# 2. Health & Damage
 	health_component = DamageComponent.find_health_component(self)
 	if not health_component:
-		health_component = HealthComponent.new()
-		add_child(health_component)
+		health_component = _add_comp(HealthComponent.new())
+	
 	health_component.bar_color = visual_component.get_actor_color()
 	health_component.health_depleted.connect(die)
-	health_component.max_health = _pending_max_hp
-	health_component.current_health = _pending_max_hp
-	health_component.armor_class = _pending_armor_class
+	health_component.max_health = max_hp
+	health_component.current_health = max_hp
+	health_component.armor_class = armor_class
 
-	# 2. Movement & AI
-	movement_component = MovementComponent.new()
+	# 3. Movement & AI
+	movement_component = _add_comp(MovementComponent.new())
 	movement_component.target = self
 	movement_component.is_controlled = is_controlled
-	add_child(movement_component)
-	movement_component.move_speed = _pending_move_speed
+	movement_component.move_speed = move_speed
 	
-	decision_component = _create_decision_component()
+	decision_component = _add_comp(_create_decision_component())
 	decision_component.movement_component = movement_component
 	decision_component.actor = self
 	decision_component.is_controlled = is_controlled
-	add_child(decision_component)
 
-	# 3. Systems (Mana, Stun, Tiles)
-	mana_component = ManaComponent.new()
+	# 4. Mana & Stun
+	mana_component = _add_comp(ManaComponent.new())
 	mana_component.mana_changed.connect(func(c, m): mana_changed.emit(c, m))
-	add_child(mana_component)
-	mana_component.max_mana = _pending_max_mana
-	mana_component.current_mana = _pending_max_mana
+	mana_component.max_mana = max_mana
+	mana_component.current_mana = max_mana
 	mana_component.setup(self)
-	particle_component.setup_mana_visuals(visual_component.get_mana_particle_texture())
-
-	stun_component = StunComponent.new()
-	add_child(stun_component)
+	
+	stun_component = _add_comp(StunComponent.new())
 	stun_component.setup(self)
 
-	tile_interaction_component = ActorTileInteractionComponent.new()
-	add_child(tile_interaction_component)
+	# 5. Tile Interaction
+	tile_interaction_component = _add_comp(ActorTileInteractionComponent.new())
 	tile_interaction_component.setup(self)
 
-	# 4. RPG Components
-	ability_scores_component = AbilityScoresComponent.new()
-	add_child(ability_scores_component)
+	# 6. RPG Systems
+	ability_scores_component = _add_comp(AbilityScoresComponent.new())
 	ability_scores_component.setup(self)
 
-	skill_check_component = SkillCheckComponent.new()
-	add_child(skill_check_component)
+	skill_check_component = _add_comp(SkillCheckComponent.new())
 	skill_check_component.setup(self)
 
-	# 5. Visual Effects (Bob, Debug)
-	bob_component = BobComponent.new()
-	add_child(bob_component)
-	bob_component.should_bob = _pending_should_bob
+	# 7. Polish (Bob, Debug)
+	bob_component = _add_comp(BobComponent.new())
+	bob_component.should_bob = should_bob
 	bob_component.setup(_body, _body.position.y if _body else 0.0, particle_component.mana_particles_container)
 
-	debug_component = DebugComponent.new()
-	add_child(debug_component)
+	debug_component = _add_comp(DebugComponent.new())
 	debug_component.setup(self)
 
-	# 6. Combat (Projectile, Weapon)
-	projectile_component = ProjectileComponent.new()
-	add_child(projectile_component)
-	projectile_component.projectile_scene = _pending_projectile_scene
-	projectile_component.lob_projectile_scene = _pending_lob_projectile_scene
+	# 8. Combat (Projectile, Weapon)
+	projectile_component = _add_comp(ProjectileComponent.new())
+	projectile_component.projectile_scene = projectile_scene
+	projectile_component.lob_projectile_scene = lob_projectile_scene
+	projectile_component.projectile_speed = projectile_speed
+	projectile_component.projectile_lifetime = projectile_lifetime
+	projectile_component.projectile_max_range = projectile_max_range
 	projectile_component.setup(self)
 
-	weapon_component = WeaponComponent.new()
-	add_child(weapon_component)
+	weapon_component = _add_comp(WeaponComponent.new())
 	weapon_component.setup(self)
+
+# Helper for adding and returning components
+func _add_comp(comp: Node) -> Node:
+	add_child(comp)
+	return comp
 
 func _create_decision_component() -> ActorDecisionComponent:
 	return ActorDecisionComponent.new()
@@ -244,17 +210,19 @@ func show_miss(direction: Vector3 = Vector3.ZERO) -> void:
 		health_component.show_miss(direction)
 
 func stun(duration: float) -> void:
-	stun_component.stun(duration)
+	if stun_component: stun_component.stun(duration)
 
 func is_stunned() -> bool:
-	return stun_component.is_stunned()
+	return stun_component.is_stunned() if stun_component else false
 
 func die() -> void:
 	if weapon_component: weapon_component.drop_inventory()
 	GameEvents.actor_died.emit(self)
+	respawn()
 
+func respawn() -> void:
 	if health_component:
-		health_component.current_health = health_component.max_health
+		health_component.reset()
 	
 	global_transform.origin = _origin + Vector3(0, 0.5, 0)
 	velocity = Vector3.ZERO
@@ -264,24 +232,10 @@ func die() -> void:
 	force_update_transform()
 
 func cycle_attack_pattern() -> void:
-	projectile_component.cycle_attack_pattern()
+	if projectile_component: projectile_component.cycle_attack_pattern()
 
 func prev_attack_pattern() -> void:
-	projectile_component.prev_attack_pattern()
-
-func launch_projectile_at(target_position: Vector3) -> void:
-	if weapon:
-		weapon_component.swing(target_position)
-	else:
-		projectile_component.launch_projectile_at(target_position, mana_component)
-
-func secondary_attack_at(target_position: Vector3) -> void:
-	if weapon_component:
-		weapon_component.secondary_attack(target_position)
-
-func throw_weapon_at(target_position: Vector3) -> void:
-	if weapon_component:
-		weapon_component.secondary_attack(target_position, true)
+	if projectile_component: projectile_component.prev_attack_pattern()
 
 func apply_pickup_penalty() -> void:
 	if movement_component: movement_component.apply_pickup_penalty()
@@ -294,25 +248,7 @@ func get_actor_color() -> Color:
 	return Color.WHITE
 
 func get_main_action_progress() -> float:
-	if weapon_component: return weapon_component.get_cooldown_progress()
-	if mana_component: return mana_component.current_mana / mana_component.max_mana
-	return 1.0
-
-func _update_attack_direction(target_position: Vector3) -> void:
-	visual_component.update_attack_direction(target_position)
+	return weapon_component.get_main_action_progress() if weapon_component else 1.0
 
 func get_cardinal_direction(dir: Vector3) -> StringName:
-	return visual_component.get_cardinal_direction(dir)
-
-func _choose_new_target() -> void:
-	if decision_component and decision_component.has_method("_choose_new_target"):
-		decision_component.call("_choose_new_target")
-
-func _setup_actor() -> void:
-	pass
-
-func _do_tile_effect(_tile: HexTileData) -> void:
-	pass
-
-func _get_mana_particle_texture() -> Texture2D:
-	return null
+	return visual_component.get_cardinal_direction(dir) if visual_component else &"down"

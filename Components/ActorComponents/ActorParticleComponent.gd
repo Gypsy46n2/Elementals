@@ -101,7 +101,7 @@ func update_mana_visuals(delta: float, current_mana: float, shot_mana_cost: floa
 		sprite.pixel_size = 0.03
 		sprite.render_priority = 5
 		sprite.transparent = true
-		sprite.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		sprite.shaded = false
 		
 		var rand_axis: Vector3 = Vector3(_rng.randf_range(-1,1), _rng.randf_range(-1,1), _rng.randf_range(-1,1)).normalized()
 		if rand_axis == Vector3.ZERO: rand_axis = Vector3.UP

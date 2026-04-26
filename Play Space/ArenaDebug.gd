@@ -38,19 +38,19 @@ func _setup_spawn_buttons() -> void:
 	var fire_btn = Button.new()
 	fire_btn.text = "Spawn Fire"
 	fire_btn.focus_mode = Control.FOCUS_NONE
-	fire_btn.pressed.connect(func(): if arena: arena.spawn_actor("fire"))
+	fire_btn.pressed.connect(func(): if arena and arena.actor_spawner: arena.actor_spawner.spawn_actor("fire"))
 	spawn_buttons_container.add_child(fire_btn)
 	
 	var water_btn = Button.new()
 	water_btn.text = "Spawn Water"
 	water_btn.focus_mode = Control.FOCUS_NONE
-	water_btn.pressed.connect(func(): if arena: arena.spawn_actor("water"))
+	water_btn.pressed.connect(func(): if arena and arena.actor_spawner: arena.actor_spawner.spawn_actor("water"))
 	spawn_buttons_container.add_child(water_btn)
 	
 	var goat_btn = Button.new()
 	goat_btn.text = "Spawn Goat"
 	goat_btn.focus_mode = Control.FOCUS_NONE
-	goat_btn.pressed.connect(func(): if arena: arena.spawn_actor("goat"))
+	goat_btn.pressed.connect(func(): if arena and arena.actor_spawner: arena.actor_spawner.spawn_actor("goat"))
 	spawn_buttons_container.add_child(goat_btn)
 
 func _update_debug_info(counts: Dictionary = {}) -> void:

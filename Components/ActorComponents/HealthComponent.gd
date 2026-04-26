@@ -138,5 +138,8 @@ func _show_damage_indicator(amount: float, direction: Vector3) -> void:
 func heal(amount: float) -> void:
 	current_health += amount
 
+func reset() -> void:
+	current_health = max_health
+
 func is_dead() -> bool:
 	return current_health <= 0.0

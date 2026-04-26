@@ -22,7 +22,22 @@ func apply_ground_effects() -> void:
 	if _ground_tile:
 		if _check_tile_damage(_ground_tile):
 			return
-		_do_tile_effect(_ground_tile)
+		_handle_tile_interaction(_ground_tile)
+
+func _handle_tile_interaction(tile: HexTileData) -> void:
+	var arena_grid = _actor.get("_arena_grid")
+	if not arena_grid:
+		return
+		
+	var element_type = _actor.get("element_type")
+	if element_type == "fire":
+		if arena_grid.apply_element_to_tile(tile, "fire"):
+			if tile.current_state == TileConstants.State.FIRE:
+				_actor.current_mana = min(_actor.current_mana + 1.0, _actor.max_mana)
+	elif element_type == "water":
+		if arena_grid.apply_element_to_tile(tile, "water"):
+			if tile.current_state == TileConstants.State.PUDDLE:
+				_actor.current_mana = min(_actor.current_mana + 1.0, _actor.max_mana)
 
 func _check_tile_damage(tile: HexTileData) -> bool:
 	var arena_grid = _actor.get("_arena_grid")
@@ -45,10 +60,6 @@ func _check_tile_damage(tile: HexTileData) -> bool:
 			arena_grid.apply_element_to_tile(tile, "water")
 			return true
 	return false
-
-func _do_tile_effect(tile: HexTileData) -> void:
-	if _actor.has_method("_do_tile_effect"):
-		_actor.call("_do_tile_effect", tile)
 
 func get_ground_tile() -> HexTileData:
 	return _ground_tile

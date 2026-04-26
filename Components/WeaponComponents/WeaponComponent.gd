@@ -5,6 +5,7 @@ class_name WeaponComponent
 extends Node3D
 
 signal ammo_changed(current: int, max: int)
+signal attack_performed(target_position: Vector3)
 
 @onready var _whack_player: AudioStreamPlayer3D = get_node_or_null("WhackPlayer")
 @onready var _swoosh_player: AudioStreamPlayer3D = get_node_or_null("SwooshPlayer")
@@ -146,10 +147,36 @@ func _process(delta: float) -> void:
 func is_on_cooldown() -> bool:
 	return _cooldown > 0
 
-func get_cooldown_progress() -> float:
+func get_main_action_progress() -> float:
 	if weapon_data and weapon_data.cooldown > 0:
 		return 1.0 - (_cooldown / weapon_data.cooldown)
+	if _owner_actor and _owner_actor.mana_component:
+		var mc: ManaComponent = _owner_actor.mana_component
+		return mc.current_mana / mc.max_mana
 	return 1.0
+
+func update_attack_direction(target_position: Vector3) -> void:
+	if _owner_actor and _owner_actor.visual_component:
+		_owner_actor.visual_component.update_attack_direction(target_position)
+
+## Initiates the primary attack action.
+## If a weapon is equipped, it swings/fires the weapon.
+## Otherwise, it falls back to the actor's projectile component if available.
+func launch_projectile_at(target_position: Vector3) -> void:
+	if weapon_data and weapon_data.name != "Unarmed strike":
+		swing(target_position)
+	elif _owner_actor and _owner_actor.projectile_component:
+		_owner_actor.projectile_component.launch_projectile_at(target_position, _owner_actor.mana_component)
+	elif weapon_data:
+		swing(target_position)
+
+## Initiates a secondary attack (typically throwing the current weapon).
+func secondary_attack_at(target_position: Vector3) -> void:
+	secondary_attack(target_position)
+
+## Forces the current weapon to be thrown, regardless of its default behavior.
+func throw_weapon_at(target_position: Vector3) -> void:
+	secondary_attack(target_position, true)
 
 func _can_attack() -> bool:
 	if not _owner_actor or is_on_cooldown() or _owner_actor.is_stunned() or weapon_data == null:
@@ -179,8 +206,8 @@ func secondary_attack(target_pos: Vector3, forced: bool = false) -> bool:
 func _perform_attack(target_pos: Vector3, is_secondary: bool) -> void:
 	_cooldown = weapon_data.cooldown
 	
-	if _owner_actor.has_method("_update_attack_direction"):
-		_owner_actor._update_attack_direction(target_pos)
+	update_attack_direction(target_pos)
+	attack_performed.emit(target_pos)
 	
 	var dir = (target_pos - _owner_actor.global_position).normalized()
 	dir.y = 0

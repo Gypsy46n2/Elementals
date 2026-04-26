@@ -3,6 +3,8 @@ extends CanvasLayer
 @onready var weapon_list: VBoxContainer = %WeaponList
 @onready var scroll_container: ScrollContainer = %ScrollContainer
 @onready var weapon_card: WeaponCard = %WeaponCard
+@onready var list_panel: PanelContainer = %ListPanel
+@onready var debug_list_toggle: CheckBox = %DebugListToggle
 
 var current_index: int = -1
 var labels: Array[Label] = []
@@ -15,11 +17,17 @@ func _ready() -> void:
 	
 	ItemsAutoload.weapon_selected.connect(_on_weapon_selected)
 	
+	debug_list_toggle.toggled.connect(_on_debug_toggled)
+	list_panel.visible = debug_list_toggle.button_pressed
+	
 	if ItemsAutoload.selected_weapon:
 		_on_weapon_selected(ItemsAutoload.selected_weapon)
 	else:
 		if ItemsAutoload.weapons.size() > 0:
 			ItemsAutoload.set_selected_weapon(ItemsAutoload.weapons[0])
+
+func _on_debug_toggled(p_pressed: bool) -> void:
+	list_panel.visible = p_pressed
 
 func _populate_list() -> void:
 	for child in weapon_list.get_children():

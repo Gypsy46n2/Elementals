@@ -1,6 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://b0v6k5x7y8j1"]
+[gd_scene load_steps=4 format=3 uid="uid://b0v6k5x7y8j1"]
 
-[ext_resource type="Script" path="res://UI/WeaponConsole.gd" id="1_w3p4l"]
+[ext_resource type="Script" uid="uid://c0o3wakhban4x" path="res://UI/WeaponConsole.gd" id="1_w3p4l"]
 [ext_resource type="PackedScene" path="res://UI/WeaponCard.tscn" id="2_w4v5c"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o6x3k"]
@@ -28,37 +28,62 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = -320.0
-offset_right = 420.0
+offset_top = -344.0
+offset_right = 440.0
 offset_bottom = -20.0
 grow_vertical = 0
 mouse_filter = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Control"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Control"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+alignment = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 20
 
-[node name="ListPanel" type="PanelContainer" parent="Control/HBoxContainer"]
+[node name="ListPanel" type="PanelContainer" parent="Control/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_o6x3k")
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Control/HBoxContainer/ListPanel"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Control/VBoxContainer/HBoxContainer/ListPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="WeaponList" type="VBoxContainer" parent="Control/HBoxContainer/ListPanel/ScrollContainer"]
+[node name="WeaponList" type="VBoxContainer" parent="Control/VBoxContainer/HBoxContainer/ListPanel/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="WeaponCard" parent="Control/HBoxContainer" instance=ExtResource("2_w4v5c")]
-unique_name_in_owner = true
+[node name="CardContainer" type="VBoxContainer" parent="Control/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 8
+alignment = 2
+
+[node name="CycleNote" type="Label" parent="Control/VBoxContainer/HBoxContainer/CardContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.588235)
+theme_override_font_sizes/font_size = 12
+text = "use Q & E to cycle weapons"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="WeaponCard" parent="Control/VBoxContainer/HBoxContainer/CardContainer" instance=ExtResource("2_w4v5c")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DebugListToggle" type="CheckBox" parent="Control/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Debug: Show Weapon List"

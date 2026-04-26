@@ -11,21 +11,19 @@ func _init() -> void:
 	element_type = "water"
 	is_playable = false
 
-func _setup_actor() -> void:	
-	# Hide the body mesh so the actor is only represented by particles
-	if _body:
-		_body.visible = false
-
-func _get_mana_particle_texture() -> Texture2D:
-	return MANA_TEXTURE
+func _ready() -> void:
+	super._ready()
+	if visual_component:
+		visual_component.mana_particle_texture = MANA_TEXTURE
+		visual_component.hide_body = true
+		if visual_component.body:
+			visual_component.body.visible = false
+	
+	if particle_component:
+		particle_component.setup_mana_visuals(MANA_TEXTURE)
 
 func get_actor_color() -> Color:
 	return Color(0.1, 0.5, 1.0)
-
-func _do_tile_effect(tile: HexTileData) -> void:
-	if _arena_grid.apply_element_to_tile(tile, "water"):
-		if tile.current_state == TileConstants.State.PUDDLE:
-			current_mana = min(current_mana + 1.0, max_mana)
 
 func _configure_particles(particles: GPUParticles3D) -> void:
 	ActorParticleComponent.setup_gpu_particles(particles, {

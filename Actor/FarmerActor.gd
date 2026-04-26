@@ -7,7 +7,8 @@ func _init() -> void:
 	max_hp = 4
 	move_speed = 3.0
 
-func _setup_actor() -> void:
+func _ready() -> void:
+	super._ready()
 	# Commoner stats (0 = base multiplier)
 	ability_scores_component.strength = 0
 	ability_scores_component.dexterity = 0

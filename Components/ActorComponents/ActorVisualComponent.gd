@@ -3,6 +3,8 @@ extends Node3D
 
 @export var actor: Actor
 @export var body: Node3D
+@export var mana_particle_texture: Texture2D
+@export var hide_body: bool = false
 
 var last_dir: StringName = &"down"
 var body_sprite: Sprite3D
@@ -12,6 +14,9 @@ func setup(p_actor: Actor, p_body: Node3D) -> void:
 	body = p_body
 	if body is Sprite3D:
 		body_sprite = body
+	
+	if hide_body and body:
+		body.visible = false
 
 func _process(_delta: float) -> void:
 	if actor and body_sprite:
@@ -62,6 +67,4 @@ func get_actor_color() -> Color:
 	return Color.WHITE
 
 func get_mana_particle_texture() -> Texture2D:
-	if actor and actor.has_method("_get_mana_particle_texture"):
-		return actor._get_mana_particle_texture()
-	return null
+	return mana_particle_texture

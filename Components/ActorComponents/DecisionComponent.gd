@@ -48,6 +48,10 @@ func _handle_controlled_input(delta: float) -> void:
 	if Input.is_key_pressed(KEY_SPACE):
 		movement_component.jump()
 
+func _choose_new_target() -> void:
+	# Virtual method for choosing a new movement target
+	pass
+
 func get_debug_state() -> String:
 	if is_controlled:
 		return "CONTROLLED"

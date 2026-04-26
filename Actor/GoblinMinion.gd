@@ -38,7 +38,8 @@ func _init() -> void:
 func _create_decision_component() -> ActorDecisionComponent:
 	return GoblinDecisionComponent.new()
 
-func _setup_actor() -> void:
+func _ready() -> void:
+	super._ready()
 	# Stat bonuses
 	ability_scores_component.strength = -1
 	ability_scores_component.dexterity = 2.5
@@ -70,6 +71,12 @@ func _setup_actor() -> void:
 		sprite.play(&"idle")
 		sprite.offset.y = 24
 
+	if weapon_component:
+		weapon_component.attack_performed.connect(_on_attack_performed)
+
+func _on_attack_performed(_target_position: Vector3) -> void:
+	is_hidden = false
+
 func take_damage(amount: float, type: String = "normal", direction: Vector3 = Vector3.ZERO) -> void:
 	if is_disengaged:
 		print(name, " avoided damage due to Disengage!")
@@ -79,11 +86,6 @@ func take_damage(amount: float, type: String = "normal", direction: Vector3 = Ve
 	
 	# Being hit reveals the goblin
 	is_hidden = false
-
-func launch_projectile_at(target_position: Vector3) -> void:
-	# If hidden, attacking reveals the goblin
-	is_hidden = false
-	super.launch_projectile_at(target_position)
 
 func take_nimble_escape_action(type: String = "random") -> void:
 	if is_stunned(): return

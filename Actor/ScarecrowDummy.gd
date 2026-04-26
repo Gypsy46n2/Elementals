@@ -30,7 +30,3 @@ func _physics_process(delta: float) -> void:
 func _launch_projectile() -> void:
 	# Disabled
 	pass
-
-func launch_projectile_at(_target: Vector3) -> void:
-	# Disabled
-	pass

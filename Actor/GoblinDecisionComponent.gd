@@ -77,4 +77,5 @@ func _check_for_attack() -> void:
 		var d = actor.global_position.distance_to(target.global_position)
 		if d < 12.0:
 			# Aim at target
-			actor.launch_projectile_at(target.global_position)
+			if actor.weapon_component:
+				actor.weapon_component.launch_projectile_at(target.global_position)

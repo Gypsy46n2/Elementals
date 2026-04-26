@@ -50,7 +50,8 @@ var goat_data: GoatData:
 			goat_data.stats_changed.connect(_on_goat_data_changed)
 			_on_goat_data_changed()
 
-func _setup_actor() -> void:
+func _ready() -> void:
+	super._ready()
 	element_type = "goat"
 	should_bob = false
 	
@@ -87,6 +88,7 @@ func _setup_actor() -> void:
 		"emission_shape": ParticleProcessMaterial.EMISSION_SHAPE_BOX,
 		"emission_box_extents": Vector3(0.3, 0.1, 0.3)
 	})
+
 
 func _on_goat_data_changed() -> void:
 	if not is_node_ready() or not goat_data:
@@ -472,9 +474,6 @@ func get_main_action_progress() -> float:
 		return 1.0 - (_charge_cooldown_timer / charge_cooldown)
 	return 1.0
 
-func _do_tile_effect(_tile: HexTileData) -> void:
-	## Goats do not currently trigger any special effects when entering a tile.
-	pass
 
 func _get_speed_multiplier() -> float:
 	## Returns a movement speed multiplier based on the current terrain tile.
@@ -647,7 +646,3 @@ func _show_scream_text() -> void:
 	tween.tween_property(label, "position:y", 1.25, 0.5)
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(label.queue_free)
-
-func launch_projectile_at(_target_position: Vector3) -> void:
-	## Implementation of the base class method; goats do not use projectiles.
-	pass
