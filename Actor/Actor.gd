@@ -69,6 +69,7 @@ var debug_component: DebugComponent
 var weapon_component: WeaponComponent
 var visual_component: ActorVisualComponent
 var particle_component: ActorParticleComponent
+var ability_component: AbilityComponent
 
 var ability_scores_component: AbilityScoresComponent
 var skill_check_component: SkillCheckComponent
@@ -191,6 +192,10 @@ func _setup_components() -> void:
 	weapon_component = _add_comp(WeaponComponent.new())
 	weapon_component.setup(self)
 
+	ability_component = _add_comp(AbilityComponent.new())
+	ability_component.setup(self)
+	weapon_component.attack_performed.connect(func(_pos): ability_component.on_attack_performed())
+
 # Helper for adding and returning components
 func _add_comp(comp: Node) -> Node:
 	add_child(comp)
@@ -204,8 +209,13 @@ func _physics_process(_delta: float) -> void:
 	move_and_slide()
 
 func take_damage(amount: float, type: String = "normal", direction: Vector3 = Vector3.ZERO) -> void:
+	if ability_component and ability_component.is_disengaged:
+		print(name, " avoided damage due to Disengage!")
+		return
 	if health_component:
 		health_component.take_damage(amount, type, direction)
+	if ability_component:
+		ability_component.on_damage_taken()
 
 func show_miss(direction: Vector3 = Vector3.ZERO) -> void:
 	if health_component:

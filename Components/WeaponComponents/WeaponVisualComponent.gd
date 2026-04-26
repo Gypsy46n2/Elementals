@@ -6,6 +6,7 @@ var _weapon: Node3D
 var _weapon_data: WeaponData
 var _weapon_model: Node3D
 var _owner_actor: Node3D
+var _current_alpha: float = 1.0
 
 func setup(p_weapon: Node3D) -> void:
 	_weapon = p_weapon
@@ -91,6 +92,9 @@ func update_model() -> void:
 		
 		add_child(_weapon_model)
 		_weapon_model.visible = true
+		
+		# Ensure new model respects current modulation
+		set_modulation(_current_alpha)
 
 func _process(delta: float) -> void:
 	if _weapon and _weapon.is_on_cooldown():
@@ -131,6 +135,22 @@ func _update_idle_animation(_delta: float) -> void:
 
 func get_weapon_model() -> Node3D:
 	return _weapon_model
+
+func set_modulation(alpha: float) -> void:
+	_current_alpha = alpha
+	if not _weapon_model: return
+	
+	# Apply to all MeshInstance3D or Sprite3D children
+	_apply_modulation_recursive(_weapon_model, alpha)
+
+func _apply_modulation_recursive(node: Node, alpha: float) -> void:
+	if node is SpriteBase3D:
+		node.modulate.a = alpha
+	elif node is GeometryInstance3D:
+		node.transparency = 1.0 - alpha
+	
+	for child in node.get_children():
+		_apply_modulation_recursive(child, alpha)
 
 ## Performs the visual tween animation for a melee weapon swing.
 func animate_swing(dir: Vector3) -> void:

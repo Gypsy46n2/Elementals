@@ -1,5 +1,5 @@
 class_name WeaponCard
-extends PanelContainer
+extends DisplayCardBase
 
 signal equipped(weapon: WeaponData)
 
@@ -11,18 +11,18 @@ signal equipped(weapon: WeaponData)
 @onready var ammo_container: MarginContainer = %AmmoContainer
 
 var weapon_data: WeaponData:
+	get:
+		return data_resource as WeaponData
 	set(v):
-		weapon_data = v
-		if is_node_ready():
-			_update_ui()
+		setup(v)
 
-func setup(p_weapon: WeaponData) -> void:
-	weapon_data = p_weapon
+func setup(p_data: Resource) -> void:
+	super.setup(p_data)
 
 func _ready() -> void:
+	super._ready()
 	_update_ui()
 	equip_button.pressed.connect(_on_equip_pressed)
-	gui_input.connect(_on_gui_input)
 
 func _process(_delta: float) -> void:
 	if not visible or not weapon_data: return
@@ -46,7 +46,7 @@ func _update_ui() -> void:
 		icon_rect.texture = weapon_data.icon
 	else:
 		# Use a default icon or placeholder
-		icon_rect.texture = preload("res://icon.svg")
+		icon_rect.texture = null
 		icon_rect.modulate = Color(0.5, 0.5, 0.5)
 	
 	var stats = "Cost: %s\nDamage: %s (%s)\nWeight: %.2f lbs" % [
@@ -60,13 +60,17 @@ func _update_ui() -> void:
 	# Visual feedback if equipped
 	var wl = get_node_or_null("/root/ItemsAutoload")
 	if wl and wl.selected_weapon == weapon_data:
-		modulate = Color(0.8, 1.0, 0.8)
 		equip_button.text = "Equipped"
 		equip_button.disabled = true
 	else:
-		modulate = Color.WHITE
 		equip_button.text = "Equip"
 		equip_button.disabled = false
+	
+	update_visual_state()
+
+func _is_selected() -> bool:
+	var wl = get_node_or_null("/root/ItemsAutoload")
+	return wl and wl.selected_weapon == weapon_data
 
 func _on_equip_pressed() -> void:
 	var wl = get_node_or_null("/root/ItemsAutoload")
@@ -78,10 +82,9 @@ func _on_equip_pressed() -> void:
 	# Find other cards in parent and update them
 	if get_parent():
 		for child in get_parent().get_children():
-			if child is WeaponCard:
+			if child.has_method("_update_ui"):
 				child._update_ui()
 
-func _on_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_on_equip_pressed()
-		accept_event()
+func _handle_selection() -> void:
+	_on_equip_pressed()
+	super._handle_selection()

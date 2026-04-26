@@ -1,12 +1,22 @@
 extends Node
 
 signal weapon_selected(weapon: WeaponData)
+signal ability_selected(ability: AbilityData)
 
 var weapons: Array[WeaponData] = []
 var selected_weapon: WeaponData
 
+var abilities: Array[AbilityData] = []
+var selected_ability: AbilityData
+
 func _ready() -> void:
 	_init_weapons()
+	_init_abilities()
+
+func _init_abilities() -> void:
+	# Abilities are now largely actor-specific and initialized via AbilityAction scripts.
+	# We keep the array for global reference if needed.
+	pass
 
 func _init_weapons() -> void:
 	# Load all icons
@@ -102,3 +112,7 @@ func _add(p_name: String, p_cost: String, p_damage: String, p_type: String, p_we
 func set_selected_weapon(weapon: WeaponData) -> void:
 	selected_weapon = weapon
 	weapon_selected.emit(weapon)
+
+func set_selected_ability(ability: AbilityData) -> void:
+	selected_ability = ability
+	ability_selected.emit(ability)

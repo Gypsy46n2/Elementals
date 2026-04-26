@@ -45,7 +45,7 @@ func _update_nimble_escape(delta: float) -> void:
 			if actor.has_method("take_nimble_escape_action"):
 				actor.take_nimble_escape_action("disengage")
 				_nimble_escape_timer = NIMBLE_ESCAPE_COOLDOWN
-		elif min_dist > 8.0 and not (actor as GoblinMinion).is_hidden:
+		elif min_dist > 8.0 and actor.ability_component and not actor.ability_component.is_hidden:
 			# Far enough to hide.
 			if actor.has_method("take_nimble_escape_action"):
 				actor.take_nimble_escape_action("hide")

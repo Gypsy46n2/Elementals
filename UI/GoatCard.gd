@@ -1,7 +1,7 @@
 class_name GoatCard
-extends PanelContainer
+extends DisplayCardBase
 
-signal selected(goat: GoatData)
+# signal selected(goat: GoatData) # Base class already has selected signal
 
 @onready var renderer: GoatRenderer = $VBoxContainer/GoatRenderer
 @onready var name_edit: LineEdit = $VBoxContainer/TopRow/NameEdit
@@ -9,20 +9,25 @@ signal selected(goat: GoatData)
 @onready var arena_checkbox: CheckBox = $VBoxContainer/ArenaCheckBox
 
 var goat_data: GoatData:
+	get:
+		return data_resource as GoatData
 	set(v):
-		if goat_data:
-			if goat_data.stats_changed.is_connected(_update_ui):
-				goat_data.stats_changed.disconnect(_update_ui)
-		goat_data = v
-		if goat_data:
-			goat_data.stats_changed.connect(_update_ui)
-		if is_node_ready():
-			_update_ui()
+		setup(v)
+
+func setup(p_data: Resource) -> void:
+	if goat_data:
+		if goat_data.stats_changed.is_connected(_update_ui):
+			goat_data.stats_changed.disconnect(_update_ui)
+	
+	super.setup(p_data)
+	
+	if goat_data:
+		goat_data.stats_changed.connect(_update_ui)
 
 func _ready() -> void:
+	super._ready()
 	_update_ui()
 	arena_checkbox.toggled.connect(_on_arena_toggled)
-	gui_input.connect(_on_gui_input)
 	
 	if name_edit:
 		name_edit.text_submitted.connect(_on_name_submitted)
@@ -57,11 +62,18 @@ func _update_ui() -> void:
 	arena_checkbox.set_pressed_no_signal(goat_data.is_selected)
 	arena_checkbox.disabled = goat_data.is_exhausted and not goat_data.is_selected
 	
-	# Visual feedback for selection
+	update_visual_state()
+
+func _is_selected() -> bool:
+	return goat_data and goat_data.is_selected
+
+func update_visual_state() -> void:
+	if not goat_data: return
+	
 	if goat_data.is_selected:
-		modulate = Color(0.8, 1.0, 0.8) # Greenish tint for arena
+		modulate = highlight_color
 	else:
-		modulate = Color(0.7, 0.7, 0.7) if goat_data.is_exhausted else Color.WHITE
+		modulate = Color(0.7, 0.7, 0.7) if goat_data.is_exhausted else base_color
 
 func _on_arena_toggled(pressed: bool) -> void:
 	if not goat_data: return
@@ -76,9 +88,12 @@ func _on_gui_input(event: InputEvent) -> void:
 		if arena_checkbox.get_global_rect().has_point(event.global_position):
 			return
 			
-		# Toggle ONLY Breeding state (Arena is handled by the checkbox)
-		selected.emit(goat_data)
+		_handle_selection()
 		accept_event()
+
+func _handle_selection() -> void:
+	# Toggle ONLY Breeding state (Arena is handled by the checkbox)
+	super._handle_selection()
 
 func _toggle_arena_selection() -> void:
 	if has_node("/root/GoatManager"):

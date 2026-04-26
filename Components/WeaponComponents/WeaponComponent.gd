@@ -161,6 +161,10 @@ func get_main_action_progress() -> float:
 		return mc.current_mana / mc.max_mana
 	return 1.0
 
+func set_weapon_modulation(alpha: float) -> void:
+	if _visual_component and _visual_component.has_method("set_modulation"):
+		_visual_component.set_modulation(alpha)
+
 func update_attack_direction(target_position: Vector3) -> void:
 	if _owner_actor and _owner_actor.visual_component:
 		_owner_actor.visual_component.update_attack_direction(target_position)

@@ -3,6 +3,7 @@ extends CanvasLayer
 @onready var weapon_list: VBoxContainer = %WeaponList
 @onready var scroll_container: ScrollContainer = %ScrollContainer
 @onready var weapon_card: WeaponCard = %WeaponCard
+@onready var ability_card: AbilityCard = get_node_or_null("%AbilityCard")
 @onready var list_panel: PanelContainer = %ListPanel
 @onready var debug_list_toggle: CheckBox = %DebugListToggle
 
@@ -16,6 +17,7 @@ func _ready() -> void:
 	_populate_list()
 	
 	ItemsAutoload.weapon_selected.connect(_on_weapon_selected)
+	ItemsAutoload.ability_selected.connect(_on_ability_selected)
 	
 	debug_list_toggle.toggled.connect(_on_debug_toggled)
 	list_panel.visible = debug_list_toggle.button_pressed
@@ -25,6 +27,9 @@ func _ready() -> void:
 	else:
 		if ItemsAutoload.weapons.size() > 0:
 			ItemsAutoload.set_selected_weapon(ItemsAutoload.weapons[0])
+			
+	if ItemsAutoload.selected_ability:
+		_on_ability_selected(ItemsAutoload.selected_ability)
 
 func _on_debug_toggled(p_pressed: bool) -> void:
 	list_panel.visible = p_pressed
@@ -91,6 +96,14 @@ func _on_weapon_selected(weapon: WeaponData) -> void:
 	# Update the card
 	weapon_card.weapon_data = weapon
 	weapon_card.visible = true
+
+func _on_ability_selected(ability: AbilityData) -> void:
+	if ability_card:
+		if ability:
+			ability_card.setup(ability)
+			ability_card.visible = true
+		else:
+			ability_card.visible = false
 
 func _scroll_to_label(label: Label) -> void:
 	if not is_instance_valid(label): return

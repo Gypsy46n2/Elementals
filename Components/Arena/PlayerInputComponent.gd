@@ -19,6 +19,11 @@ var current_controlled_actor: Actor:
 			if arena and arena.ui_component:
 				arena.ui_component.update_for_actor(current_controlled_actor)
 
+var _ability_pressed: bool = false
+var _ability_press_time: int = 0
+var _hide_triggered: bool = false
+const HOLD_THRESHOLD_MS: int = 300
+
 ## Initializes the component with a reference to the ArenaGrid.
 func setup(p_arena: ArenaGrid) -> void:
 	arena = p_arena
@@ -43,14 +48,46 @@ func _unhandled_input(event: InputEvent) -> void:
 			if current_controlled_actor.weapon_component:
 				current_controlled_actor.weapon_component.secondary_attack_at(_get_mouse_3d_position())
 	
-	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_E:
-			current_controlled_actor.cycle_attack_pattern()
-		elif event.keycode == KEY_Q:
-			current_controlled_actor.prev_attack_pattern()
-		elif event.keycode == KEY_T:
-			if current_controlled_actor.weapon_component:
-				current_controlled_actor.weapon_component.throw_weapon_at(_get_mouse_3d_position())
+	if event is InputEventKey:
+		if event.pressed:
+			if event.keycode == KEY_E:
+				current_controlled_actor.cycle_attack_pattern()
+			elif event.keycode == KEY_Q:
+				current_controlled_actor.prev_attack_pattern()
+			elif event.keycode == KEY_T:
+				if current_controlled_actor.weapon_component:
+					current_controlled_actor.weapon_component.throw_weapon_at(_get_mouse_3d_position())
+			elif event.keycode == KEY_SHIFT:
+				_ability_pressed = true
+				_ability_press_time = Time.get_ticks_msec()
+			elif event.keycode == KEY_R:
+				if current_controlled_actor and current_controlled_actor.ability_component:
+					current_controlled_actor.ability_component.execute_ability("ability_r")
+		else: # Key Released
+			if event.keycode == KEY_SHIFT:
+				_ability_pressed = false
+				if _hide_triggered:
+					if current_controlled_actor and current_controlled_actor.ability_component:
+						current_controlled_actor.ability_component.execute_ability("hide", false)
+					_hide_triggered = false
+				else:
+					var hold_duration: int = Time.get_ticks_msec() - _ability_press_time
+					if hold_duration < HOLD_THRESHOLD_MS: # Tap
+						if current_controlled_actor and current_controlled_actor.ability_component:
+							var mouse_pos = _get_mouse_3d_position()
+							var dash_dir = (current_controlled_actor.global_position - mouse_pos).normalized()
+							if dash_dir.length() < 0.1:
+								dash_dir = -current_controlled_actor.global_transform.basis.z
+							dash_dir.y = 0
+							current_controlled_actor.ability_component.execute_ability("disengage", dash_dir)
+
+func _process(_delta: float) -> void:
+	if _ability_pressed and not _hide_triggered:
+		var hold_duration: int = Time.get_ticks_msec() - _ability_press_time
+		if hold_duration >= HOLD_THRESHOLD_MS: # Hold
+			if current_controlled_actor and current_controlled_actor.ability_component:
+				current_controlled_actor.ability_component.execute_ability("hide", true)
+			_hide_triggered = true
 
 ## Selects the first available playable actor to be controlled.
 func select_initial_actor() -> void:

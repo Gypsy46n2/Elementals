@@ -9,24 +9,6 @@ extends Actor
 @export var stealth_modifier: int = 6
 @export var passive_perception: int = 9
 
-var is_hidden: bool = false:
-	set(v):
-		if is_hidden == v: return
-		is_hidden = v
-		if _body:
-			_body.modulate.a = 0.4 if is_hidden else 1.0
-		
-		if is_hidden:
-			print(name, " is now HIDDEN")
-		else:
-			print(name, " is now REVEALED")
-			if movement_component:
-				movement_component.speed_multiplier = 1.0
-
-var is_disengaged: bool = false
-var _hide_check_timer: float = 0.0
-const HIDE_CHECK_INTERVAL: float = 3.0
-
 func _init() -> void:
 	element_type = "goblin"
 	should_bob = false
@@ -71,82 +53,17 @@ func _ready() -> void:
 		sprite.play(&"idle")
 		sprite.offset.y = 24
 
-	if weapon_component:
-		weapon_component.attack_performed.connect(_on_attack_performed)
-
-func _on_attack_performed(_target_position: Vector3) -> void:
-	is_hidden = false
-
-func take_damage(amount: float, type: String = "normal", direction: Vector3 = Vector3.ZERO) -> void:
-	if is_disengaged:
-		print(name, " avoided damage due to Disengage!")
-		return
-	
-	super.take_damage(amount, type, direction)
-	
-	# Being hit reveals the goblin
-	is_hidden = false
-
 func take_nimble_escape_action(type: String = "random") -> void:
 	if is_stunned(): return
 	
 	if type == "random":
 		type = "hide" if _rng.randf() > 0.5 else "disengage"
 	
-	if type == "disengage":
-		_disengage()
-	elif type == "hide":
-		_hide()
-
-func _disengage() -> void:
-	print(name, " uses Nimble Escape: DISENGAGE")
-	is_disengaged = true
-	# Invulnerability frames for a short duration
-	get_tree().create_timer(0.5).timeout.connect(func(): is_disengaged = false)
-	
-	if movement_component:
-		# Push away from nearest enemy or just random dash
-		var dash_dir = -velocity.normalized() if velocity.length() > 0.1 else Vector3(_rng.randf_range(-1,1), 0, _rng.randf_range(-1,1)).normalized()
-		movement_component.apply_external_force(dash_dir * 10.0)
-
-func _hide() -> void:
-	print(name, " uses Nimble Escape: HIDE")
-	is_hidden = true
-	_hide_check_timer = 0.0
+	if ability_component:
+		ability_component.execute_ability(type)
 
 func _process(delta: float) -> void:
 	_update_sprite_animation()
-	
-	if is_hidden:
-		# Crouching speed (half speed)
-		if movement_component:
-			movement_component.speed_multiplier = 0.5
-		
-		if velocity.length() > 0.1:
-			_hide_check_timer += delta
-			if _hide_check_timer >= HIDE_CHECK_INTERVAL:
-				_hide_check_timer = 0.0
-				_perform_stealth_check()
-
-## Periodically checks if the goblin is spotted by any other actors in the arena.
-## If a stealth check fails against an observer's passive perception, the goblin is revealed.
-func _perform_stealth_check() -> void:
-	var arena: Node = _arena_grid
-	if not arena: return
-	
-	for actor_node in arena.actors:
-		if actor_node == self: continue
-		if actor_node is Actor:
-			var dex_val: float = ability_scores_component.dexterity
-			# We use the wisdom of the other actor (the observer) to determine their perception DC.
-			var wis_val: float = actor_node.ability_scores_component.wisdom
-			
-			# Perform a Stealth check for the goblin against the viewer's passive perception (10 + Wis).
-			var result: Dictionary = skill_check_component.perform_check(dex_val, 10.0 + wis_val, "Stealth Check", actor_node)
-			if not result.success:
-				# If the goblin fails the check, they are seen by the observer.
-				is_hidden = false
-				break
 
 func _update_sprite_animation() -> void:
 	if not _body is AnimatedSprite3D: return

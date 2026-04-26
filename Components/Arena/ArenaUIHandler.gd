@@ -93,6 +93,13 @@ func update_for_actor(actor: Actor) -> void:
 		if reticle:
 			reticle.color = _current_actor.get_actor_color()
 		update_ui_text()
+		
+		# Update UI abilities
+		var ability_comp = _current_actor.ability_component
+		if ability_comp and ability_comp.actions.size() > 0:
+			ItemsAutoload.set_selected_ability(ability_comp.actions[0].get_ability_data())
+		else:
+			ItemsAutoload.set_selected_ability(null)
 
 func _on_actor_hp_changed(_hp: float, _m_hp: float) -> void:
 	update_ui_text()
