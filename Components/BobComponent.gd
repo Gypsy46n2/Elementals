@@ -15,6 +15,9 @@ func setup(target: Node3D, base_y: float, mana_container: Node3D = null) -> void
 	_base_visual_y = base_y
 	_mana_particles_container = mana_container
 
+func _physics_process(delta: float) -> void:
+	apply_bob(delta)
+
 func apply_bob(delta: float) -> void:
 	var bob_offset: float = 0.0
 	if should_bob:

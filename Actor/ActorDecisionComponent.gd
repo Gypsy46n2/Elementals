@@ -49,6 +49,11 @@ func _handle_ai_logic(delta: float) -> void:
 	
 	movement_component.move(dir_3d, delta)
 	movement_component.apply_gravity(delta)
+	
+	# AI Combat Logic
+	if actor.mana_component and actor.projectile_component:
+		if actor.mana_component.current_mana >= actor.mana_component.max_mana and not actor.is_stunned():
+			actor.projectile_component.launch_projectile_ai(actor.mana_component)
 
 func _get_obstacle_avoidance_vector() -> Vector3:
 	var avoidance := Vector3.ZERO

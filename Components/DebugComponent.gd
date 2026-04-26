@@ -21,6 +21,18 @@ func _setup_debug_label() -> void:
 	_debug_label.modulate = Color.YELLOW
 	_actor.add_child(_debug_label)
 
+func _process(_delta: float) -> void:
+	if _actor:
+		var debug_state = "Unknown"
+		if "decision_component" in _actor and _actor.decision_component and _actor.decision_component.has_method("get_debug_state"):
+			debug_state = _actor.decision_component.get_debug_state()
+		
+		var is_stunned = false
+		if _actor.has_method("is_stunned"):
+			is_stunned = _actor.is_stunned()
+			
+		update_debug_label(debug_state, is_stunned)
+
 func update_debug_label(state_text: String, is_stunned: bool) -> void:
 	if not _debug_label: return
 	

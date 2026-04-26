@@ -61,6 +61,10 @@ func setup(p_actor: Actor) -> void:
 var actor: Actor
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
+func _process(delta: float) -> void:
+	if actor and actor.mana_component:
+		update_mana_visuals(delta, actor.mana_component.current_mana, actor.mana_component.shot_mana_cost)
+
 # Mana Particle Visuals (Sprite3D based)
 var mana_particles: Array[Sprite3D] = []
 var mana_particles_container: Node3D

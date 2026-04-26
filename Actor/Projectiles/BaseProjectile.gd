@@ -178,7 +178,8 @@ func _pick_up(actor: Actor) -> void:
 		if remaining_charges > 1:
 			amount_to_add = remaining_charges
 			
-		actor.add_weapon_ammo(source_weapon_data, amount_to_add)
+		if actor.weapon_component:
+			actor.weapon_component.add_weapon_ammo(source_weapon_data, amount_to_add)
 		if actor.has_method("apply_pickup_penalty"):
 			actor.apply_pickup_penalty()
 		

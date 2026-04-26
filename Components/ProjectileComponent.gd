@@ -37,12 +37,8 @@ func launch_projectile_at(target_position: Vector3, mana_comp: ManaComponent = n
 	if not _actor.get("_arena_grid"):
 		return
 	
-	if _actor.get("weapon"):
+	if _actor.has_method("_update_attack_direction"):
 		_actor.call("_update_attack_direction", target_position)
-		var w_comp = _actor.get("weapon_component")
-		if w_comp:
-			w_comp.call("swing", target_position)
-		return
 	
 	match current_attack_pattern:
 		AttackPattern.SINGLE:

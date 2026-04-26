@@ -179,6 +179,9 @@ func secondary_attack(target_pos: Vector3, forced: bool = false) -> bool:
 func _perform_attack(target_pos: Vector3, is_secondary: bool) -> void:
 	_cooldown = weapon_data.cooldown
 	
+	if _owner_actor.has_method("_update_attack_direction"):
+		_owner_actor._update_attack_direction(target_pos)
+	
 	var dir = (target_pos - _owner_actor.global_position).normalized()
 	dir.y = 0
 	
@@ -196,4 +199,4 @@ func _on_projectile_launched(is_secondary: bool) -> void:
 		current_ammo -= 1
 		# If it's a thrown weapon (secondary attack), unequip when out of ammo
 		if is_secondary and current_ammo <= 0:
-			_owner_actor.unequip_weapon()
+			unequip_weapon()

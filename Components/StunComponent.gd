@@ -18,6 +18,9 @@ func _setup_stun_visuals() -> void:
 	_stun_visual.set_process(false)
 	_actor.add_child(_stun_visual)
 
+func _process(delta: float) -> void:
+	update_stun(delta)
+
 func stun(duration: float) -> void:
 	_stun_timer = max(_stun_timer, duration)
 

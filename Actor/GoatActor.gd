@@ -1,10 +1,6 @@
 class_name GoatActor
 extends Actor
 
-func _init() -> void:
-	element_type = "goat"
-	should_bob = false
-
 ## Specialized Actor that represents a goat.
 ## Features a charge attack, terrain-based speed modifiers, and specialized visual effects.
 
@@ -54,10 +50,43 @@ var goat_data: GoatData:
 			goat_data.stats_changed.connect(_on_goat_data_changed)
 			_on_goat_data_changed()
 
-func _ready() -> void:
-	super._ready()
-	print(name, ": Ready! is_controlled=", is_controlled)
+func _setup_actor() -> void:
+	element_type = "goat"
+	should_bob = false
+	
 	_on_goat_data_changed()
+	
+	if _body is Sprite3D:
+		if _body.hframes * _body.vframes > 1:
+			_body.frame = _rng.randi_range(0, _body.hframes * _body.vframes - 1)
+	
+	get_tree().node_added.connect(_on_node_added)
+	# Connect to existing goats
+	for node in get_tree().get_nodes_in_group("goats"):
+		if node != self:
+			node.screamed.connect(_on_other_goat_screamed)
+	add_to_group("goats")
+
+	if health_component:
+		health_component.damage_received.connect(_on_damage_received)
+	
+	_fire_particles = GPUParticles3D.new()
+	add_child(_fire_particles)
+	_fire_particles.position = Vector3(0, 0, 0)
+	_fire_particles.emitting = false
+	
+	ActorParticleComponent.setup_gpu_particles(_fire_particles, {
+		"amount": 15,
+		"lifetime": 0.5,
+		"velocity_min": 1.0,
+		"velocity_max": 2.0,
+		"gravity": Vector3(0.0, 2.0, 0.0),
+		"scale_min": 0.1,
+		"scale_max": 0.2,
+		"texture": FIRE_TEXTURE,
+		"emission_shape": ParticleProcessMaterial.EMISSION_SHAPE_BOX,
+		"emission_box_extents": Vector3(0.3, 0.1, 0.3)
+	})
 
 func _on_goat_data_changed() -> void:
 	if not is_node_ready() or not goat_data:
@@ -75,12 +104,7 @@ func _on_goat_data_changed() -> void:
 	ability_scores_component.charisma = goat_data.charisma
 
 	move_speed = 3.0 * ability_scores_component.dexterity
-	if movement_component:
-		movement_component.move_speed = move_speed
-		
-	if health_component:
-		health_component.max_health = 10.0 * ability_scores_component.constitution
-		# Don't reset current health unless it's a fresh spawn
+	max_hp = 10.0 * ability_scores_component.constitution
 	
 	charge_speed = 25.0 + (5.0 * ability_scores_component.strength)
 	charge_distance = 5.0 + (1.0 * ability_scores_component.strength)
@@ -196,56 +220,8 @@ func _create_decision_component() -> ActorDecisionComponent:
 
 signal screamed(pos: Vector3)
 
-func _setup_actor() -> void:
-	## Initializes the goat-specific visual elements, such as fire particles for the burning state.
-	_on_goat_data_changed()
-	
-	if _body is Sprite3D:
-		if _body.hframes * _body.vframes > 1:
-			_body.frame = _rng.randi_range(0, _body.hframes * _body.vframes - 1)
-	
-	get_tree().node_added.connect(_on_node_added)
-	# Connect to existing goats
-	for node in get_tree().get_nodes_in_group("goats"):
-		if node != self:
-			node.screamed.connect(_on_other_goat_screamed)
-	add_to_group("goats")
-
-	if health_component:
-		health_component.damage_received.connect(_on_damage_received)
-	
-	_fire_particles = GPUParticles3D.new()
-	add_child(_fire_particles)
-	_fire_particles.position = Vector3(0, 0, 0)
-	_fire_particles.emitting = false
-	
-	ActorParticleComponent.setup_gpu_particles(_fire_particles, {
-		"amount": 15,
-		"lifetime": 0.5,
-		"velocity_min": 1.0,
-		"velocity_max": 2.0,
-		"gravity": Vector3(0.0, 2.0, 0.0),
-		"scale_min": 0.1,
-		"scale_max": 0.2,
-		"texture": FIRE_TEXTURE,
-		"emission_shape": ParticleProcessMaterial.EMISSION_SHAPE_BOX,
-		"emission_box_extents": Vector3(0.3, 0.1, 0.3)
-	})
-
-func get_actor_color() -> Color:
-	## Returns the thematic color for the goat actor.
-	return Color(0.7, 0.6, 0.4) # A light brown/grey
-
-func get_main_action_progress() -> float:
-	## Overridden to show the headbutt (charge) cooldown progress instead of mana.
-	if _charge_cooldown_timer > 0:
-		return 1.0 - (_charge_cooldown_timer / charge_cooldown)
-	return 1.0
-
 func _process(delta: float) -> void:
 	## Main update loop handling visual updates and cooldowns.
-	super._process(delta)
-	_update_sprite_flip()
 	_update_burning(delta)
 	_update_water_effect(delta)
 	
@@ -473,42 +449,28 @@ func _on_damage_received(_amount: float, type: String) -> void:
 	elif type == "water":
 		_burning_time_left = 0.0
 
-func hit_by_projectile(projectile: BaseProjectile) -> void:
-	# This might be called by legacy systems or if DamageComponent isn't used
-	take_damage(projectile.remaining_charges, projectile.element_type, projectile._direction if "_direction" in projectile else Vector3.ZERO)
-
 func _flash_red() -> void:
 	## Briefly modulates the sprite red to indicate damage.
 	if _body:
 		var sprite = _body as Sprite3D
 		if sprite:
 			var base_color = Color.WHITE
-			var genetic = get_node_or_null("GeneticComponent")
-			if genetic and genetic.goat_data:
-				base_color = genetic.goat_data.base_color
+			if goat_data:
+				base_color = goat_data.base_color
 				
 			var tween = create_tween()
 			tween.tween_property(sprite, "modulate", Color.RED, 0.1)
 			tween.tween_property(sprite, "modulate", base_color, 0.1)
 
-func _update_sprite_flip() -> void:
-	## Flips the sprite horizontally based on its movement relative to the camera view.
-	var camera = get_viewport().get_camera_3d()
-	if not camera:
-		return
-		
-	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
-	if horizontal_velocity.length() > 0.1:
-		var cam_right = camera.global_transform.basis.x
-		var move_dot_right = horizontal_velocity.dot(cam_right)
-		
-		var sprite = _body as Sprite3D
-		if sprite:
-			# Determine horizontal flip based on screen-space direction
-			if move_dot_right > 0.1:
-				sprite.flip_h = false # Moving right
-			elif move_dot_right < -0.1:
-				sprite.flip_h = true # Moving left
+func get_actor_color() -> Color:
+	## Returns the thematic color for the goat actor.
+	return Color(0.7, 0.6, 0.4) # A light brown/grey
+
+func get_main_action_progress() -> float:
+	## Overridden to show the headbutt (charge) cooldown progress instead of mana.
+	if _charge_cooldown_timer > 0:
+		return 1.0 - (_charge_cooldown_timer / charge_cooldown)
+	return 1.0
 
 func _do_tile_effect(_tile: HexTileData) -> void:
 	## Goats do not currently trigger any special effects when entering a tile.

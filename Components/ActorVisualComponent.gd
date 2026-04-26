@@ -5,10 +5,34 @@ extends Node3D
 @export var body: Node3D
 
 var last_dir: StringName = &"down"
+var body_sprite: Sprite3D
 
 func setup(p_actor: Actor, p_body: Node3D) -> void:
 	actor = p_actor
 	body = p_body
+	if body is Sprite3D:
+		body_sprite = body
+
+func _process(_delta: float) -> void:
+	if actor and body_sprite:
+		_update_sprite_flip()
+
+func _update_sprite_flip() -> void:
+	var camera = get_viewport().get_camera_3d()
+	if not camera:
+		return
+		
+	var velocity = actor.velocity
+	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
+	if horizontal_velocity.length() > 0.1:
+		var cam_right = camera.global_transform.basis.x
+		var move_dot_right = horizontal_velocity.dot(cam_right)
+		
+		# Determine horizontal flip based on screen-space direction
+		if move_dot_right > 0.1:
+			body_sprite.flip_h = false # Moving right
+		elif move_dot_right < -0.1:
+			body_sprite.flip_h = true # Moving left
 
 func update_attack_direction(target_position: Vector3) -> void:
 	var dir: Vector3 = (target_position - actor.global_position).normalized()

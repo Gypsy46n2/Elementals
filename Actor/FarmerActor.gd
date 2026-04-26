@@ -69,10 +69,6 @@ func _update_sprite_animation() -> void:
 		sprite.play("idle_" + _last_dir)
 		sprite.flip_h = false
 
-func _process(delta: float) -> void:
-	super._process(delta)
-	_update_sprite_animation()
-
 func herd_goat(goat: GoatActor) -> void:
 	if goat.has_method("_scream"):
 		goat.call("_scream")

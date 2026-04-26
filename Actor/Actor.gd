@@ -231,26 +231,9 @@ func _setup_components() -> void:
 func _create_decision_component() -> ActorDecisionComponent:
 	return ActorDecisionComponent.new()
 
-func _process(delta: float) -> void:
-	particle_component.update_mana_visuals(delta, mana_component.current_mana, mana_component.shot_mana_cost)
-	stun_component.update_stun(delta)
-	var debug_state = decision_component.get_debug_state() if decision_component.has_method("get_debug_state") else "Unknown"
-	debug_component.update_debug_label(debug_state, is_stunned())
-
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	if Engine.is_editor_hint(): return
-		
-	if is_on_floor():
-		tile_interaction_component.update_tile_below()
-		tile_interaction_component.apply_ground_effects()
-	
-	mana_component.regenerate_mana(delta)
 	move_and_slide()
-	bob_component.apply_bob(delta)
-	
-	if not is_controlled:
-		if mana_component.current_mana >= mana_component.max_mana and not is_stunned():
-			projectile_component.launch_projectile_ai(mana_component)
 
 func take_damage(amount: float, type: String = "normal", direction: Vector3 = Vector3.ZERO) -> void:
 	if health_component:
@@ -287,23 +270,18 @@ func prev_attack_pattern() -> void:
 	projectile_component.prev_attack_pattern()
 
 func launch_projectile_at(target_position: Vector3) -> void:
-	projectile_component.launch_projectile_at(target_position, mana_component)
+	if weapon:
+		weapon_component.swing(target_position)
+	else:
+		projectile_component.launch_projectile_at(target_position, mana_component)
 
 func secondary_attack_at(target_position: Vector3) -> void:
 	if weapon_component:
-		visual_component.update_attack_direction(target_position)
 		weapon_component.secondary_attack(target_position)
 
 func throw_weapon_at(target_position: Vector3) -> void:
 	if weapon_component:
-		visual_component.update_attack_direction(target_position)
 		weapon_component.secondary_attack(target_position, true)
-
-func add_weapon_ammo(p_weapon_data: WeaponData, amount: int) -> void:
-	if weapon_component: weapon_component.add_weapon_ammo(p_weapon_data, amount)
-
-func unequip_weapon() -> void:
-	if weapon_component: weapon_component.unequip_weapon()
 
 func apply_pickup_penalty() -> void:
 	if movement_component: movement_component.apply_pickup_penalty()

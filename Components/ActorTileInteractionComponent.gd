@@ -7,6 +7,11 @@ var _actor: Node3D
 func setup(actor: Node3D) -> void:
 	_actor = actor
 
+func _physics_process(_delta: float) -> void:
+	if _actor and _actor.has_method("is_on_floor") and _actor.is_on_floor():
+		update_tile_below()
+		apply_ground_effects()
+
 func update_tile_below() -> void:
 	if _actor and _actor.get("_arena_grid"):
 		_ground_tile = _actor.get("_arena_grid").get_tile_data_at_world_position(_actor.global_transform.origin)

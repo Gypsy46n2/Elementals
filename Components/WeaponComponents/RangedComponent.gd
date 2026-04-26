@@ -17,6 +17,11 @@ func setup(p_weapon: Node3D) -> void:
 func set_weapon_data(data: WeaponData) -> void:
 	_weapon_data = data
 
+## Adds ammo to the current weapon.
+func add_ammo(p_weapon_data: WeaponData, amount: int) -> void:
+	if not _weapon or not _weapon.has_method("add_weapon_ammo"): return
+	_weapon.call("add_weapon_ammo", p_weapon_data, amount)
+
 ## Spawns and initializes a projectile for ranged attacks.
 func launch(target_position: Vector3, _dir: Vector3, is_secondary: bool = false) -> void:
 	if not _weapon_data or not _owner_actor: return

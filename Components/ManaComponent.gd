@@ -23,6 +23,9 @@ func setup(actor: Node3D) -> void:
 	if "element_type" in actor:
 		element_type = actor.get("element_type")
 
+func _physics_process(delta: float) -> void:
+	regenerate_mana(delta)
+
 func regenerate_mana(delta: float, multiplier: float = 1.0) -> void:
 	var current_regen_mult = multiplier
 	
