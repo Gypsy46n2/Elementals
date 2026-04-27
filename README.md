@@ -2,6 +2,11 @@
 
 **Elementals** is an arena combat simulator that blends tactical hex-based combat with creature ranching and breeding mechanics. Lead your team of specialized goats (and other actors) through elemental battlefields, manage your herd back at the ranch, and breed the ultimate champions.
 
+Weapons are working, I have thrown weapon mechanics in play that allow actors to pick up thrown weapons or shot arrows to use themselves.
+A few abilities have been implemented and the stat system seems to be working as intended (so far).
+
+Actual breeding and capture mechanics are broken at the moment.
+
 ---
 
 ## 🎮 Core Gameplay Loops
