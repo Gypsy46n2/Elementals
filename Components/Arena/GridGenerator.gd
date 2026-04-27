@@ -109,7 +109,6 @@ func setup_farmstead() -> void:
 		var interior_center = farmstead_interior_tiles[0] if not farmstead_interior_tiles.is_empty() else house_tile
 		var player = arena.actor_spawner.spawn_selected_actor_at_tile(interior_center)
 		if player:
-			player.is_playable = true
 			if player.has_node("ActorController"):
 				var controller = player.get_node("ActorController")
 				if "farm_center" in controller:

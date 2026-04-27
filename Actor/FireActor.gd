@@ -11,7 +11,8 @@ func _init() -> void:
 
 func _ready() -> void:
 	super._ready()
-	faction_component.setup(FactionComponent.Faction.MONSTERS)
+	if faction_component.faction == FactionComponent.Faction.NEUTRAL:
+		faction_component.setup(FactionComponent.Faction.MONSTERS)
 	if visual_component:
 		visual_component.mana_particle_texture = MANA_TEXTURE
 		visual_component.hide_body = true

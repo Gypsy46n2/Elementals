@@ -1,3 +1,4 @@
+
 class_name GoatActor
 extends Actor
 
@@ -51,18 +52,14 @@ var goat_data: GoatData:
 			_on_goat_data_changed()
 
 func _ready() -> void:
-	# Update actor size based on body type
-	match goat_data.body_type:
-		GoatData.BodyType.SMALL: actor_size = Size.SMALL
-		GoatData.BodyType.MEDIUM: actor_size = Size.MEDIUM
-		GoatData.BodyType.LARGE: actor_size = Size.LARGE
-	
 	super._ready()
-	faction_component.setup(FactionComponent.Faction.WILDLIFE)
+	if faction_component.faction == FactionComponent.Faction.NEUTRAL:
+		faction_component.setup(FactionComponent.Faction.WILDLIFE)
 	element_type = "goat"
 	should_bob = false
 	
-	_on_goat_data_changed()
+	if goat_data:
+		_on_goat_data_changed()
 	
 	if _body is Sprite3D:
 		if _body.hframes * _body.vframes > 1:
@@ -98,7 +95,7 @@ func _ready() -> void:
 
 
 func _on_goat_data_changed() -> void:
-	if not is_node_ready() or not goat_data:
+	if not goat_data or not _body:
 		return
 	
 	# Visuals

@@ -4,11 +4,21 @@ extends Node
 ## Delegating work to specialized components to avoid god-object patterns.
 
 # Components
-var herd_manager: Node
-var economy_manager: Node
-var progression_manager: Node
-var save_manager: Node
-var breeding_manager: Node
+var herd_manager: HerdComponent
+var economy_manager: EconomyComponent
+var progression_manager: ProgressionComponent
+var save_manager: SaveComponent
+var breeding_manager: BreedingComponent
+
+var herd: Array[GoatData]:
+	get: return herd_manager.herd
+
+var gold: int:
+	get: return economy_manager.gold
+	set(v): economy_manager.gold = v
+
+var current_day: int:
+	get: return progression_manager.current_day
 
 const MAX_TEAM_SIZE = 4
 

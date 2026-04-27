@@ -19,10 +19,6 @@ var selected_doe: GoatData
 var selected_buck: GoatData
 
 func _ready() -> void:
-	if not has_node("/root/GoatManager"):
-		push_error("Ranch: GoatManager autoload not found!")
-		return
-		
 	GameEvents.herd_updated.connect(refresh_ui)
 	GameEvents.day_advanced.connect(_on_day_advanced)
 	GameEvents.gold_changed.connect(_on_gold_changed)
@@ -36,10 +32,9 @@ func _ready() -> void:
 	close_cheat_button.pressed.connect(func(): cheat_panel.visible = false)
 	max_level_goat_button.pressed.connect(_on_max_level_goat_pressed)
 	
-	var gm = get_node("/root/GoatManager")
 	refresh_ui()
-	_on_gold_changed(gm.gold)
-	_on_day_advanced(gm.current_day)
+	_on_gold_changed(GoatManager.gold)
+	_on_day_advanced(GoatManager.current_day)
 	
 	# Ensure mouse is visible
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -47,11 +42,8 @@ func _ready() -> void:
 func refresh_ui() -> void:
 	_clear_containers()
 	
-	if not has_node("/root/GoatManager"): return
-	var gm = get_node("/root/GoatManager")
-	
 	# Sort herd by name for stability
-	var sorted_herd = gm.herd.duplicate()
+	var sorted_herd = GoatManager.herd.duplicate()
 	sorted_herd.sort_custom(func(a, b): 
 		return a.goat_name < b.goat_name
 	)
@@ -104,29 +96,22 @@ func _update_breeding_selection() -> void:
 	
 	breed_button.disabled = not (selected_doe and selected_buck)
 	
-	if has_node("/root/GoatManager"):
-		var gm = get_node("/root/GoatManager")
-		var selected = gm.get_selected_goats()
-		next_day_button.disabled = selected.is_empty()
-		next_day_button.text = "Enter Arena (%d/%d)" % [selected.size(), GoatManager.MAX_TEAM_SIZE]
+	var selected = GoatManager.get_selected_goats()
+	# next_day_button.disabled = selected.is_empty() # Allow entering without goats
+	# Accessing MAX_TEAM_SIZE from GoatManager autoload instance
+	next_day_button.text = "Enter Arena (%d/%d)" % [selected.size(), GoatManager.MAX_TEAM_SIZE]
 
 func _on_enter_arena_pressed() -> void:
-	var gs = get_node_or_null("/root/GameSettings")
-	if gs:
-		gs.selected_actor_type = "goat"
 	get_tree().change_scene_to_file("res://Play Space/Arena.tscn")
 
 func _on_breed_pressed() -> void:
-	if not has_node("/root/GoatManager"): return
-	var gm = get_node("/root/GoatManager")
-	if gm.breed_goats(selected_doe, selected_buck):
+	if GoatManager.breed_goats(selected_doe, selected_buck):
 		selected_doe = null
 		selected_buck = null
 		refresh_ui()
 
 func _on_next_day_pressed() -> void:
-	if has_node("/root/GoatManager"):
-		get_node("/root/GoatManager").next_day()
+	GoatManager.next_day()
 
 func _on_day_advanced(day: int) -> void:
 	day_label.text = "Day: %d" % day
@@ -138,9 +123,6 @@ func _on_back_pressed() -> void:
 	get_tree().change_scene_to_file("res://UI/MainMenu.tscn")
 
 func _on_max_level_goat_pressed() -> void:
-	if not has_node("/root/GoatManager"): return
-	var gm = get_node("/root/GoatManager")
-	
 	var max_goat = GoatData.new()
 	max_goat.goat_name = "Mega Goat"
 	max_goat.level = 20
@@ -152,6 +134,6 @@ func _on_max_level_goat_pressed() -> void:
 	max_goat.wisdom = 20.0
 	max_goat.charisma = 20.0
 	
-	gm.add_goat(max_goat)
+	GoatManager.add_goat(max_goat)
 	cheat_panel.visible = false
 	refresh_ui()

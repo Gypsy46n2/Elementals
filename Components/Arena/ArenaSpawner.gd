@@ -1,4 +1,4 @@
-class_name ArenaSpawner
+class_name ArenaSpawnerComponent
 extends Node
 
 var arena: Node3D # ArenaGrid
@@ -27,8 +27,11 @@ func spawn_initial_actors() -> void:
 			var g_tile = _get_random_spawn_tile()
 			if g_tile:
 				var goat = spawn_actor_at_tile("goat", g_tile)
-				if goat and goat is GoatActor:
-					goat.goat_data = goat_data
+				if goat and goat is Actor:
+					goat.faction_component.setup(FactionComponent.Faction.PLAYER)
+					goat.is_playable = true
+					if goat is GoatActor:
+						goat.goat_data = goat_data
 
 func get_selected_actor_scene() -> PackedScene:
 	var gs = get_node_or_null("/root/GameSettings")
@@ -64,13 +67,23 @@ func spawn_scarecrow() -> void:
 			dummy.transform.origin = n.position + Vector3(0, arena._get_tile_surface_y(n), 0)
 			arena.add_child(dummy)
 			arena.actors.append(dummy)
+			_log_spawn(dummy, "scarecrow")
 			break
 
 func spawn_selected_actor_at_tile(tile: HexTileData) -> Node3D:
+	var gs = get_node_or_null("/root/GameSettings")
+	var type = "farmer"
+	if gs:
+		type = gs.selected_actor_type
+		
 	var scene = get_selected_actor_scene()
 	if scene:
 		var actor = scene.instantiate()
 		actor.transform.origin = tile.position + Vector3(0, arena._get_tile_surface_y(tile) + 1.0, 0)
+		
+		if actor is Actor:
+			actor.is_playable = true
+		
 		arena.add_child(actor)
 		arena.actors.append(actor)
 		
@@ -82,10 +95,8 @@ func spawn_selected_actor_at_tile(tile: HexTileData) -> Node3D:
 			actor.goat_data.goat_name = "Player Goat"
 		
 		# Set default weapon for player
-		var gs = get_node_or_null("/root/GameSettings")
 		var wl = get_node_or_null("/root/ItemsAutoload")
 		if gs and wl:
-			var type = gs.selected_actor_type
 			var default_weapon_name = "Quarterstaff"
 			if type == "goblin": default_weapon_name = "Dagger"
 			
@@ -93,7 +104,8 @@ func spawn_selected_actor_at_tile(tile: HexTileData) -> Node3D:
 				if w.name == default_weapon_name:
 					wl.set_selected_weapon(w)
 					break
-			
+		
+		_log_spawn(actor, type)
 		return actor
 	return null
 
@@ -111,8 +123,16 @@ func spawn_actor_at_tile(type: String, tile: HexTileData) -> Node3D:
 		actor.transform.origin = tile.position + Vector3(0, arena._get_tile_surface_y(tile) + 1.0, 0)
 		arena.add_child(actor)
 		arena.actors.append(actor)
+		_log_spawn(actor, type)
 		return actor
 	return null
+
+func _log_spawn(actor: Node, type_name: String) -> void:
+	if not actor or not actor is Actor: return
+	var faction_name: String = "Unknown"
+	if actor.faction_component:
+		faction_name = FactionComponent.Faction.keys()[actor.faction_component.faction]
+	print("[%s] of [%s] spawned in" % [type_name.capitalize(), faction_name.capitalize()])
 
 func _get_random_spawn_tile() -> HexTileData:
 	if not arena or arena.tile_data_grid.is_empty(): return null

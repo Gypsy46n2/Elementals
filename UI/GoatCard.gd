@@ -96,11 +96,9 @@ func _handle_selection() -> void:
 	super._handle_selection()
 
 func _toggle_arena_selection() -> void:
-	if has_node("/root/GoatManager"):
-		var gm = get_node("/root/GoatManager")
-		gm.toggle_selection(goat_data)
-		# No need to manually update UI here as GoatManager emits herd_updated
-		# which causes Ranch to refresh all cards.
+	GoatManager.toggle_selection(goat_data)
+	# No need to manually update UI here as GoatManager emits herd_updated
+	# which causes Ranch to refresh all cards.
 
 func _on_name_submitted(new_text: String) -> void:
 	if goat_data:

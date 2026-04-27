@@ -27,7 +27,7 @@ var tile_system: TileSystem
 var physics: ArenaPhysics
 var tile_interaction: ArenaTileInteractionComponent
 var ui_component: Node # ArenaUIHandler
-var actor_spawner: Node # ArenaSpawner
+var actor_spawner: ArenaSpawnerComponent
 var player_input: PlayerInputComponent
 var grid_generator: GridGenerator
 
@@ -66,9 +66,9 @@ func _ready() -> void:
 	_setup_components()
 	grid_generator.initialize_grid()
 	_setup_physics()
+	grid_generator.setup_farmstead()
 	if actor_spawner:
 		actor_spawner.spawn_initial_actors()
-	grid_generator.setup_farmstead()
 	add_to_group("arena")
 	
 	if player_input:
@@ -100,7 +100,7 @@ func _setup_components() -> void:
 	tile_interaction.setup(self)
 	add_child(tile_interaction)
 	
-	actor_spawner = ArenaSpawner.new()
+	actor_spawner = ArenaSpawnerComponent.new()
 	actor_spawner.name = "ArenaSpawner"
 	add_child(actor_spawner)
 	
