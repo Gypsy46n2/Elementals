@@ -110,10 +110,10 @@ func setup_farmstead() -> void:
 		var player = arena.actor_spawner.spawn_selected_actor_at_tile(interior_center)
 		if player:
 			player.is_playable = true
-			if player.has_node("DecisionComponent"):
-				var decision = player.get_node("DecisionComponent")
-				if "farm_center" in decision:
-					decision.farm_center = interior_center.position
+			if player.has_node("ActorController"):
+				var controller = player.get_node("ActorController")
+				if "farm_center" in controller:
+					controller.farm_center = interior_center.position
 	
 	# Spawn Fences on the rest of the perimeter
 	var fences: Array[Node3D] = []

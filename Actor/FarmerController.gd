@@ -1,5 +1,5 @@
-class_name FarmerDecisionComponent
-extends ActorDecisionComponent
+class_name FarmerController
+extends ActorAIController
 
 enum State { PATROLLING, HERDING, RETURNING }
 var current_state: State = State.PATROLLING

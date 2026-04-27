@@ -13,15 +13,18 @@ func _init() -> void:
 	element_type = "goblin"
 	should_bob = false
 	is_playable = false
-	is_friendly = false
 	armor_class = 12
 	move_speed = 3.0
+	actor_size = Size.SMALL
 
-func _create_decision_component() -> ActorDecisionComponent:
-	return GoblinDecisionComponent.new()
+func _create_controller() -> ActorAIController:
+	return GoblinController.new()
 
 func _ready() -> void:
+	actor_size = Size.SMALL
+	actor_size = Size.SMALL
 	super._ready()
+	faction_component.setup(FactionComponent.Faction.GOBLINS)
 	# Stat bonuses
 	ability_scores_component.strength = -1
 	ability_scores_component.dexterity = 2.5

@@ -24,10 +24,11 @@ var tile: HexTileData = null
 func set_tile(p_tile: HexTileData) -> void:
 	tile = p_tile
 var move_speed: float = 8.0 # Slightly faster movement for pinecones
-var movement_component: MovementComponent
 
 ## Tree Health System
 var health_component: HealthComponent
+# movement_component is used for moving pinecones when they are pushed by elements (water/headbutt)
+var movement_component: MovementComponent 
 var fire_damage_accumulator: float = 0.0 # To track 1 HP per second
 
 ## Cap on pinecones per tree: Track the pinecone this tree spawned.

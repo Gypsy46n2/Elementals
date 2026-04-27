@@ -9,7 +9,7 @@ var _is_hiding_intent: bool = false
 var _hide_check_timer: float = 0.0
 const HIDE_CHECK_INTERVAL: float = 3.0
 
-func _init(p_actor: Actor, p_component: AbilityComponent) -> void:
+func _init(p_actor: Actor, p_component: Node) -> void:
 	super(p_actor, p_component)
 	ability_name = "Nimble Escape"
 	ability_description = "A versatile maneuver allowing the user to Disengage or Hide."

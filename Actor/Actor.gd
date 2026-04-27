@@ -6,8 +6,18 @@ extends CharacterBody3D
 
 @export_group("Identity")
 @export var is_playable: bool = true
-@export var is_friendly: bool = true
 @export var element_type: String = "none"
+
+var is_friendly: bool:
+	get:
+		if not faction_component: return true
+		return faction_component.faction == FactionComponent.Faction.PLAYER or faction_component.faction == FactionComponent.Faction.FARMSTEAD
+	set(v):
+		# Legacy setter support if needed, but we should migrate
+		pass
+
+enum Size { SMALL, MEDIUM, LARGE }
+@export var actor_size: Size = Size.MEDIUM
 
 @export_group("Stats")
 @export var move_speed: float = 3.0:
@@ -59,7 +69,7 @@ extends CharacterBody3D
 
 var health_component: HealthComponent
 var movement_component: MovementComponent
-var decision_component: Node
+var controller: ActorController
 var projectile_component: ProjectileComponent
 var stun_component: StunComponent
 var mana_component: ManaComponent
@@ -70,6 +80,7 @@ var weapon_component: WeaponComponent
 var visual_component: ActorVisualComponent
 var particle_component: ActorParticleComponent
 var ability_component: AbilityComponent
+var faction_component: FactionComponent
 
 var ability_scores_component: AbilityScoresComponent
 var skill_check_component: SkillCheckComponent
@@ -77,7 +88,7 @@ var skill_check_component: SkillCheckComponent
 var is_controlled: bool = false:
 	set(value):
 		is_controlled = value
-		if decision_component: decision_component.is_controlled = value
+		if controller: controller.is_controlled = value
 		if movement_component: movement_component.is_controlled = value
 		if weapon_component and weapon_component.has_method("on_control_changed"):
 			weapon_component.on_control_changed(value)
@@ -146,10 +157,12 @@ func _setup_components() -> void:
 	movement_component.is_controlled = is_controlled
 	movement_component.move_speed = move_speed
 	
-	decision_component = _add_comp(_create_decision_component())
-	decision_component.movement_component = movement_component
-	decision_component.actor = self
-	decision_component.is_controlled = is_controlled
+	controller = _create_controller()
+	controller.name = "ActorController"
+	_add_comp(controller)
+	controller.movement_component = movement_component
+	controller.actor = self
+	controller.is_controlled = is_controlled
 
 	# 4. Mana & Stun
 	mana_component = _add_comp(ManaComponent.new())
@@ -196,13 +209,23 @@ func _setup_components() -> void:
 	ability_component.setup(self)
 	weapon_component.attack_performed.connect(func(_pos): ability_component.on_attack_performed())
 
+	faction_component = _add_comp(FactionComponent.new())
+	# Default setup - will be overridden by subclasses
+	faction_component.setup(FactionComponent.Faction.PLAYER if is_playable else FactionComponent.Faction.NEUTRAL)
+
+func is_ally(other: Node) -> bool:
+	return faction_component.is_ally(other)
+
+func is_enemy(other: Node) -> bool:
+	return faction_component.is_enemy(other)
+
 # Helper for adding and returning components
 func _add_comp(comp: Node) -> Node:
 	add_child(comp)
 	return comp
 
-func _create_decision_component() -> ActorDecisionComponent:
-	return ActorDecisionComponent.new()
+func _create_controller() -> ActorAIController:
+	return ActorAIController.new()
 
 func _physics_process(_delta: float) -> void:
 	if Engine.is_editor_hint(): return
@@ -238,8 +261,8 @@ func respawn() -> void:
 	
 	global_transform.origin = _origin + Vector3(0, 0.5, 0)
 	velocity = Vector3.ZERO
-	if decision_component:
-		decision_component.set("_movement_target", _origin)
+	if controller:
+		controller.set("_movement_target", _origin)
 	
 	force_update_transform()
 

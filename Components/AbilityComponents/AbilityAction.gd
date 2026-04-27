@@ -4,14 +4,14 @@ extends RefCounted
 ## Base class for special abilities handled by the AbilityComponent.
 
 var actor: Actor
-var component: AbilityComponent
+var component: Node
 
 var ability_name: String = ""
 var ability_description: String = ""
 var ability_usage: String = ""
 var ability_icon: Texture2D = null
 
-func _init(p_actor: Actor, p_component: AbilityComponent) -> void:
+func _init(p_actor: Actor, p_component: Node) -> void:
 	actor = p_actor
 	component = p_component
 
@@ -34,3 +34,8 @@ func on_damage_taken() -> void:
 
 func on_attack_performed() -> void:
 	pass
+
+## Called when the actor is targeted by an attack roll.
+## Returns the actual target of the attack (usually 'actor' unless redirected).
+func on_targeted_by_attack(_attacker: Actor) -> Actor:
+	return actor

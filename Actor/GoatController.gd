@@ -1,5 +1,5 @@
-class_name GoatDecisionComponent
-extends ActorDecisionComponent
+class_name GoatController
+extends ActorAIController
 
 ## Specialized AI for goats to make them rowdy and rambunctious.
 ## They seek out other actors, scream at them, and headbutt them.
@@ -264,11 +264,11 @@ func _find_nearby_actor() -> Node3D:
 	
 	var arena_grid = actor.get("_arena_grid")
 	for other in arena_grid.get("actors"):
-		if not is_instance_valid(other) or other == actor or other.get("is_friendly") == true:
+		if not is_instance_valid(other) or other == actor:
 			continue
 		
-		# Only target enemies (non-goats)
-		possible_targets.append(other)
+		if actor.is_enemy(other):
+			possible_targets.append(other)
 			
 	if possible_targets.is_empty():
 		return null

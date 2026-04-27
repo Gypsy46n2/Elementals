@@ -51,7 +51,14 @@ var goat_data: GoatData:
 			_on_goat_data_changed()
 
 func _ready() -> void:
+	# Update actor size based on body type
+	match goat_data.body_type:
+		GoatData.BodyType.SMALL: actor_size = Size.SMALL
+		GoatData.BodyType.MEDIUM: actor_size = Size.MEDIUM
+		GoatData.BodyType.LARGE: actor_size = Size.LARGE
+	
 	super._ready()
+	faction_component.setup(FactionComponent.Faction.WILDLIFE)
 	element_type = "goat"
 	should_bob = false
 	
@@ -114,9 +121,15 @@ func _on_goat_data_changed() -> void:
 	# Scale Body
 	var s = 1.5
 	match goat_data.body_type:
-		GoatData.BodyType.SMALL: s = 1.2
-		GoatData.BodyType.MEDIUM: s = 1.5
-		GoatData.BodyType.LARGE: s = 1.8
+		GoatData.BodyType.SMALL: 
+			s = 1.2
+			actor_size = Size.SMALL
+		GoatData.BodyType.MEDIUM: 
+			s = 1.5
+			actor_size = Size.MEDIUM
+		GoatData.BodyType.LARGE: 
+			s = 1.8
+			actor_size = Size.LARGE
 	
 	if _body:
 		_body.scale = Vector3.ONE * s
@@ -217,8 +230,8 @@ const FIRE_TEXTURE = preload("res://assets/generated/fire_particle_1774823455.pn
 const THWAK_TEXTURE = preload("res://assets/generated/thwak_popup_frame_0_1774916398.png")
 const SCREAM_TEXTURE = preload("res://assets/generated/scream_bubble_frame_0_1774821924.png")
 
-func _create_decision_component() -> ActorDecisionComponent:
-	return GoatDecisionComponent.new()
+func _create_controller() -> ActorAIController:
+	return GoatController.new()
 
 signal screamed(pos: Vector3)
 

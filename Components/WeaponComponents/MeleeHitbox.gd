@@ -80,21 +80,26 @@ func _handle_hit(target: Node3D, _dir: Vector3) -> void:
 	var skill_check = _owner_actor.get("skill_check_component")
 	if not skill_check: return
 	
-	var target_ac = target.get("armor_class") if target.get("armor_class") != null else 10
-	var result: Dictionary = skill_check.perform_check(ability_score, target_ac, "Attack", target)
+	# Check for target redirection
+	var final_target: Node3D = target
+	if target.get("ability_component"):
+		final_target = target.get("ability_component").get_attack_target(_owner_actor)
 	
-	var impact_dir: Vector3 = (target.global_position - _owner_actor.global_position).normalized()
+	var target_ac = final_target.get("armor_class") if final_target.get("armor_class") != null else 10
+	var result: Dictionary = skill_check.perform_check(ability_score, target_ac, "Attack", final_target)
+	
+	var impact_dir: Vector3 = (final_target.global_position - _owner_actor.global_position).normalized()
 	
 	# Use the check results
 	if result.success:
 		var damage: float = _weapon_data.roll_damage()
-		target.take_damage(damage, "normal", impact_dir)
-		if target.has_method("stun"):
-			target.stun(0.3)
+		final_target.take_damage(damage, "normal", impact_dir)
+		if final_target.has_method("stun"):
+			final_target.stun(0.3)
 		_play_whack()
-		_show_thwak_visual(target.global_position + Vector3(0, 1.0, 0))
+		_show_thwak_visual(final_target.global_position + Vector3(0, 1.0, 0))
 		
-		var movement = target.get("movement_component")
+		var movement = final_target.get("movement_component")
 		if movement:
 			impact_dir.y = 0.2
 			movement.apply_external_force(impact_dir * 8.0)

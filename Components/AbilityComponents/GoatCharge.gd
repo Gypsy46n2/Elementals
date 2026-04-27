@@ -1,7 +1,7 @@
 class_name GoatCharge
 extends AbilityAction
 
-func _init(p_actor: Actor, p_component: AbilityComponent) -> void:
+func _init(p_actor: Actor, p_component: Node) -> void:
 	super(p_actor, p_component)
 	ability_name = "Headbutt Charge"
 	ability_description = "Charge forward with great speed, headbutting anything in your path. Deals damage and knockback."

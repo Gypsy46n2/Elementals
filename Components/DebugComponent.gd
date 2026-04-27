@@ -24,8 +24,8 @@ func _setup_debug_label() -> void:
 func _process(_delta: float) -> void:
 	if _actor:
 		var debug_state = "Unknown"
-		if "decision_component" in _actor and _actor.decision_component and _actor.decision_component.has_method("get_debug_state"):
-			debug_state = _actor.decision_component.get_debug_state()
+		if "controller" in _actor and _actor.controller and _actor.controller.has_method("get_debug_state"):
+			debug_state = _actor.controller.get_debug_state()
 		
 		var is_stunned = false
 		if _actor.has_method("is_stunned"):

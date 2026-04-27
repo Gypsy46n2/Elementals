@@ -11,6 +11,7 @@ extends Node
 
 @export var auto_jump_on_wall: bool = true
 @export var auto_jump_timeout: float = 0.15
+@export var max_velocity_threshold: float = 100.0
 
 signal stuck
 
@@ -38,6 +39,41 @@ func _physics_process(delta: float) -> void:
 	if target is CharacterBody3D and external_velocity.length_squared() > 0.001:
 		target.velocity += external_velocity
 		external_velocity = Vector3.ZERO
+	
+	if target is CharacterBody3D:
+		var cb: CharacterBody3D = target as CharacterBody3D
+		
+		# WORKAROUND: The following safety checks are implemented because RedirectAttack.gd 
+		# occasionally applies extreme forces that launch actors (especially goblins) 
+		# out of the map or into the ground.
+		
+		# 1. High Velocity Check: Catch actors being "sent into space"
+		var high_velocity: bool = cb.velocity.length() > max_velocity_threshold
+		
+		# 2. Floor Check: Catch actors that have glitched under the hex tiles
+		var under_floor: bool = false
+		var surface_y: float = 0.0
+		var arena: Node = target.get("_arena_grid")
+		if arena:
+			var tile: Object = arena.call("get_tile_at_world_position", cb.global_position)
+			if tile:
+				surface_y = arena.call("_get_tile_surface_y", tile)
+				if cb.global_position.y < surface_y - 0.5: # Tolerance of 0.5 units
+					under_floor = true
+		
+		# If either safety condition is met, log the event and reset the actor
+		if high_velocity or under_floor:
+			var reason = "High velocity" if high_velocity else "Under floor"
+			if high_velocity and under_floor: reason = "High velocity and Under floor"
+			
+			printerr("MovementComponent: ", reason, " detected on ", cb.name, 
+				" Vel: ", cb.velocity, 
+				" Pos: ", cb.global_position, 
+				" Surface Y: ", surface_y, 
+				". Resetting.")
+				
+			cb.velocity = Vector3.ZERO
+			cb.global_position.y = surface_y
 		
 	if _is_interpolating:
 		_process_interpolation(delta)
@@ -139,7 +175,7 @@ func get_move_speed() -> float:
 func get_jump_force() -> float:
 	return jump_force
 
-func stop(delta: float) -> void:
+func stop(delta: float = 0.0) -> void:
 	if target is CharacterBody3D:
 		move(Vector3.ZERO, delta)
 	else:

@@ -237,8 +237,13 @@ func _on_body_entered(body: Node3D) -> void:
 	
 	var can_damage: bool = body is Actor or body.has_method("take_damage") or DamageComponent.find_health_component(body)
 	if can_damage:
-		_apply_hit_damage(body)
-		_stick(body if body is Actor else null)
+		var final_target: Node3D = body
+		if body is Actor and body.ability_component:
+			var attacker: Actor = caster if caster is Actor else null
+			final_target = body.ability_component.get_attack_target(attacker)
+			
+		_apply_hit_damage(final_target)
+		_stick(final_target if final_target is Actor else null)
 	else:
 		_stick()
 

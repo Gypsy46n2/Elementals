@@ -1,7 +1,7 @@
-class_name GoblinDecisionComponent
-extends ActorDecisionComponent
+class_name GoblinController
+extends ActorAIController
 
-## Specialized decision component for Goblins.
+## Specialized controller for Goblins.
 ## Goblins use Nimble Escape to hide or disengage.
 
 var _nimble_escape_timer: float = 0.0
@@ -33,7 +33,7 @@ func _update_nimble_escape(delta: float) -> void:
 	
 	for a in arena.actors:
 		if a == actor: continue
-		if a is Actor:
+		if a is Actor and actor.is_enemy(a):
 			var d = actor.global_position.distance_to(a.global_position)
 			if d < min_dist:
 				min_dist = d
@@ -65,11 +65,11 @@ func _check_for_attack() -> void:
 	var arena = actor._arena_grid
 	if not arena: return
 	
-	# Try to find a target (Friendlies)
+	# Try to find a target (Enemies)
 	var target: Actor = null
 	for a in arena.actors:
 		if a == actor: continue
-		if a is Actor and a.is_friendly:
+		if a is Actor and actor.is_enemy(a):
 			target = a
 			break
 	

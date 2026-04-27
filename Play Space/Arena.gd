@@ -131,7 +131,7 @@ func _on_actor_died(e: Node3D) -> void:
 		if player_input:
 			player_input.next_actor()
 	
-	# Only check for extinction if a friendly unit just died
+	# Only check for extinction if a player-allied unit just died
 	if e is Actor and e.is_friendly:
 		var friendlies_left = false
 		for actor in actors:

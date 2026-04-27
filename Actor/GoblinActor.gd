@@ -7,7 +7,7 @@ extends Actor
 func _init() -> void:
 	element_type = "goblin"
 	is_playable = false
-	is_friendly = false
 
-func _create_decision_component() -> ActorDecisionComponent:
-	return GoblinDecisionComponent.new()
+func _ready() -> void:
+	super._ready()
+	faction_component.setup(FactionComponent.Faction.GOBLINS)

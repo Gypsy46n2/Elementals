@@ -3,7 +3,6 @@ extends Actor
 
 func _init() -> void:
 	is_playable = false
-	is_friendly = false
 
 func _ready() -> void:
 	max_hp = 999
@@ -11,6 +10,7 @@ func _ready() -> void:
 	should_bob = false
 	
 	super._ready()
+	faction_component.setup(FactionComponent.Faction.FARMSTEAD)
 	
 	if health_component:
 		health_component.bar_visible_always = true

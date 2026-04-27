@@ -14,10 +14,11 @@ func setup(p_arena: Node3D) -> void:
 	arena = p_arena
 
 func spawn_initial_actors() -> void:
-	# Spawn a starting goblin at a random location away from center
-	var spawn_tile = _get_random_spawn_tile()
-	if spawn_tile:
-		spawn_actor_at_tile("goblin", spawn_tile)
+	# Spawn 6 starting goblins at random locations away from center
+	for i in range(6):
+		var spawn_tile = _get_random_spawn_tile()
+		if spawn_tile:
+			spawn_actor_at_tile("goblin", spawn_tile)
 	
 	# Spawn persistent goats from GoatManager if applicable
 	if has_node("/root/GoatManager"):
@@ -73,9 +74,25 @@ func spawn_selected_actor_at_tile(tile: HexTileData) -> Node3D:
 		arena.add_child(actor)
 		arena.actors.append(actor)
 		
+		if actor is Actor:
+			actor.faction_component.setup(FactionComponent.Faction.PLAYER)
+		
 		if actor is GoatActor:
 			actor.goat_data = GoatData.new()
 			actor.goat_data.goat_name = "Player Goat"
+		
+		# Set default weapon for player
+		var gs = get_node_or_null("/root/GameSettings")
+		var wl = get_node_or_null("/root/ItemsAutoload")
+		if gs and wl:
+			var type = gs.selected_actor_type
+			var default_weapon_name = "Quarterstaff"
+			if type == "goblin": default_weapon_name = "Dagger"
+			
+			for w in wl.weapons:
+				if w.name == default_weapon_name:
+					wl.set_selected_weapon(w)
+					break
 			
 		return actor
 	return null
