@@ -16,6 +16,7 @@ extends Node
 signal stuck
 
 var speed_multiplier: float = 1.0
+var armor_speed_multiplier: float = 1.0
 var external_velocity: Vector3 = Vector3.ZERO
 
 var _wall_stuck_timer: float = 0.0
@@ -121,7 +122,7 @@ func move(direction: Vector3, delta: float) -> void:
 		return
 	
 	var cb = target as CharacterBody3D
-	var target_vel = direction * move_speed * speed_multiplier
+	var target_vel = direction * move_speed * speed_multiplier * armor_speed_multiplier
 	
 	# Horizontal movement
 	var horizontal_vel = Vector3(cb.velocity.x, 0, cb.velocity.z)

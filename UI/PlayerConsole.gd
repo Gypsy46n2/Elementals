@@ -4,6 +4,7 @@ extends CanvasLayer
 @onready var scroll_container: ScrollContainer = %ScrollContainer
 @onready var weapon_card: WeaponCard = %WeaponCard
 @onready var ability_card: AbilityCard = get_node_or_null("%AbilityCard")
+@onready var actor_card: ActorCard = get_node_or_null("%ActorCard")
 @onready var list_panel: PanelContainer = %ListPanel
 @onready var debug_list_toggle: CheckBox = %DebugListToggle
 
@@ -18,6 +19,7 @@ func _ready() -> void:
 	
 	ItemsAutoload.weapon_selected.connect(_on_weapon_selected)
 	ItemsAutoload.ability_selected.connect(_on_ability_selected)
+	ItemsAutoload.actor_selected.connect(_on_actor_selected)
 	
 	debug_list_toggle.toggled.connect(_on_debug_toggled)
 	list_panel.visible = debug_list_toggle.button_pressed
@@ -30,6 +32,9 @@ func _ready() -> void:
 			
 	if ItemsAutoload.selected_ability:
 		_on_ability_selected(ItemsAutoload.selected_ability)
+		
+	if ItemsAutoload.selected_actor:
+		_on_actor_selected(ItemsAutoload.selected_actor)
 
 func _on_debug_toggled(p_pressed: bool) -> void:
 	list_panel.visible = p_pressed
@@ -104,6 +109,14 @@ func _on_ability_selected(ability: AbilityData) -> void:
 			ability_card.visible = true
 		else:
 			ability_card.visible = false
+
+func _on_actor_selected(actor: Actor) -> void:
+	if actor_card:
+		if actor:
+			actor_card.set_actor(actor)
+			actor_card.visible = true
+		else:
+			actor_card.visible = false
 
 func _scroll_to_label(label: Label) -> void:
 	if not is_instance_valid(label): return

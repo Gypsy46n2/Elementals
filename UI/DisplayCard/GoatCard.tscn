@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=3 format=3 uid="uid://cxuqt0d6aexr2"]
 
-[ext_resource type="Script" path="res://UI/GoatCard.gd" id="1_p4l2m"]
+[ext_resource type="Script" path="res://UI/DisplayCard/GoatCard.gd" id="1_p4l2m"]
 [ext_resource type="PackedScene" path="res://UI/GoatRenderer.tscn" id="2_r8y2u"]
 
 [node name="GoatCard" type="PanelContainer"]
@@ -36,7 +36,6 @@ mouse_filter = 2
 
 [node name="StatsLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-mouse_filter = 2
 theme_override_font_sizes/font_size = 12
 text = "Doe - Age: 0
 Strength: 1.0
@@ -48,6 +47,6 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 10
+focus_mode = 0
 theme_override_font_sizes/font_size = 12
 text = "Select for Arena"
-focus_mode = 0

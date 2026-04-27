@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://cxm131gyigp1n"]
 
-[ext_resource type="PackedScene" uid="uid://c4bn2q222h0rt" path="res://UI/WeaponCard.tscn" id="2_w4v5c"]
+[ext_resource type="PackedScene" uid="uid://c4bn2q222h0rt" path="res://UI/DisplayCard/WeaponCard.tscn" id="2_w4v5c"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o6x3k"]
 bg_color = Color(0, 0, 0, 0.4)

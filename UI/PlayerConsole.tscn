@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3 uid="uid://dfugpdrbvku5s"]
 
-[ext_resource type="Script" path="res://UI/PlayerConsole.gd" id="1_p_console"]
-[ext_resource type="PackedScene" path="res://UI/WeaponCard.tscn" id="2_w4v5c"]
+[ext_resource type="Script" uid="uid://ugsediyp1jss" path="res://UI/PlayerConsole.gd" id="1_p_console"]
+[ext_resource type="PackedScene" uid="uid://c4bn2q222h0rt" path="res://UI/DisplayCard/WeaponCard.tscn" id="2_w4v5c"]
 [ext_resource type="PackedScene" path="res://UI/DisplayCard/AbilityCard.tscn" id="3_a4v5c"]
+[ext_resource type="PackedScene" uid="uid://becy15jcmkmob" path="res://UI/DisplayCard/ActorCard.tscn" id="4_actor_card"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o6x3k"]
 bg_color = Color(0, 0, 0, 0.4)
@@ -97,3 +98,34 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Debug: Show Weapon List"
+
+[node name="ActorCardContainer" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -340.0
+offset_top = -320.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="ActorCard" parent="ActorCardContainer" instance=ExtResource("4_actor_card")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -150.0
+offset_right = 160.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2

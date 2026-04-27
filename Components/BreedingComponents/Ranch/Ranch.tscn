@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://Ranch/Ranch.gd" id="1_ranch"]
+[ext_resource type="Script" uid="uid://w2onaeppvlj5" path="res://Components/BreedingComponents/Ranch/Ranch.gd" id="1_ranch"]
 
 [node name="Ranch" type="Control"]
 layout_mode = 3

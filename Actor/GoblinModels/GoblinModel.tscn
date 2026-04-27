@@ -1,0 +1,82 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Shader" path="res://assets/Shaders/instance_transparency.gdshader" id="1_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_green"]
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/albedo = Color(0.2, 0.6, 0.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dark_green"]
+render_priority = 1
+shader = ExtResource("1_shader")
+shader_parameter/albedo = Color(0.1, 0.3, 0.1, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nose"]
+render_priority = 1
+shader = ExtResource("1_shader")
+shader_parameter/albedo = Color(0.3, 0.7, 0.3, 1)
+
+[node name="GoblinModel" type="Node3D"]
+
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="."]
+use_collision = false
+
+[node name="Body" type="CSGSphere3D" parent="CSGCombiner3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+radius = 0.4
+material = SubResource("ShaderMaterial_green")
+
+[node name="LegL" type="CSGCylinder3D" parent="CSGCombiner3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.1, 0)
+radius = 0.1
+height = 0.2
+material = SubResource("ShaderMaterial_green")
+
+[node name="LegR" type="CSGCylinder3D" parent="CSGCombiner3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.1, 0)
+radius = 0.1
+height = 0.2
+material = SubResource("ShaderMaterial_green")
+
+[node name="ArmL" type="CSGCylinder3D" parent="CSGCombiner3D"]
+transform = Transform3D(0.707107, -0.707107, 0, 0.707107, 0.707107, 0, 0, 0, 1, -0.4, 0.5, 0)
+radius = 0.08
+height = 0.3
+material = SubResource("ShaderMaterial_green")
+
+[node name="ArmR" type="CSGCylinder3D" parent="CSGCombiner3D"]
+transform = Transform3D(0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 0, 0, 1, 0.4, 0.5, 0)
+radius = 0.08
+height = 0.3
+material = SubResource("ShaderMaterial_green")
+
+[node name="Head" type="CSGSphere3D" parent="CSGCombiner3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+radius = 0.6
+material = SubResource("ShaderMaterial_green")
+
+[node name="Nose" type="CSGBox3D" parent="CSGCombiner3D/Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.6)
+size = Vector3(0.15, 0.15, 0.5)
+material = SubResource("ShaderMaterial_nose")
+
+[node name="EarL" type="CSGBox3D" parent="CSGCombiner3D/Head"]
+transform = Transform3D(0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0, 0, 1, -0.6, 0.1, 0)
+size = Vector3(0.6, 0.2, 0.1)
+material = SubResource("ShaderMaterial_green")
+
+[node name="EarR" type="CSGBox3D" parent="CSGCombiner3D/Head"]
+transform = Transform3D(0.965926, -0.258819, 0, 0.258819, 0.965926, 0, 0, 0, 1, 0.6, 0.1, 0)
+size = Vector3(0.6, 0.2, 0.1)
+material = SubResource("ShaderMaterial_green")
+
+[node name="EyebrowL" type="CSGBox3D" parent="CSGCombiner3D/Head"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, -0.25, 0.35, 0.55)
+size = Vector3(0.4, 0.2, 0.1)
+material = SubResource("ShaderMaterial_dark_green")
+
+[node name="EyebrowR" type="CSGBox3D" parent="CSGCombiner3D/Head"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0.25, 0.35, 0.55)
+size = Vector3(0.4, 0.2, 0.1)
+material = SubResource("ShaderMaterial_dark_green")

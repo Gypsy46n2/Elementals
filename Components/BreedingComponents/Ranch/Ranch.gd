@@ -49,7 +49,7 @@ func refresh_ui() -> void:
 	)
 	
 	for goat in sorted_herd:
-		var card = preload("res://UI/GoatCard.tscn").instantiate()
+		var card = preload("res://UI/DisplayCard/ActorCard.tscn").instantiate()
 		card.goat_data = goat
 		card.selected.connect(_on_goat_selected)
 		
@@ -85,12 +85,12 @@ func _on_goat_selected(goat: GoatData) -> void:
 
 func _update_breeding_selection() -> void:
 	if selected_doe:
-		var card = preload("res://UI/GoatCard.tscn").instantiate()
+		var card = preload("res://UI/DisplayCard/ActorCard.tscn").instantiate()
 		card.goat_data = selected_doe
 		selected_doe_card.add_child(card)
 		
 	if selected_buck:
-		var card = preload("res://UI/GoatCard.tscn").instantiate()
+		var card = preload("res://UI/DisplayCard/ActorCard.tscn").instantiate()
 		card.goat_data = selected_buck
 		selected_buck_card.add_child(card)
 	

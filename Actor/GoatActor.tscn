@@ -7,9 +7,9 @@
 [ext_resource type="AudioStream" uid="uid://cssq5sgv227at" path="res://assets/SoundFiles/ElevenLabs_Person_jumping_into_a_pond,_big_water_splash.mp3" id="5_splash"]
 [ext_resource type="AudioStream" uid="uid://p1w0ucmu7w5n" path="res://assets/SoundFiles/Swoosh noise.mp3" id="6_swoosh"]
 [ext_resource type="AudioStream" uid="uid://da7kfmcufs83v" path="res://assets/SoundFiles/Whack.mp3" id="7_whack"]
-[ext_resource type="Script" uid="uid://cc611eyoi8yai" path="res://Components/GeneticComponent.gd" id="8_genetic"]
+[ext_resource type="Script" uid="uid://cc611eyoi8yai" path="res://Components/BreedingComponents/GeneticComponent.gd" id="8_genetic"]
 [ext_resource type="Script" uid="uid://dfuui0forq1w0" path="res://Components/ActorComponents/AbilityScoresComponent.gd" id="9_ability"]
-[ext_resource type="Script" uid="uid://dus202etu102d" path="res://Core/GoatData.gd" id="10_data"]
+[ext_resource type="Script" uid="uid://dus202etu102d" path="res://Components/BreedingComponents/GoatData.gd" id="10_data"]
 
 [sub_resource type="Resource" id="Resource_Goat"]
 script = ExtResource("10_data")

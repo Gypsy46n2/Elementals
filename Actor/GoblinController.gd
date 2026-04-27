@@ -32,6 +32,7 @@ func _update_nimble_escape(delta: float) -> void:
 	var min_dist = 100.0
 	
 	for a in arena.actors:
+		if not is_instance_valid(a): continue
 		if a == actor: continue
 		if a is Actor and actor.is_enemy(a):
 			var d = actor.global_position.distance_to(a.global_position)
@@ -42,13 +43,13 @@ func _update_nimble_escape(delta: float) -> void:
 	if nearest_enemy:
 		if min_dist < 4.0:
 			# Too close! Disengage.
-			if actor.has_method("take_nimble_escape_action"):
-				actor.take_nimble_escape_action("disengage")
+			if actor.ability_component:
+				actor.ability_component.execute_ability("disengage")
 				_nimble_escape_timer = NIMBLE_ESCAPE_COOLDOWN
 		elif min_dist > 8.0 and actor.ability_component and not actor.ability_component.is_hidden:
 			# Far enough to hide.
-			if actor.has_method("take_nimble_escape_action"):
-				actor.take_nimble_escape_action("hide")
+			if actor.ability_component:
+				actor.ability_component.execute_ability("hide")
 				_nimble_escape_timer = NIMBLE_ESCAPE_COOLDOWN
 
 func _handle_ai_logic(delta: float) -> void:
@@ -68,6 +69,7 @@ func _check_for_attack() -> void:
 	# Try to find a target (Enemies)
 	var target: Actor = null
 	for a in arena.actors:
+		if not is_instance_valid(a): continue
 		if a == actor: continue
 		if a is Actor and actor.is_enemy(a):
 			target = a

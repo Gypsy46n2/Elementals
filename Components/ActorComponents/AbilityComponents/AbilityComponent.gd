@@ -1,8 +1,8 @@
 class_name AbilityComponent
 extends Node
 
-## AbilityComponent manages special maneuvers like Hide and Disengage.
-## It handles a collection of AbilityAction objects.
+# AbilityComponent manages special maneuvers like Hide and Disengage.
+# It handles a collection of AbilityAction objects.
 
 var actor: Actor
 var actions: Array[AbilityAction] = []
@@ -26,15 +26,17 @@ var is_disengaged: bool:
 func setup(p_actor: Actor) -> void:
 	actor = p_actor
 	# For now, default to adding NimbleEscape or RedirectAttack if it's a goblin-related actor
-	if actor is GoblinMinion or actor is GoblinActor:
+	if actor.element_type == "goblin":
 		var rng = RandomNumberGenerator.new()
 		rng.randomize()
 		if rng.randf() > 0.5:
-			add_action(preload("res://Components/AbilityComponents/NimbleEscape.gd").new(actor, self))
+			add_action(preload("res://Components/ActorComponents/AbilityComponents/NimbleEscape.gd").new(actor, self))
 		else:
-			add_action(preload("res://Components/AbilityComponents/RedirectAttack.gd").new(actor, self))
-	elif actor is GoatActor:
-		add_action(GoatCharge.new(actor, self))
+			add_action(preload("res://Components/ActorComponents/AbilityComponents/RedirectAttack.gd").new(actor, self))
+	elif actor.element_type == "goat":
+		var GoatChargeClass = load("res://Components/ActorComponents/AbilityComponents/GoatCharge.gd")
+		if GoatChargeClass:
+			add_action(GoatChargeClass.new(actor, self))
 
 func get_attack_target(attacker: Actor) -> Actor:
 	var current_target: Actor = actor

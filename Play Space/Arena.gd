@@ -134,8 +134,8 @@ func _on_actor_died(e: Node3D) -> void:
 	# Only check for extinction if a player-allied unit just died
 	if e is Actor and e.is_friendly:
 		var friendlies_left = false
-		for actor in actors:
-			if actor is Actor and actor.is_friendly:
+		for a in actors:
+			if is_instance_valid(a) and a is Actor and a.is_friendly:
 				friendlies_left = true
 				break
 		
@@ -199,6 +199,14 @@ func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 		
+	# Periodic cleanup of freed actor references (safety measure)
+	if Engine.get_frames_drawn() % 30 == 0:
+		var i = actors.size() - 1
+		while i >= 0:
+			if not is_instance_valid(actors[i]):
+				actors.remove_at(i)
+			i -= 1
+
 	tile_system.process_tiles(delta)
 
 # Proxies elemental application to the ArenaTileInteractionComponent.

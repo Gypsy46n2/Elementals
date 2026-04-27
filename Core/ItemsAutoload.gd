@@ -2,12 +2,17 @@ extends Node
 
 signal weapon_selected(weapon: WeaponData)
 signal ability_selected(ability: AbilityData)
+signal goat_selected(goat: GoatData)
+signal actor_selected(actor: Actor)
 
 var weapons: Array[WeaponData] = []
 var selected_weapon: WeaponData
 
 var abilities: Array[AbilityData] = []
 var selected_ability: AbilityData
+
+var selected_goat: GoatData
+var selected_actor: Actor
 
 func _ready() -> void:
 	_init_weapons()
@@ -116,3 +121,15 @@ func set_selected_weapon(weapon: WeaponData) -> void:
 func set_selected_ability(ability: AbilityData) -> void:
 	selected_ability = ability
 	ability_selected.emit(ability)
+
+func set_selected_goat(goat: GoatData) -> void:
+	selected_goat = goat
+	goat_selected.emit(goat)
+
+func set_selected_actor(actor: Actor) -> void:
+	selected_actor = actor
+	actor_selected.emit(actor)
+	if actor and actor is GoatActor:
+		set_selected_goat(actor.goat_data)
+	else:
+		set_selected_goat(null)

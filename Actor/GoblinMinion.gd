@@ -13,7 +13,6 @@ func _init() -> void:
 	element_type = "goblin"
 	should_bob = false
 	is_playable = false
-	armor_class = 12
 	move_speed = 3.0
 	actor_size = Size.SMALL
 
@@ -21,10 +20,9 @@ func _create_controller() -> ActorAIController:
 	return GoblinController.new()
 
 func _ready() -> void:
-	actor_size = Size.SMALL
-	actor_size = Size.SMALL
 	super._ready()
 	faction_component.setup(FactionComponent.Faction.GOBLINS)
+	
 	# Stat bonuses
 	ability_scores_component.strength = -1
 	ability_scores_component.dexterity = 2.5
@@ -32,6 +30,12 @@ func _ready() -> void:
 	ability_scores_component.intelligence = 0
 	ability_scores_component.wisdom = -1
 	ability_scores_component.charisma = -1
+
+	# Armor Setup: AC 12 (10 base + 2 dex)
+	if armor_class_component:
+		armor_class_component.armor_type = ArmorClassComponent.ArmorType.NONE
+		armor_class_component.armor_value = 10
+		armor_class_component.refresh()
 
 	# Roll HP: 2d6
 	max_hp = float(_rng.randi_range(1, 6) + _rng.randi_range(1, 6))
@@ -55,15 +59,6 @@ func _ready() -> void:
 		sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		sprite.play(&"idle")
 		sprite.offset.y = 24
-
-func take_nimble_escape_action(type: String = "random") -> void:
-	if is_stunned(): return
-	
-	if type == "random":
-		type = "hide" if _rng.randf() > 0.5 else "disengage"
-	
-	if ability_component:
-		ability_component.execute_ability(type)
 
 func _process(delta: float) -> void:
 	_update_sprite_animation()

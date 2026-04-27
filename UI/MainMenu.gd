@@ -107,7 +107,7 @@ func _on_map_settings_button_pressed() -> void:
 		weapon_tab_container.visible = false
 
 func _on_ranch_button_pressed() -> void:
-	get_tree().change_scene_to_file("res://Ranch/Ranch.tscn")
+	get_tree().change_scene_to_file("res://Components/BreedingComponents/Ranch/Ranch.tscn")
 
 func _on_random_seed_toggled(button_pressed: bool) -> void:
 	seed_input.editable = !button_pressed

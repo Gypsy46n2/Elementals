@@ -83,6 +83,7 @@ var ability_component: AbilityComponent
 var faction_component: FactionComponent
 
 var ability_scores_component: AbilityScoresComponent
+var armor_class_component: ArmorClassComponent
 var skill_check_component: SkillCheckComponent
 
 var is_controlled: bool = false:
@@ -181,6 +182,9 @@ func _setup_components() -> void:
 	# 6. RPG Systems
 	ability_scores_component = _add_comp(AbilityScoresComponent.new())
 	ability_scores_component.setup(self)
+
+	armor_class_component = _add_comp(ArmorClassComponent.new())
+	armor_class_component.setup(self)
 
 	skill_check_component = _add_comp(SkillCheckComponent.new())
 	skill_check_component.setup(self)

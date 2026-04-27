@@ -100,6 +100,8 @@ func update_for_actor(actor: Actor) -> void:
 			ItemsAutoload.set_selected_ability(ability_comp.actions[0].get_ability_data())
 		else:
 			ItemsAutoload.set_selected_ability(null)
+			
+		ItemsAutoload.set_selected_actor(_current_actor)
 
 func _on_actor_hp_changed(_hp: float, _m_hp: float) -> void:
 	update_ui_text()

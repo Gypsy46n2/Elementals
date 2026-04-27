@@ -1,9 +1,9 @@
 [gd_scene load_steps=6 format=3 uid="uid://dnr67p6yfynnt"]
 
 [ext_resource type="Script" uid="uid://dvxgv2wmx7qf7" path="res://Actor/GoblinMinion.gd" id="1_goblin"]
+[ext_resource type="PackedScene" path="res://Actor/GoblinModels/GoblinModel.tscn" id="2_model"]
 [ext_resource type="AudioStream" uid="uid://da7kfmcufs83v" path="res://assets/SoundFiles/Whack.mp3" id="3_whack"]
 [ext_resource type="AudioStream" uid="uid://p1w0ucmu7w5n" path="res://assets/SoundFiles/Swoosh noise.mp3" id="4_swoosh"]
-[ext_resource type="SpriteFrames" path="res://Actor/goblin_sprite_frames.tres" id="5_frames"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_goblin"]
 radius = 0.3
@@ -14,12 +14,8 @@ collision_layer = 2
 collision_mask = 3
 script = ExtResource("1_goblin")
 
-[node name="Body" type="AnimatedSprite3D" parent="."]
-pixel_size = 0.02
-billboard = 1
-sprite_frames = ExtResource("5_frames")
-animation = &"idle"
-autoplay = "idle"
+[node name="Body" parent="." instance=ExtResource("2_model")]
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0, 0, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)

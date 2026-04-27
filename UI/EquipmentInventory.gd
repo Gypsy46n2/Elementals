@@ -1,7 +1,7 @@
 extends ScrollContainer
 
 @onready var grid_container: GridContainer = %GridContainer
-const WEAPON_CARD = preload("res://UI/WeaponCard.tscn")
+const WEAPON_CARD = preload("res://UI/DisplayCard/WeaponCard.tscn")
 
 func _ready() -> void:
 	# Small delay to ensure EquipmentManager is initialized

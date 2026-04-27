@@ -37,6 +37,7 @@ func _get_valid_allies() -> Array[Actor]:
 		return result
 		
 	for other in actor._arena_grid.actors:
+		if not is_instance_valid(other): continue
 		var other_actor := other as Actor
 		if not other_actor or other_actor == actor:
 			continue

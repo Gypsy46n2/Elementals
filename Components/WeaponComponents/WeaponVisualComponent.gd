@@ -148,6 +148,29 @@ func _apply_modulation_recursive(node: Node, alpha: float) -> void:
 		node.modulate.a = alpha
 	elif node is GeometryInstance3D:
 		node.transparency = 1.0 - alpha
+		# Support for gl_compatibility renderer via instance uniforms
+		node.set_instance_shader_parameter("instance_alpha", alpha)
+		
+		# Fallback for StandardMaterial3D in Compatibility mode where transparency property is ignored
+		if alpha < 1.0:
+			var mat: Material = null
+			if node is MeshInstance3D:
+				mat = node.get_active_material(0)
+			elif node.get("material") is Material:
+				mat = node.get("material")
+			
+			if mat is StandardMaterial3D:
+				if not node.material_override or not node.material_override.has_meta("is_transparency_override"):
+					var override = mat.duplicate()
+					override.set_meta("is_transparency_override", true)
+					node.material_override = override
+				
+				if node.material_override is StandardMaterial3D:
+					node.material_override.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+					node.material_override.albedo_color.a = alpha
+		else:
+			if node.material_override and node.material_override.has_meta("is_transparency_override"):
+				node.material_override = null
 	
 	for child in node.get_children():
 		_apply_modulation_recursive(child, alpha)

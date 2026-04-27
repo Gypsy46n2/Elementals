@@ -1,0 +1,104 @@
+[gd_scene load_steps=3 format=3 uid="uid://becy15jcmkmob"]
+
+[ext_resource type="Script" uid="uid://crxh7omyleiuo" path="res://UI/DisplayCard/ActorCard.gd" id="1_p4l2m"]
+[ext_resource type="PackedScene" path="res://UI/GoatRenderer.tscn" id="2_r8y2u"]
+
+[node name="ActorCard" type="PanelContainer"]
+custom_minimum_size = Vector2(140, 240)
+offset_right = 140.0
+offset_bottom = 200.0
+mouse_default_cursor_shape = 2
+script = ExtResource("1_p4l2m")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="TopRow" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="NameEdit" type="LineEdit" parent="VBoxContainer/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "Goat Name"
+alignment = 1
+flat = true
+select_all_on_focus = true
+
+[node name="GoatRenderer" parent="VBoxContainer" instance=ExtResource("2_r8y2u")]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+
+[node name="InfoLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Info"
+horizontal_alignment = 1
+
+[node name="StatsGrid" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 2
+columns = 3
+
+[node name="StrLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "STR: 0"
+horizontal_alignment = 1
+
+[node name="DexLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "DEX: 0"
+horizontal_alignment = 1
+
+[node name="ConLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "CON: 0"
+horizontal_alignment = 1
+
+[node name="IntLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.6, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "INT: 0"
+horizontal_alignment = 1
+
+[node name="WisLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.6, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "WIS: 0"
+horizontal_alignment = 1
+
+[node name="ChaLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "CHA: 0"
+horizontal_alignment = 1
+
+[node name="ACLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "AC: 10 (None)"
+horizontal_alignment = 1
+
+[node name="ArenaCheckBox" type="CheckBox" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 10
+focus_mode = 0
+theme_override_font_sizes/font_size = 12
+text = "Select for Arena"

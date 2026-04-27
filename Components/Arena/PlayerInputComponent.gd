@@ -102,7 +102,9 @@ func update_camera_target() -> void:
 		return
 		
 	var target = arena.actors[current_target_index % arena.actors.size()]
-	
+	if not is_instance_valid(target):
+		return
+		
 	var _camera_follower = arena.get_node_or_null("Camera3D")
 	if _camera_follower and _camera_follower is CameraFollower:
 		_camera_follower.set_target(target)
@@ -140,7 +142,7 @@ func _find_playable_actor(start_index: int, step: int) -> int:
 			idx += n
 		
 		var a = arena.actors[idx]
-		if a is Actor and a.is_playable:
+		if is_instance_valid(a) and a is Actor and a.is_playable:
 			return idx
 	return -1
 
