@@ -1,4 +1,6 @@
 # Elementals: Arena & Ranch
+<img width="1152" height="648" alt="image" src="https://github.com/user-attachments/assets/4e340b84-57d7-4a75-a1d4-c8f0fc56fdb0" />
+
 
 **Elementals** is an arena combat simulator that blends tactical hex-based combat with creature ranching and breeding mechanics. Lead your team of specialized goats (and other actors) through elemental battlefields, manage your herd back at the ranch, and breed the ultimate champions.
 
@@ -50,5 +52,6 @@ Between battles, return to your ranch to manage your growing herd.
 *   **Expanded Ranching**: More buildings (Fences, Barns) and interaction types.
 *   **Deeper Genetic Traits**: More complex inheritance patterns and unique mutations.
 *   **Elemental Magic**: More elemental types (Earth, Air) and complex tile reactions.
+*   **Expanded Map Generation** I plan to rework the basic map generation to create a tesselating pattern with varying noisemaps for different biomes and map types to explore
 
 
