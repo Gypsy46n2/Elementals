@@ -41,9 +41,10 @@ Between battles, return to your ranch to manage your growing herd.
 ## 🚀 Getting Started
 
 1.  **Main Menu**: Start a new game or continue your progress.
-2.  **The Ranch**: Select your team of up to 4 goats. Check their stats and ensure they are ready for combat.
-3.  **Enter Arena**: Battle against enemies like Goblins. Use the environment to your advantage—lure enemies into fire or use height for better positioning.
-4.  **Advance the Day**: Back at the ranch, advance the day to process pregnancies and recover.
+2.  **Character Select** Farmers and Goblins are currently working, playing farmer is for masochists.
+3.  **The Ranch**: [Currently Busted] Select your team of up to 4 goats. Check their stats and ensure they are ready for combat.
+4.  **Enter Arena**: Battle against enemies like Goblins. Use the environment to your advantage—lure enemies into fire or use height for better positioning.
+5.  **Advance the Day**: Back at the ranch, advance the day to process pregnancies and recover.
 
 ---
 
