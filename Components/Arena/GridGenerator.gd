@@ -66,7 +66,7 @@ func initialize_grid() -> void:
 			var state: int
 			if dist == radius:
 				state = TileConstants.State.STONE
-			elif x > total_w / 2 and y > total_h / 2:
+			elif arena.noise.get_noise_2d(float(x), float(y)) > 0.2:
 				state = TileConstants.State.DIRT
 			else:
 				state = TileConstants.State.GRASS
