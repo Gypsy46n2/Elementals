@@ -13,6 +13,7 @@ var farmstead_perimeter_tiles: Array[HexTileData] = []
 var house_tile: HexTileData = null
 
 var _neighbor_cache: Dictionary = {}
+var _tile_lookup: Dictionary = {}
 
 func setup(p_arena: ArenaGrid) -> void:
 	arena = p_arena
@@ -25,11 +26,17 @@ func initialize_grid() -> void:
 	var total_w = w + 2
 	var total_tiles = total_h * total_w
 	
+	var radius = min(w, h) / 2
+	var center_x = total_w / 2
+	var center_y = total_h / 2
+	var center_axial = offset_to_axial(center_x, center_y)
+	
 	arena.renderer.setup(total_tiles)
 	
 	arena.tile_data_grid.clear()
 	arena.tile_counts.clear()
 	_neighbor_cache.clear()
+	_tile_lookup.clear()
 	for state in TileConstants.State.values():
 		arena.tile_counts[state] = 0
 	
@@ -47,12 +54,17 @@ func initialize_grid() -> void:
 	
 	for y in total_h:
 		for x in total_w:
+			var axial = offset_to_axial(x, y)
+			var dist = axial_distance(center_axial, axial)
+			
+			if dist > radius:
+				continue
+			
 			var pos_2d = calculate_hex_position(x, y)
 			var pos = Vector3(pos_2d.x, 0.0, pos_2d.y)
-			var axial = offset_to_axial(x, y)
 			
 			var state: int
-			if x == 0 or x == total_w - 1 or y == 0 or y == total_h - 1:
+			if dist == radius:
 				state = TileConstants.State.STONE
 			elif x > total_w / 2 and y > total_h / 2:
 				state = TileConstants.State.DIRT
@@ -66,6 +78,7 @@ func initialize_grid() -> void:
 			
 			var tile = HexTileData.new(state, pos, axial, Vector2i(x, y), h_val)
 			arena.tile_data_grid.append(tile)
+			_tile_lookup[Vector2i(x, y)] = tile
 			arena.tile_counts[state] += 1
 			
 			arena.renderer.add_tile(tile)
@@ -140,8 +153,10 @@ func setup_farmstead() -> void:
 
 ## Determines the layout of the farmstead, including interior and perimeter tiles.
 func plan_farmstead() -> void:
-	var x = arena.grid_width / 2
-	var y = arena.grid_height / 2
+	var total_h = _grid_height_clamped() + 2
+	var total_w = _grid_width_clamped() + 2
+	var x = total_w / 2
+	var y = total_h / 2
 	var center_tile = get_tile_at_grid_coords(x, y)
 	if not center_tile: return
 	
@@ -204,6 +219,13 @@ func offset_to_axial(col: int, row: int) -> Vector2i:
 	var r = row - (col - (col & 1)) / 2
 	return Vector2i(q, r)
 
+## Calculates the axial distance between two axial coordinates.
+func axial_distance(a: Vector2i, b: Vector2i) -> int:
+	var dq = a.x - b.x
+	var dr = a.y - b.y
+	var ds = (-a.x - a.y) - (-b.x - b.y)
+	return (abs(dq) + abs(dr) + abs(ds)) / 2
+
 ## Calculates the vertical position of a tile's surface.
 func get_tile_surface_y(tile: HexTileData) -> float:
 	if tile.current_state == TileConstants.State.STONE:
@@ -256,11 +278,7 @@ func get_adjacent_dirt(tile: HexTileData) -> HexTileData:
 
 ## Retrieves tile data at the specified grid coordinates.
 func get_tile_at_grid_coords(x: int, y: int) -> HexTileData:
-	var h = _grid_height_clamped() + 2
-	var w = _grid_width_clamped() + 2
-	if x < 0 or x >= w or y < 0 or y >= h:
-		return null
-	return arena.tile_data_grid[y * w + x]
+	return _tile_lookup.get(Vector2i(x, y), null)
 
 func _grid_width_clamped() -> int: return max(1, arena.grid_width)
 func _grid_height_clamped() -> int: return max(1, arena.grid_height)
