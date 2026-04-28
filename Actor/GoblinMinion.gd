@@ -31,26 +31,66 @@ func _ready() -> void:
 	ability_scores_component.wisdom = -1
 	ability_scores_component.charisma = -1
 
-	# Armor Setup: AC 12 (10 base + 2 dex)
+	# Armor Setup: random among none, leather, or chain shirt
 	if armor_class_component:
-		armor_class_component.armor_type = ArmorClassComponent.ArmorType.NONE
-		armor_class_component.armor_value = 10
+		var armor_roll: int = _rng.randi_range(1, 3)
+		match armor_roll:
+			1:
+				# No armor: AC 10 + dex
+				armor_class_component.armor_type = ArmorClassComponent.ArmorType.NONE
+				armor_class_component.armor_value = 10
+				armor_class_component.equipped_armor = null
+			2:
+				# Leather armor: AC 11 + dex
+				armor_class_component.equipped_armor = ArmorData.create_standard_armor("leather")
+			3:
+				# Chain shirt: AC 13 + dex (max 2)
+				armor_class_component.equipped_armor = ArmorData.create_standard_armor("chain shirt")
 		armor_class_component.refresh()
+		
+		# Update body color to match armor
+		if _body is GoblinModel:
+			var model: GoblinModel = _body as GoblinModel
+			match armor_roll:
+				1:
+					model.set_armor_skin(GoblinModel.ArmorSkin.NONE)
+				2:
+					model.set_armor_skin(GoblinModel.ArmorSkin.LEATHER)
+				3:
+					model.set_armor_skin(GoblinModel.ArmorSkin.CHAIN)
 
 	# Roll HP: 2d6
 	max_hp = health_component.roll_max_health(2, 6, _rng)
 	
-	# Load Dagger weapon - overrides the default if found
+	# Random weapon: Dagger, Scimitar, or Shortbow with 2d10 arrows
+	var weapon_names: Array[String] = ["Dagger", "Scimitar", "Shortbow"]
+	var chosen_weapon_name: String = weapon_names[_rng.randi_range(0, weapon_names.size() - 1)]
+	
 	var wl = get_node_or_null("/root/ItemsAutoload")
+	var weapon_to_equip: WeaponData = null
 	if wl:
 		for w in wl.weapons:
-			if w.name == "Dagger":
-				_on_weapon_selected(w)
+			if w.name == chosen_weapon_name:
+				weapon_to_equip = w.duplicate()
 				break
 	
-	if not equipped_weapon:
-		# Fallback if ItemsAutoload not ready or dagger not found
-		_on_weapon_selected(WeaponData.new("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 10/30), ammo 5"))
+	if not weapon_to_equip:
+		# Fallback if ItemsAutoload not ready or weapon not found
+		match chosen_weapon_name:
+			"Dagger":
+				weapon_to_equip = WeaponData.new("Dagger", "2 gp", "1d4", "piercing", 1, "Finesse, light, thrown (range 10/30), ammo 5")
+			"Scimitar":
+				weapon_to_equip = WeaponData.new("Scimitar", "25 gp", "1d6", "slashing", 3, "Finesse, light")
+			"Shortbow":
+				weapon_to_equip = WeaponData.new("Shortbow", "25 gp", "1d6", "piercing", 2, "Ammunition (range 80/320), two-handed, ammo 20")
+	
+	if chosen_weapon_name == "Shortbow":
+		var arrow_count: int = 0
+		for i in range(2):
+			arrow_count += _rng.randi_range(1, 10)
+		weapon_to_equip.current_ammo = arrow_count
+	
+	_on_weapon_selected(weapon_to_equip)
 
 	if _body is AnimatedSprite3D:
 		var sprite = _body as AnimatedSprite3D

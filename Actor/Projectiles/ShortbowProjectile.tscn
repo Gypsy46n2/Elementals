@@ -1,0 +1,66 @@
+[gd_scene load_steps=10 format=3 uid="uid://cxabw3jnd92l1"]
+
+[ext_resource type="Script" uid="uid://b1uqxo8prdw7s" path="res://Actor/Projectiles/BaseProjectile.gd" id="1_script"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
+albedo_color = Color(0.45, 0.3, 0.15, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_handle"]
+material = SubResource("StandardMaterial3D_wood")
+top_radius = 0.02
+bottom_radius = 0.02
+height = 0.2
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_arm"]
+material = SubResource("StandardMaterial3D_wood")
+top_radius = 0.01
+bottom_radius = 0.02
+height = 0.3
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_arm2"]
+material = SubResource("StandardMaterial3D_wood")
+top_radius = 0.02
+bottom_radius = 0.01
+height = 0.3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_string"]
+albedo_color = Color(0.9, 0.9, 0.9, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_string"]
+material = SubResource("StandardMaterial3D_string")
+top_radius = 0.005
+bottom_radius = 0.005
+height = 0.66
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_collision"]
+size = Vector3(0.1, 0.8, 0.3)
+
+[node name="ShortbowProjectile" type="Area3D"]
+collision_layer = 0
+collision_mask = 3
+script = ExtResource("1_script")
+
+[node name="Model" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0)
+
+[node name="Handle" type="MeshInstance3D" parent="Model"]
+mesh = SubResource("CylinderMesh_handle")
+
+[node name="TopArm" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 0.2, -0.05)
+mesh = SubResource("CylinderMesh_arm")
+
+[node name="BottomArm" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, -0.5, 0, 0.5, 0.866025, 0, -0.2, -0.05)
+mesh = SubResource("CylinderMesh_arm2")
+
+[node name="String" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.125)
+mesh = SubResource("CylinderMesh_string")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0)
+shape = SubResource("BoxShape3D_collision")
+
+[node name="TileRay" type="RayCast3D" parent="."]
+target_position = Vector3(0, -3, 0)

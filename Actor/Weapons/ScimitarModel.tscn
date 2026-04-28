@@ -1,0 +1,66 @@
+[gd_scene load_steps=9 format=3 uid="uid://bummd5myfyb80"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eky5b"]
+albedo_color = Color(0.45, 0.3, 0.15, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_cvgkc"]
+material = SubResource("StandardMaterial3D_eky5b")
+top_radius = 0.015
+bottom_radius = 0.015
+height = 0.15
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_50e7y"]
+albedo_color = Color(0.7, 0.7, 0.75, 1)
+metallic = 1.0
+roughness = 0.3
+
+[sub_resource type="BoxMesh" id="BoxMesh_ny8cf"]
+material = SubResource("StandardMaterial3D_50e7y")
+size = Vector3(0.1, 0.02, 0.04)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ifc41"]
+material = SubResource("StandardMaterial3D_50e7y")
+size = Vector3(0.04, 0.2, 0.01)
+
+[sub_resource type="BoxMesh" id="BoxMesh_5ill3"]
+material = SubResource("StandardMaterial3D_50e7y")
+size = Vector3(0.04, 0.2, 0.01)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bm4kp"]
+material = SubResource("StandardMaterial3D_50e7y")
+size = Vector3(0.04, 0.15, 0.01)
+
+[sub_resource type="PrismMesh" id="PrismMesh_iql2p"]
+material = SubResource("StandardMaterial3D_50e7y")
+left_to_right = 0.0
+size = Vector3(0.04, 0.15, 0.01)
+
+[node name="ScimitarModel" type="Node3D"]
+
+[node name="Model" type="Node3D" parent="."]
+transform = Transform3D(-1.172251e-07, 0, -1, 0, 1, 0, 1, 0, -1.172251e-07, 0, 0, 0)
+
+[node name="Handle" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.075, 0)
+mesh = SubResource("CylinderMesh_cvgkc")
+
+[node name="Guard" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9848077, -0.17364818, 0, 0.17364818, 0.9848077, 0, 0, 0, 1, 0, 0.16, 0)
+mesh = SubResource("BoxMesh_ny8cf")
+
+[node name="Blade1" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9961947, 0.08715574, 0, -0.08715574, 0.9961947, 0, 0, 0, 1, 0.005, 0.27, 0)
+mesh = SubResource("BoxMesh_ifc41")
+
+[node name="Blade2" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 0, 0, 0, 1, 0.04, 0.46, 0)
+mesh = SubResource("BoxMesh_5ill3")
+
+[node name="Blade3" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.8660254, 0.5, 0, -0.5, 0.8660254, 0, 0, 0, 1, 0.1, 0.62, 0)
+mesh = SubResource("BoxMesh_bm4kp")
+
+[node name="Tip" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 0, 0, 1, 0.18, 0.72, 0)
+mesh = SubResource("PrismMesh_iql2p")
