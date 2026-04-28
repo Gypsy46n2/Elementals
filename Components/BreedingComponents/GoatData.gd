@@ -6,7 +6,7 @@ signal stats_changed
 enum HornType { NONE, SMALL, LARGE, SPIRAL }
 enum BodyType { SMALL, MEDIUM, LARGE }
 enum PatternType { SOLID, PIEBALD, SPOTTED }
-enum Gender { DOE, BUCK }
+enum Gender { BUCK, DOE }
 
 @export_group("Identity")
 @export var goat_name: String = "New Goat":

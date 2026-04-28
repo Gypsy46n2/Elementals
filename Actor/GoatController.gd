@@ -7,12 +7,11 @@ extends ActorAIController
 enum State { WANDERING, ALERT, CHARGING, COOLDOWN }
 var current_state: State = State.WANDERING
 
-## Inherits detection_range from ActorAIController (default 15.0).
-## Kept close to original goat behavior by overriding in _ready if needed.
-@export var charge_range: float = 6.0
 @export var alert_duration: float = 1.0
 @export var cooldown_duration: float = 3.0
 
+## Flocking needs to be upgraded to a State
+## make a res://Components/ActorComponents/NPC Behavior/States/AIFlockinState.gd and move function there.
 @export_group("Flocking")
 ## Minimum distance to keep from the player goat.
 @export var min_follow_distance: float = 1.0
@@ -22,64 +21,21 @@ var current_state: State = State.WANDERING
 var _state_timer: float = 0.0
 var _target_actor: Node3D = null
 
-var _debug_line: MeshInstance3D
-var _debug_material: StandardMaterial3D
-
+# REFACTOR: Consider caching the actor reference locally and validating
+# DebugComponent.debug_enabled before spending cycles on _setup_debug_line().
+# see res://Components/DebugComponent.gd
 func _ready() -> void:
 	super._ready()
-	_setup_debug_line()
 
-func _setup_debug_line() -> void:
-	_debug_line = MeshInstance3D.new()
-	_debug_line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	
-	_debug_material = StandardMaterial3D.new()
-	_debug_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_debug_material.vertex_color_use_as_albedo = true
-	_debug_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	
-	_debug_line.mesh = ImmediateMesh.new()
-	add_child(_debug_line)
+func _init_state_machine() -> void:
+	super._init_state_machine()
+	if state_machine:
+		state_machine.register_state("flock", AIFlockinState.new())
 
-func _physics_process(delta: float) -> void:
-	if actor and actor.has_method("is_stunned") and actor.is_stunned():
-		if movement_component:
-			movement_component.apply_gravity(delta)
-			movement_component.stop(delta)
-		return
-	
-	_update_debug_visuals()
-	super._physics_process(delta)
-
-func _update_debug_visuals() -> void:
-	if not _debug_line: return
-	
-	var should_show = DebugComponent.debug_enabled and not is_controlled
-	_debug_line.visible = should_show
-	
-	if not should_show: return
-	
-	var player = _get_player_goat()
-	if not player: 
-		if _debug_line.mesh is ImmediateMesh:
-			(_debug_line.mesh as ImmediateMesh).clear_surfaces()
-		return
-	
-	var dist = actor.global_position.distance_to(player.global_position)
-	var color = Color.GREEN
-	if dist < min_follow_distance:
-		color = Color.RED
-	elif dist < max_follow_distance:
-		color = Color.YELLOW
-		
-	var mesh = _debug_line.mesh as ImmediateMesh
-	mesh.clear_surfaces()
-	mesh.surface_begin(Mesh.PRIMITIVE_LINES, _debug_material)
-	mesh.surface_set_color(color)
-	mesh.surface_add_vertex(Vector3.ZERO)
-	mesh.surface_add_vertex(actor.to_local(player.global_position))
-	mesh.surface_end()
-
+# REFACTOR: Replace string-based reflection (.get("_arena_grid")) with typed
+# references or at least constants for property names. The current approach
+# is fragile and bypasses compile-time checks. Consider caching the result
+# and updating it via signals when control changes rather than polling.
 func _get_player_goat() -> Node3D:
 	if not actor or not actor.get("_arena_grid"):
 		return null
@@ -88,57 +44,13 @@ func _get_player_goat() -> Node3D:
 		return target
 	return null
 
-func _choose_new_target() -> void:
-	if not actor or not actor.get("_arena_grid"):
-		return
-		
-	var player_goat = _get_player_goat()
-	if not player_goat:
-		super._choose_new_target()
-		return
-		
-	actor.tile_interaction_component.update_tile_below()
-	var ground_tile = actor.tile_interaction_component.get_ground_tile()
-	if not ground_tile:
-		super._choose_new_target()
-		return
-
-	var dist_to_player = actor.global_position.distance_to(player_goat.global_position)
-	
-	# Get valid neighbors using base class helper
-	var neighbors = actor.tile_navigation_component.get_traversable_neighbors(ground_tile)
-	
-	if neighbors.is_empty():
-		super._choose_new_target()
-		return
-
-	var next_tile: HexTileData = null
-	
-	if dist_to_player > max_follow_distance:
-		# Seek player: pick neighbor closest to player
-		neighbors.sort_custom(func(a, b):
-			return a.position.distance_to(player_goat.global_position) < b.position.distance_to(player_goat.global_position)
-		)
-		next_tile = neighbors[0]
-	elif dist_to_player < min_follow_distance:
-		# Repel/Maintain: pick neighbor further from player
-		neighbors.sort_custom(func(a, b):
-			return a.position.distance_to(player_goat.global_position) > b.position.distance_to(player_goat.global_position)
-		)
-		next_tile = neighbors[0]
-	else:
-		# Random wander within neighbors
-		var candidates = neighbors.filter(func(t): return t != _previous_tile)
-		if candidates.size() > 0:
-			next_tile = candidates[_rng.randi_range(0, candidates.size() - 1)]
-		else:
-			next_tile = neighbors.pick_random()
-
-	if next_tile:
-		_previous_tile = ground_tile
-		_movement_target = next_tile.position
-		_movement_target.y = actor.global_position.y
-
+# REFACTOR: This function violates Single Responsibility Principle.
+# 1. The flocking distance check should live in WANDERING state logic.
+# 2. The "rowdy_bonus" scans all actors every frame (O(n)). Cache nearby
+#    goats using an Area3D overlap check or update on a slower timer.
+# 3. State dispatch and speed multiplier application should be separate methods.
+# 4. Avoid calling super._handle_ai_logic() from child states (WANDERING/COOLDOWN)
+#    as it creates tight coupling; prefer composition or explicit behavior nodes.
 func _handle_ai_logic(delta: float) -> void:
 	if not actor or not actor.get("_arena_grid") or not movement_component:
 		return
@@ -146,16 +58,6 @@ func _handle_ai_logic(delta: float) -> void:
 	if is_controlled:
 		return
 		
-	# Reactive Flocking: If we are way too far from the player, force a re-target
-	var player_goat = _get_player_goat()
-	if player_goat and current_state == State.WANDERING:
-		var dist_to_player = actor.global_position.distance_to(player_goat.global_position)
-		if dist_to_player > max_follow_distance * 1.5:
-			# Force immediate movement update if current target is moving away or too far
-			var target_dist_to_player = _movement_target.distance_to(player_goat.global_position)
-			if target_dist_to_player > max_follow_distance:
-				_choose_new_target()
-
 	# Social rowdiness: speed up if others are nearby
 	var rowdy_bonus = 1.0
 	var arena_grid = actor.get("_arena_grid")
@@ -182,16 +84,27 @@ func _handle_ai_logic(delta: float) -> void:
 			
 	movement_component.speed_multiplier = rowdy_bonus * state_mult
 
+# REFACTOR: Calling super._handle_ai_logic() inside a state update is a code smell;
+# it re-enters base class logic unpredictably. Inline the needed wandering behavior
+# or delegate to a dedicated WanderingBehavior node. Cache _find_nearby_actor()
+# result to avoid duplicate raycasts/detection work.
 func _update_wandering(delta: float) -> void:
-	# Normal wandering behavior from base class
+	var player_goat := _get_player_goat()
+	if player_goat and state_machine and state_machine.get_base_state_name() != "flock":
+		state_machine.change_state("flock")
+	elif not player_goat and state_machine and state_machine.get_base_state_name() == "flock":
+		state_machine.change_state("roam")
+	
 	super._handle_ai_logic(delta)
 	
-	# Look for a target
-	var target = _find_nearby_actor()
+	var target := _find_nearby_actor(player_goat)
 	if target:
 		_target_actor = target
 		_transition_to(State.ALERT)
 
+# REFACTOR: Add null-check for _target_actor before accessing its global_position.
+# Consider using a Tween or Timer node instead of manual _state_timer bookkeeping.
+# Facing logic should use actor.look_at() or a dedicated face_direction() method.
 func _update_alert(delta: float) -> void:
 	# Stop moving and face the target
 	movement_component.stop(delta)
@@ -201,6 +114,11 @@ func _update_alert(delta: float) -> void:
 	if _state_timer <= 0:
 		_transition_to(State.CHARGING)
 
+# REFACTOR: Scanning ability_comp.actions every frame is expensive. Cache the
+# GoatCharge action reference in _ready(). Also, _delta is unused; if the method
+# truly doesn't need delta, document why. Validate _target_actor validity before
+# using its position. Consider moving charge triggering to the _transition_to()
+# method so it fires once on state entry rather than every frame.
 func _update_charging(_delta: float) -> void:
 	# The GoatCharge ability handles the actual charge physics
 	# We just need to trigger it once
@@ -216,15 +134,14 @@ func _update_charging(_delta: float) -> void:
 		# If we aren't charging yet, start it
 		var target_pos = _target_actor.global_position
 
-		# Set the charge direction in the goat script
-		var dir = (target_pos - actor.global_position).normalized()
-		dir.y = 0
-
 		if ability_comp:
 			ability_comp.execute_ability("charge", target_pos)
 
 		_transition_to(State.COOLDOWN)
 
+# REFACTOR: Like _update_wandering, calling super._handle_ai_logic() here couples
+# child state to base implementation. Prefer explicit cooldown movement behavior.
+# Use a Timer node instead of manual _state_timer countdown.
 func _update_cooldown(delta: float) -> void:
 	# Wander slowly or stay still
 	super._handle_ai_logic(delta)
@@ -233,6 +150,10 @@ func _update_cooldown(delta: float) -> void:
 	if _state_timer <= 0:
 		_transition_to(State.WANDERING)
 
+# REFACTOR: Replace with a proper state machine (State pattern or HierarchicalFSM).
+# Emit a signal like state_changed(new_state) so other systems (audio, particles)
+# can react without hardcoded side-effects (e.g., _scream). Avoid using
+# actor.call("_scream") for private methods; use a public interface or signal.
 func _transition_to(new_state: State) -> void:
 	current_state = new_state
 	match new_state:
@@ -247,16 +168,23 @@ func _transition_to(new_state: State) -> void:
 		State.COOLDOWN:
 			_state_timer = cooldown_duration
 
+# REFACTOR: Consider making this a property with a setter that updates a UI label
+# only when the state actually changes, rather than polling every frame.
 func get_debug_state() -> String:
 	if is_controlled:
 		return "CONTROLLED"
 	return State.keys()[current_state]
 
-func _find_nearby_actor() -> Node3D:
+# REFACTOR: Replace magic number 1e9 with INF or a named constant MAX_DISTANCE.
+# The scoring heuristic (dist_to_self + dist_from_player * 0.5) is opaque;
+# extract into a _score_target(target) method with documented weights.
+# Filter by detection_range before sorting to reduce iteration cost.
+# Cache player_goat distance if used in a loop.
+func _find_nearby_actor(p_player_goat: Node3D = null) -> Node3D:
 	if not actor or not actor.get("_arena_grid"):
 		return null
 		
-	var player_goat = _get_player_goat()
+	var player_goat: Node3D = p_player_goat if p_player_goat else _get_player_goat()
 	var possible_targets: Array[Node3D] = []
 	
 	var arena_grid = actor.get("_arena_grid")
@@ -271,11 +199,11 @@ func _find_nearby_actor() -> Node3D:
 		return null
 		
 	var best_target: Node3D = null
-	var min_score = 1e9
+	var min_score = INF
 	
 	for target in possible_targets:
 		var dist_to_self = actor.global_position.distance_to(target.global_position)
-		var dist_from_player = player_goat.global_position.distance_to(target.global_position) if player_goat else 1e9
+		var dist_from_player = player_goat.global_position.distance_to(target.global_position) if player_goat else INF
 		
 		# Candidate if near me OR near the player (herd awareness)
 		if dist_to_self > detection_range and dist_from_player > detection_range:
@@ -289,10 +217,3 @@ func _find_nearby_actor() -> Node3D:
 			best_target = target
 			
 	return best_target
-
-func _face_target(pos: Vector3) -> void:
-	# The sprite flip logic in GoatActor handles visual facing
-	# But we can update velocity slightly to influence it if needed
-	var dir = (pos - actor.global_position).normalized()
-	actor.velocity.x = dir.x * 0.01
-	actor.velocity.z = dir.z * 0.01

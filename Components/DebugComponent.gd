@@ -44,3 +44,38 @@ func update_debug_label(state_text: String, is_stunned: bool) -> void:
 		text += " (STUNNED)"
 	
 	_debug_label.text = text
+
+var _debug_line: MeshInstance3D
+var _debug_line_material: StandardMaterial3D
+
+func setup_debug_line() -> void:
+	_debug_line = MeshInstance3D.new()
+	_debug_line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	
+	_debug_line_material = StandardMaterial3D.new()
+	_debug_line_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_debug_line_material.vertex_color_use_as_albedo = true
+	_debug_line_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	
+	_debug_line.mesh = ImmediateMesh.new()
+	_actor.add_child(_debug_line)
+
+func update_debug_line(to_local_pos: Vector3, color: Color) -> void:
+	if not _debug_line:
+		setup_debug_line()
+	
+	_debug_line.visible = debug_enabled
+	if not debug_enabled:
+		return
+	
+	var mesh := _debug_line.mesh as ImmediateMesh
+	mesh.clear_surfaces()
+	mesh.surface_begin(Mesh.PRIMITIVE_LINES, _debug_line_material)
+	mesh.surface_set_color(color)
+	mesh.surface_add_vertex(Vector3.ZERO)
+	mesh.surface_add_vertex(to_local_pos)
+	mesh.surface_end()
+
+func clear_debug_line() -> void:
+	if _debug_line and _debug_line.mesh is ImmediateMesh:
+		(_debug_line.mesh as ImmediateMesh).clear_surfaces()
