@@ -6,6 +6,7 @@ extends Control
 @onready var red_slider: HSlider = $PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/R/RedSlider
 @onready var green_slider: HSlider = $PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/G/GreenSlider
 @onready var blue_slider: HSlider = $PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/B/BlueSlider
+@onready var volume_slider: HSlider = $PanelContainer/MarginContainer/VBoxContainer/VolumeContainer/VolumeSlider
 
 func _ready() -> void:
 	hide()
@@ -26,6 +27,11 @@ func _ready() -> void:
 	if blue_slider:
 		blue_slider.focus_mode = Control.FOCUS_NONE
 		blue_slider.value_changed.connect(_on_color_slider_changed)
+	if volume_slider:
+		volume_slider.focus_mode = Control.FOCUS_NONE
+		volume_slider.value_changed.connect(_on_volume_changed)
+		volume_slider.value = GameSettings.master_volume
+		_apply_volume(GameSettings.master_volume)
 
 func toggle() -> void:
 	visible = !visible
@@ -68,6 +74,14 @@ func _on_color_slider_changed(_value: float) -> void:
 func _on_return_pressed() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://UI/MainMenu.tscn")
+
+func _on_volume_changed(value: float) -> void:
+	GameSettings.master_volume = value
+	GameSettings.save_settings()
+	_apply_volume(value)
+
+func _apply_volume(value: float) -> void:
+	AudioServer.set_bus_volume_db(0, linear_to_db(value))
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
