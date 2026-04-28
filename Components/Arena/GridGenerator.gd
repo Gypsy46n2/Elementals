@@ -66,7 +66,7 @@ func initialize_grid() -> void:
 			var state: int
 			if dist == radius:
 				state = TileConstants.State.STONE
-			elif arena.noise.get_noise_2d(float(x), float(y)) > 0.2:
+			elif arena.noise.get_noise_2d(float(x), float(y)) > _get_dirt_threshold():
 				state = TileConstants.State.DIRT
 			else:
 				state = TileConstants.State.GRASS
@@ -282,3 +282,9 @@ func get_tile_at_grid_coords(x: int, y: int) -> HexTileData:
 
 func _grid_width_clamped() -> int: return max(1, arena.grid_width)
 func _grid_height_clamped() -> int: return max(1, arena.grid_height)
+
+func _get_dirt_threshold() -> float:
+	var gs = get_node_or_null("/root/GameSettings")
+	if gs:
+		return gs.dirt_threshold
+	return 0.2

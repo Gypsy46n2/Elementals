@@ -12,6 +12,7 @@ var goat_count: int = 1
 var noise_seed: int = 0
 var noise_frequency: float = 0.05
 var height_step: float = 1.0
+var dirt_threshold: float = 0.2
 var master_volume: float = 1.0
 
 func _ready() -> void:
@@ -35,6 +36,7 @@ func save_settings() -> void:
 	config.set_value("WorldGen", "noise_seed", noise_seed)
 	config.set_value("WorldGen", "noise_frequency", noise_frequency)
 	config.set_value("WorldGen", "height_step", height_step)
+	config.set_value("WorldGen", "dirt_threshold", dirt_threshold)
 	config.set_value("Audio", "master_volume", master_volume)
 	
 	var err = config.save(SAVE_PATH)
@@ -58,4 +60,5 @@ func load_settings() -> void:
 	noise_seed = config.get_value("WorldGen", "noise_seed", noise_seed)
 	noise_frequency = config.get_value("WorldGen", "noise_frequency", noise_frequency)
 	height_step = config.get_value("WorldGen", "height_step", height_step)
+	dirt_threshold = config.get_value("WorldGen", "dirt_threshold", dirt_threshold)
 	master_volume = config.get_value("Audio", "master_volume", master_volume)

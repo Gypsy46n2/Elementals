@@ -11,6 +11,8 @@ extends Control
 @onready var scale_value_label: Label = $CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseScale/ValueLabel
 @onready var height_slider: HSlider = $CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/HeightStep/HeightSlider
 @onready var height_value_label: Label = $CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/HeightStep/ValueLabel
+@onready var dirt_slider: HSlider = $CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/DirtThreshold/DirtSlider
+@onready var dirt_value_label: Label = $CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/DirtThreshold/ValueLabel
 
 var selected_actor_path: String = ""
 
@@ -35,6 +37,7 @@ func _ready() -> void:
 	
 	scale_slider.value_changed.connect(_on_scale_changed)
 	height_slider.value_changed.connect(_on_height_changed)
+	dirt_slider.value_changed.connect(_on_dirt_changed)
 	
 	# Initialize values from GameSettings
 	var gs = get_node_or_null("/root/GameSettings")
@@ -43,6 +46,7 @@ func _ready() -> void:
 		seed_input.value = gs.noise_seed
 		scale_slider.value = gs.noise_frequency
 		height_slider.value = gs.height_step
+		dirt_slider.value = gs.dirt_threshold
 		
 		# Set initial actor path from settings if it exists
 		if gs.get("selected_actor_type") in ACTOR_SCENES:
@@ -52,6 +56,7 @@ func _ready() -> void:
 		
 		_on_scale_changed(scale_slider.value)
 		_on_height_changed(height_slider.value)
+		_on_dirt_changed(dirt_slider.value)
 	
 	# Ensure mouse is visible for the menu
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -87,6 +92,11 @@ func _on_scale_changed(value: float) -> void:
 
 func _on_height_changed(value: float) -> void:
 	if height_value_label: height_value_label.text = "%.1f" % value
+
+func _on_dirt_changed(value: float) -> void:
+	if dirt_value_label:
+		var normalized = clamp((value + 0.3) / 0.6, 0.0, 1.0)
+		dirt_value_label.text = "%.2f" % normalized
 
 func _on_character_tab_button_pressed() -> void:
 	character_tab_container.visible = !character_tab_container.visible
@@ -125,6 +135,7 @@ func _on_play_button_pressed() -> void:
 		
 		gs.noise_frequency = scale_slider.value
 		gs.height_step = height_slider.value
+		gs.dirt_threshold = dirt_slider.value
 		
 		# Find the actor name from the path
 		for actor_name in ACTOR_SCENES:
