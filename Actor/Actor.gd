@@ -74,6 +74,7 @@ var projectile_component: ProjectileComponent
 var stun_component: StunComponent
 var mana_component: ManaComponent
 var tile_interaction_component: ActorTileInteractionComponent
+var tile_navigation_component: ActorTileNavigationComponent
 var bob_component: BobComponent
 var debug_component: DebugComponent
 var weapon_component: WeaponComponent
@@ -110,6 +111,10 @@ var equipped_weapon: WeaponData:
 	set(v): if weapon_component: weapon_component.weapon_data = v
 
 signal mana_changed(new_mana: float, max_mana: float)
+signal died()
+signal resurrected()
+
+var is_dead: bool = false
 
 var _arena_grid: ArenaGrid
 var _origin: Vector3
@@ -175,9 +180,12 @@ func _setup_components() -> void:
 	stun_component = _add_comp(StunComponent.new())
 	stun_component.setup(self)
 
-	# 5. Tile Interaction
+	# 5. Tile Interaction & Navigation
 	tile_interaction_component = _add_comp(ActorTileInteractionComponent.new())
 	tile_interaction_component.setup(self)
+
+	tile_navigation_component = _add_comp(ActorTileNavigationComponent.new())
+	tile_navigation_component.actor = self
 
 	# 6. RPG Systems
 	ability_scores_component = _add_comp(AbilityScoresComponent.new())
@@ -233,6 +241,8 @@ func _create_controller() -> ActorAIController:
 
 func _physics_process(_delta: float) -> void:
 	if Engine.is_editor_hint(): return
+	if is_dead:
+		return
 	move_and_slide()
 
 func take_damage(amount: float, type: String = "normal", direction: Vector3 = Vector3.ZERO) -> void:
@@ -255,11 +265,20 @@ func is_stunned() -> bool:
 	return stun_component.is_stunned() if stun_component else false
 
 func die() -> void:
-	if weapon_component: weapon_component.drop_inventory()
+	if is_dead:
+		return
+	is_dead = true
+	if weapon_component:
+		weapon_component.drop_inventory()
+	if visual_component:
+		visual_component.fall_over()
+	_disable_living_components()
+	died.emit()
 	GameEvents.actor_died.emit(self)
-	respawn()
 
 func respawn() -> void:
+	if is_dead:
+		return
 	if health_component:
 		health_component.reset()
 	
@@ -269,6 +288,63 @@ func respawn() -> void:
 		controller.set("_movement_target", _origin)
 	
 	force_update_transform()
+
+func resurrect() -> void:
+	if not is_dead:
+		return
+	is_dead = false
+	if visual_component:
+		visual_component.stand_up()
+	_enable_living_components()
+	if health_component:
+		health_component.reset()
+	resurrected.emit()
+
+func _disable_living_components() -> void:
+	if movement_component:
+		movement_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if projectile_component:
+		projectile_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if ability_component:
+		ability_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if stun_component:
+		stun_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if bob_component:
+		bob_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if mana_component:
+		mana_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if tile_interaction_component:
+		tile_interaction_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if tile_navigation_component:
+		tile_navigation_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if debug_component:
+		debug_component.process_mode = Node.PROCESS_MODE_DISABLED
+	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collision:
+		collision.set_deferred("disabled", true)
+
+func _enable_living_components() -> void:
+	if movement_component:
+		movement_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if projectile_component:
+		projectile_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if ability_component:
+		ability_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if stun_component:
+		stun_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if bob_component:
+		bob_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if mana_component:
+		mana_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if tile_interaction_component:
+		tile_interaction_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if tile_navigation_component:
+		tile_navigation_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if debug_component:
+		debug_component.process_mode = Node.PROCESS_MODE_INHERIT
+	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collision:
+		collision.set_deferred("disabled", false)
 
 func cycle_attack_pattern() -> void:
 	if projectile_component: projectile_component.cycle_attack_pattern()

@@ -1,7 +1,7 @@
-[gd_scene load_steps=12 format=3 uid="uid://btcnblfrcs0da"]
+[gd_scene load_steps=13 format=3 uid="uid://btcnblfrcs0da"]
 
 [ext_resource type="Script" uid="uid://s3u0jtkv01l2" path="res://Actor/GoatActor.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://cyhgmx4chxrlh" path="res://assets/Characters/GruffGoat.png" id="2_gruff"]
+[ext_resource type="PackedScene" uid="uid://difcukmej5l7i" path="res://Actor/GoatModels/GoatModel.tscn" id="2_model"]
 [ext_resource type="Texture2D" uid="uid://putuanp46xin" path="res://assets/generated/shadow_circle_frame_0_1774760543.png" id="3_shadow"]
 [ext_resource type="AudioStream" uid="uid://dgfo0pp6y1iq8" path="res://assets/SoundFiles/ElevenLabs_Alarmed_goat_scream,_sensing_a_predator_nearby.mp3" id="4_k8c4n"]
 [ext_resource type="AudioStream" uid="uid://cssq5sgv227at" path="res://assets/SoundFiles/ElevenLabs_Person_jumping_into_a_pond,_big_water_splash.mp3" id="5_splash"]
@@ -20,17 +20,7 @@ radius = 0.4
 [node name="GoatActor" type="CharacterBody3D"]
 script = ExtResource("1")
 
-[node name="Body" type="Sprite3D" parent="."]
-billboard = 2
-texture = ExtResource("2_gruff")
-
-[node name="Pattern" type="Sprite3D" parent="Body"]
-billboard = 2
-render_priority = 1
-
-[node name="Horns" type="Sprite3D" parent="Body"]
-billboard = 2
-render_priority = 2
+[node name="Body" parent="." instance=ExtResource("2_model")]
 
 [node name="GeneticComponent" type="Node" parent="." node_paths=PackedStringArray("sprite")]
 script = ExtResource("8_genetic")

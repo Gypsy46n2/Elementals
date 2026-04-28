@@ -1,26 +1,25 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=5 format=3 uid="uid://sqhy615yrjo5"]
 
-[ext_resource type="Shader" path="res://assets/Shaders/instance_transparency.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://c4y0amrlfaf34" path="res://assets/Shaders/instance_transparency.gdshader" id="1_shader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_green"]
 render_priority = 0
 shader = ExtResource("1_shader")
 shader_parameter/albedo = Color(0.2, 0.6, 0.2, 1)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_dark_green"]
-render_priority = 1
-shader = ExtResource("1_shader")
-shader_parameter/albedo = Color(0.1, 0.3, 0.1, 1)
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_nose"]
 render_priority = 1
 shader = ExtResource("1_shader")
 shader_parameter/albedo = Color(0.3, 0.7, 0.3, 1)
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dark_green"]
+render_priority = 1
+shader = ExtResource("1_shader")
+shader_parameter/albedo = Color(0.1, 0.3, 0.1, 1)
+
 [node name="GoblinModel" type="Node3D"]
 
 [node name="CSGCombiner3D" type="CSGCombiner3D" parent="."]
-use_collision = false
 
 [node name="Body" type="CSGSphere3D" parent="CSGCombiner3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)

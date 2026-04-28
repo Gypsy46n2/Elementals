@@ -13,6 +13,10 @@ var body_model: Node3D
 
 var initial_model_scale: Vector3 = Vector3.ONE
 
+var _name_label: Label3D
+var _flash_tween: Tween
+var _goat_base_color: Color = Color.WHITE
+
 func setup(p_actor: Actor, p_body: Node3D) -> void:
 	actor = p_actor
 	body = p_body
@@ -25,9 +29,102 @@ func setup(p_actor: Actor, p_body: Node3D) -> void:
 	
 	if hide_body and body:
 		body.visible = false
+	
+	if actor is GoatActor and body_model:
+		_setup_goat_visuals()
+
+func _setup_goat_visuals() -> void:
+	if not actor is GoatActor:
+		return
+	var goat_actor: GoatActor = actor as GoatActor
+	if goat_actor.goat_data:
+		update_goat_visuals(goat_actor.goat_data)
+
+func update_goat_visuals(goat_data: GoatData) -> void:
+	if not body_model or not goat_data:
+		return
+	
+	_goat_base_color = goat_data.base_color
+	
+	# Scale based on body type
+	var s: float = 0.7
+	match goat_data.body_type:
+		GoatData.BodyType.SMALL:
+			s = 0.5
+		GoatData.BodyType.MEDIUM:
+			s = 0.7
+		GoatData.BodyType.LARGE:
+			s = 0.9
+	
+	initial_model_scale = Vector3.ONE * s
+	body_model.scale = initial_model_scale
+	
+	# Update coat color via shared material
+	var combiner: Node3D = body_model.get_node_or_null("CSGCombiner3D")
+	if combiner:
+		var body_mesh = combiner.get_node_or_null("Body")
+		if body_mesh and body_mesh.material is ShaderMaterial:
+			var mat: ShaderMaterial = body_mesh.material as ShaderMaterial
+			mat.set_shader_parameter("albedo", goat_data.base_color)
+	
+	# Update horns visibility
+	var horn_l1: Node3D = body_model.find_child("HornL1", true, false)
+	var horn_r1: Node3D = body_model.find_child("HornR1", true, false)
+	if horn_l1 and horn_r1:
+		var show_horns: bool = goat_data.horn_type != GoatData.HornType.NONE
+		horn_l1.visible = show_horns
+		horn_r1.visible = show_horns
+	
+	# Name label
+	if not _name_label:
+		_name_label = Label3D.new()
+		_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_name_label.no_depth_test = true
+		_name_label.render_priority = 25
+		_name_label.modulate = Color.YELLOW
+		_name_label.outline_modulate = Color.BLACK
+		_name_label.pixel_size = 0.015
+		_name_label.font_size = 64
+		actor.add_child(_name_label)
+	
+	_name_label.text = goat_data.goat_name
+	_name_label.position = Vector3(0, 1.6 * s, 0)
+	
+	# Health bar offset
+	if actor.health_component:
+		actor.health_component.bar_offset = Vector3(0, 1.2 * s, 0)
+
+func flash_red() -> void:
+	if body_sprite:
+		var base: Color = body_sprite.modulate
+		if _flash_tween and _flash_tween.is_valid():
+			_flash_tween.kill()
+		_flash_tween = create_tween()
+		_flash_tween.tween_property(body_sprite, "modulate", Color.RED, 0.1)
+		_flash_tween.tween_property(body_sprite, "modulate", base, 0.1)
+	elif body_model and actor is GoatActor:
+		var combiner: Node3D = body_model.get_node_or_null("CSGCombiner3D")
+		if combiner:
+			var body_mesh = combiner.get_node_or_null("Body")
+			if body_mesh and body_mesh.material is ShaderMaterial:
+				var mat: ShaderMaterial = body_mesh.material as ShaderMaterial
+				var base_color: Color = _goat_base_color
+				if _flash_tween and _flash_tween.is_valid():
+					_flash_tween.kill()
+				_flash_tween = create_tween()
+				_flash_tween.tween_method(
+					func(c: Color) -> void: mat.set_shader_parameter("albedo", c),
+					base_color, Color.RED, 0.1
+				)
+				_flash_tween.tween_method(
+					func(c: Color) -> void: mat.set_shader_parameter("albedo", c),
+					Color.RED, base_color, 0.1
+				)
 
 func _process(delta: float) -> void:
 	if actor:
+		if actor.is_dead:
+			return
 		if body_sprite:
 			_update_sprite_flip()
 		elif body_model:
@@ -144,3 +241,13 @@ func get_actor_color() -> Color:
 
 func get_mana_particle_texture() -> Texture2D:
 	return mana_particle_texture
+
+## Rotates the actor's body to lie flat on the ground, as if fallen over.
+func fall_over() -> void:
+	if body:
+		body.rotation.x = PI / 2.0
+
+## Restores the actor's body to an upright standing position.
+func stand_up() -> void:
+	if body:
+		body.rotation.x = 0.0

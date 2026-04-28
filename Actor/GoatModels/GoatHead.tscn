@@ -1,0 +1,90 @@
+[gd_scene load_steps=4 format=3 uid="uid://difcukmej5l7h"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_coat"]
+albedo_color = Color(0.85, 0.85, 0.85, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark"]
+albedo_color = Color(0.1, 0.1, 0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_horn"]
+albedo_color = Color(0.4, 0.3, 0.2, 1)
+
+[node name="GoatHead" type="Node3D"]
+
+[node name="Head" type="CSGSphere3D" parent="."]
+material = SubResource("StandardMaterial3D_coat")
+
+[node name="Snout" type="CSGBox3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0.4)
+size = Vector3(0.35, 0.3, 0.6)
+material = SubResource("StandardMaterial3D_coat")
+
+[node name="Nose" type="CSGBox3D" parent="Head/Snout"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.3)
+size = Vector3(0.2, 0.1, 0.1)
+material = SubResource("StandardMaterial3D_dark")
+
+[node name="Beard" type="CSGCylinder3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, -0.258819, 0, 0.258819, 0.965926, 0, -0.4, 0.5)
+radius = 0.1
+height = 0.4
+cone = true
+material = SubResource("StandardMaterial3D_coat")
+
+[node name="EarL" type="CSGBox3D" parent="Head"]
+transform = Transform3D(0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0, 0, 1, -0.45, 0, 0)
+size = Vector3(0.4, 0.1, 0.2)
+material = SubResource("StandardMaterial3D_coat")
+
+[node name="EarR" type="CSGBox3D" parent="Head"]
+transform = Transform3D(0.965926, -0.258819, 0, 0.258819, 0.965926, 0, 0, 0, 1, 0.45, 0, 0)
+size = Vector3(0.4, 0.1, 0.2)
+material = SubResource("StandardMaterial3D_coat")
+
+[node name="EyeL" type="CSGSphere3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.1, 0.45)
+radius = 0.08
+material = SubResource("StandardMaterial3D_dark")
+
+[node name="EyeR" type="CSGSphere3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.1, 0.45)
+radius = 0.08
+material = SubResource("StandardMaterial3D_dark")
+
+[node name="HornL1" type="CSGCylinder3D" parent="Head"]
+transform = Transform3D(0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0, 0, 1, -0.25, 0.4, -0.1)
+radius = 0.08
+height = 0.3
+material = SubResource("StandardMaterial3D_horn")
+
+[node name="HornL2" type="CSGCylinder3D" parent="Head/HornL1"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 0.25, -0.1)
+radius = 0.06
+height = 0.3
+material = SubResource("StandardMaterial3D_horn")
+
+[node name="HornL3" type="CSGCylinder3D" parent="Head/HornL1/HornL2"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 0.2, -0.1)
+radius = 0.06
+height = 0.2
+cone = true
+material = SubResource("StandardMaterial3D_horn")
+
+[node name="HornR1" type="CSGCylinder3D" parent="Head"]
+transform = Transform3D(0.965926, -0.258819, 0, 0.258819, 0.965926, 0, 0, 0, 1, 0.25, 0.4, -0.1)
+radius = 0.08
+height = 0.3
+material = SubResource("StandardMaterial3D_horn")
+
+[node name="HornR2" type="CSGCylinder3D" parent="Head/HornR1"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 0.25, -0.1)
+radius = 0.06
+height = 0.3
+material = SubResource("StandardMaterial3D_horn")
+
+[node name="HornR3" type="CSGCylinder3D" parent="Head/HornR1/HornR2"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 0.2, -0.1)
+radius = 0.06
+height = 0.2
+cone = true
+material = SubResource("StandardMaterial3D_horn")

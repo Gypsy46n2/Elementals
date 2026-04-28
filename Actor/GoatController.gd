@@ -7,7 +7,8 @@ extends ActorAIController
 enum State { WANDERING, ALERT, CHARGING, COOLDOWN }
 var current_state: State = State.WANDERING
 
-@export var detection_range: float = 10.0
+## Inherits detection_range from ActorAIController (default 15.0).
+## Kept close to original goat behavior by overriding in _ready if needed.
 @export var charge_range: float = 6.0
 @export var alert_duration: float = 1.0
 @export var cooldown_duration: float = 3.0
@@ -25,17 +26,7 @@ var _debug_line: MeshInstance3D
 var _debug_material: StandardMaterial3D
 
 func _ready() -> void:
-	_rng.randomize()
-	if not actor and get_parent().get("element_type") != null: # Duck typing check for Actor
-		actor = get_parent()
-	
-	if actor:
-		_movement_target = actor.global_transform.origin
-		if movement_component:
-			movement_component.stuck.connect(_choose_new_target)
-		# Use call_deferred to ensure arena grid is ready
-		call_deferred("_choose_new_target")
-	
+	super._ready()
 	_setup_debug_line()
 
 func _setup_debug_line() -> void:
@@ -115,7 +106,7 @@ func _choose_new_target() -> void:
 	var dist_to_player = actor.global_position.distance_to(player_goat.global_position)
 	
 	# Get valid neighbors using base class helper
-	var neighbors = _get_traversable_neighbors(ground_tile)
+	var neighbors = actor.tile_navigation_component.get_traversable_neighbors(ground_tile)
 	
 	if neighbors.is_empty():
 		super._choose_new_target()
@@ -210,22 +201,28 @@ func _update_alert(delta: float) -> void:
 	if _state_timer <= 0:
 		_transition_to(State.CHARGING)
 
-func _update_charging(delta: float) -> void:
-	# The GoatActor script handles the actual charge physics
+func _update_charging(_delta: float) -> void:
+	# The GoatCharge ability handles the actual charge physics
 	# We just need to trigger it once
-	if not actor.get("_is_charging"):
+	var is_charging := false
+	var ability_comp = actor.get("ability_component")
+	if ability_comp:
+		for action in ability_comp.actions:
+			if action is GoatCharge and action.is_charging:
+				is_charging = true
+				break
+
+	if not is_charging:
 		# If we aren't charging yet, start it
 		var target_pos = _target_actor.global_position
-		
+
 		# Set the charge direction in the goat script
 		var dir = (target_pos - actor.global_position).normalized()
 		dir.y = 0
-		
-		# We use the internal charge method by simulating a mouse click or calling it directly
-		# GoatActor._start_charge() uses mouse position, so we should add an AI-friendly version
-		if actor.has_method("ai_start_charge"):
-			actor.ai_start_charge(target_pos)
-		
+
+		if ability_comp:
+			ability_comp.execute_ability("charge", target_pos)
+
 		_transition_to(State.COOLDOWN)
 
 func _update_cooldown(delta: float) -> void:

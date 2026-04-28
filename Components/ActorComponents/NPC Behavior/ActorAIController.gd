@@ -7,6 +7,12 @@ extends ActorController
 @export var actor: Node3D
 ## Maximum distance from the starting position the actor will roam.
 @export var roam_radius: float = 22.0
+## Distance at which the actor can detect enemies.
+@export var detection_range: float = 15.0
+## Distance at which the actor will begin attacking.
+@export var attack_range: float = 10.0
+## Health percentage below which the actor will attempt to flee.
+@export var flee_health_threshold: float = 0.3
 
 ## Tracks the previous tile to avoid immediate backtracking.
 var _previous_tile: HexTileData
@@ -15,53 +21,71 @@ var _movement_target: Vector3
 ## Local RNG for randomized movement decisions.
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
+## The state machine driving this controller's behavior.
+var state_machine: ActorStateMachine
+
 func _ready() -> void:
 	_rng.randomize()
 	if not actor and get_parent() is Actor:
 		actor = get_parent()
-	
+
 	if actor:
 		_movement_target = actor.global_transform.origin
 		if movement_component:
 			# If the movement component gets stuck, force a recalculation of the target.
-			movement_component.stuck.connect(_choose_new_target)
-		# Use call_deferred to ensure arena grid and other dependencies are fully initialized.
+			movement_component.stuck.connect(_on_movement_stuck)
+		# Deferred initialization because the actor may not have finished creating
+		# all components (tile_interaction_component, stun_component, etc.) yet.
+		call_deferred("_init_state_machine")
+		call_deferred("_connect_stun_signals")
+		call_deferred("_connect_death_signals")
 		call_deferred("_choose_new_target")
 
+## Frame-update hook for non-physics state logic (animations, timers, etc.).
+func _process(delta: float) -> void:
+	if state_machine:
+		state_machine.update(delta)
+
 func _physics_process(delta: float) -> void:
-	# Disable logic if the actor is currently stunned.
-	if actor and actor.is_stunned():
+	# Stun is now handled as an affected state inside the state machine.
+	# Emergency fallback only if the state machine hasn't initialized yet.
+	if actor and actor.is_stunned() and not state_machine:
 		if movement_component:
 			movement_component.apply_gravity(delta)
 			movement_component.stop(delta)
 		return
-		
+
 	super._physics_process(delta)
 
-## Implements the autonomous logic for NPCs: moves toward a target and fires projectiles.
+## Dispatches AI logic to the active state machine state.
 func _handle_ai_logic(delta: float) -> void:
 	if not actor or not actor._arena_grid or not movement_component:
 		return
-		
-	var current_pos_2d = Vector2(actor.global_transform.origin.x, actor.global_transform.origin.z)
-	var target_pos_2d = Vector2(_movement_target.x, _movement_target.z)
-	
-	# If we've reached the current target tile, pick a new one.
+
+	if state_machine:
+		state_machine.physics_update(delta)
+	else:
+		# Fallback for safety if state machine failed to initialize
+		_execute_legacy_ai(delta)
+
+## Legacy AI behavior kept as a fallback when the state machine is unavailable.
+func _execute_legacy_ai(delta: float) -> void:
+	var current_pos_2d := Vector2(actor.global_transform.origin.x, actor.global_transform.origin.z)
+	var target_pos_2d := Vector2(_movement_target.x, _movement_target.z)
+
 	if current_pos_2d.distance_to(target_pos_2d) < 0.2:
 		_choose_new_target()
-		
-	var direction = (target_pos_2d - current_pos_2d).normalized()
-	var dir_3d = Vector3(direction.x, 0, direction.y)
-	
-	# Calculate a steering vector to push the actor away from Trees, Stones, and Cliffs.
-	var avoidance = _get_obstacle_avoidance_vector()
+
+	var direction := (target_pos_2d - current_pos_2d).normalized()
+	var dir_3d := Vector3(direction.x, 0, direction.y)
+
+	var avoidance := _get_obstacle_avoidance_vector()
 	if avoidance.length_squared() > 0.01:
-		# Blend the target direction with the avoidance force.
 		dir_3d = (dir_3d + avoidance * 2.0).normalized()
-	
+
 	movement_component.move(dir_3d, delta)
 	movement_component.apply_gravity(delta)
-	
+
 	# AI Combat Logic: Auto-fire when mana is full.
 	if actor.mana_component and actor.projectile_component:
 		if actor.mana_component.current_mana >= actor.mana_component.max_mana and not actor.is_stunned():
@@ -147,7 +171,7 @@ func _choose_new_target() -> void:
 	
 	if ground_tile and actor._arena_grid:
 		# Filter neighbors for those that are actually traversable (no stone, no trees, no high walls).
-		var neighbors = _get_traversable_neighbors(ground_tile)
+		var neighbors = actor.tile_navigation_component.get_traversable_neighbors(ground_tile)
 		
 		if neighbors.size() > 0:
 			# Try to avoid going back to the tile we just came from.
@@ -173,22 +197,105 @@ func _choose_new_target() -> void:
 	else:
 		var heading = _rng.randf_range(0.0, TAU)
 		_movement_target = actor.global_transform.origin + Vector3(cos(heading), 0.0, sin(heading)) * 3.0
-	
+
 	_movement_target.y = actor.global_position.y
 
-## Helper to find neighbors that the NPC can actually walk onto.
-func _get_traversable_neighbors(tile: HexTileData, max_step_up: float = 3.0) -> Array[HexTileData]:
-	if not tile or not actor or not actor._arena_grid: return []
-	var ground_y = actor._arena_grid._get_tile_surface_y(tile)
-	return actor._arena_grid._get_neighbors(tile).filter(func(t):
-		if t == null or t.current_state == TileConstants.State.STONE: return false
-		if t.feature:
-			if t.feature is TreeFeature:
-				if t.feature.current_state in [TreeFeature.State.TREE, TreeFeature.State.STUMP, TreeFeature.State.BURNT_STUMP]:
-					return false
-			elif t.feature is FenceFeature:
-				return false
-		var ty = actor._arena_grid._get_tile_surface_y(t)
-		if ty > ground_y + max_step_up: return false
-		return true
-	)
+## Initializes the state machine and registers all default AI states.
+func _init_state_machine() -> void:
+	if state_machine:
+		return
+	state_machine = ActorStateMachine.new()
+	state_machine.actor = actor
+	state_machine.controller = self
+
+	state_machine.register_state("idle", AIIdleState.new())
+	state_machine.register_state("roam", AIRoamState.new())
+	state_machine.register_state("chase", AIChaseState.new())
+	state_machine.register_state("attack", AIAttackState.new())
+	state_machine.register_state("flee", AIFleeState.new())
+	state_machine.register_state("investigate", AIInvestigateState.new())
+	state_machine.register_state("stunned", AIStunnedState.new())
+	state_machine.register_state("death", AIDeathState.new())
+
+	state_machine.change_state("roam")
+
+## Connects to the actor's stun component so affected states are applied automatically.
+func _connect_stun_signals() -> void:
+	if not actor or not actor.stun_component:
+		return
+	actor.stun_component.stun_started.connect(_on_stun_started)
+	actor.stun_component.stun_ended.connect(_on_stun_ended)
+	# Handle edge case where actor is already stunned when this controller initializes
+	if actor.stun_component.is_stunned():
+		state_machine.change_affected_state("stunned")
+
+## Called when the actor begins being stunned.
+func _on_stun_started(_duration: float) -> void:
+	if state_machine:
+		state_machine.change_affected_state("stunned")
+
+## Called when the actor recovers from stun.
+func _on_stun_ended() -> void:
+	if state_machine:
+		state_machine.clear_affected_state()
+
+## Connects to the actor's death and resurrection signals.
+func _connect_death_signals() -> void:
+	if not actor:
+		return
+	actor.died.connect(_on_actor_died)
+	actor.resurrected.connect(_on_actor_resurrected)
+
+## Called when the actor dies. Transitions the state machine to the death state.
+func _on_actor_died() -> void:
+	if state_machine:
+		state_machine.change_state("death")
+
+## Called when the actor is resurrected. Returns to roaming behavior.
+func _on_actor_resurrected() -> void:
+	if state_machine:
+		state_machine.change_state("roam")
+
+## Finds the nearest enemy actor within detection_range.
+func _find_nearest_enemy() -> Node3D:
+	if not actor or not actor._arena_grid:
+		return null
+	var nearest: Node3D = null
+	var nearest_dist: float = INF
+	for other in actor._arena_grid.actors:
+		if not is_instance_valid(other) or other == actor:
+			continue
+		if actor.is_enemy(other):
+			var dist: float = actor.global_position.distance_to(other.global_position)
+			if dist < detection_range and dist < nearest_dist:
+				nearest = other
+				nearest_dist = dist
+	return nearest
+
+## Returns true if the actor's health is below the flee threshold.
+func _should_flee() -> bool:
+	if not actor or not actor.health_component:
+		return false
+	return actor.health_component.current_health / actor.health_component.max_health < flee_health_threshold
+
+## Rotates the actor to face a world position (updates visual facing).
+func _face_target(target_pos: Vector3) -> void:
+	var dir := (target_pos - actor.global_position).normalized()
+	dir.y = 0
+	if dir.length() > 0.01 and actor.visual_component:
+		actor.visual_component.last_attack_dir = dir
+		# Nudge velocity slightly so the visual component picks up the direction
+		actor.velocity.x = dir.x * 0.01
+		actor.velocity.z = dir.z * 0.01
+
+## Called when the movement component reports being stuck.
+func _on_movement_stuck() -> void:
+	_choose_new_target()
+
+## Returns a string representation of the current control state for debugging tools.
+func get_debug_state() -> String:
+	if is_controlled:
+		return "CONTROLLED"
+	if state_machine:
+		return state_machine.get_current_state_name().to_upper()
+	return "AI"

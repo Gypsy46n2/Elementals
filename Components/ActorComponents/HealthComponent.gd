@@ -42,6 +42,22 @@ func set_current_health(v: float) -> void:
 		if current_health <= 0:
 			health_depleted.emit()
 
+## Rolls hit dice and sets both max and current health to the result.
+func roll_max_health(die_count: int, die_sides: int, rng: RandomNumberGenerator = null) -> float:
+	var total: int = 0
+	if rng:
+		for i in range(die_count):
+			total += rng.randi_range(1, die_sides)
+	else:
+		var fallback_rng := RandomNumberGenerator.new()
+		fallback_rng.randomize()
+		for i in range(die_count):
+			total += fallback_rng.randi_range(1, die_sides)
+	var result: float = float(total)
+	max_health = result
+	current_health = result
+	return result
+
 func _setup_hp_bar() -> void:
 	# Create a SubViewport for the UI
 	_hp_viewport = SubViewport.new()

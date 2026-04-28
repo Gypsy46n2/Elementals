@@ -58,7 +58,7 @@ enum Gender { DOE, BUCK }
 		if strength == v: return
 		strength = v
 		stats_changed.emit()
-@export var dexterity: float = 0: # Agility, influences move speed
+@export var dexterity: float = 1.0: # Agility, influences move speed
 	set(v): 
 		if dexterity == v: return
 		dexterity = v

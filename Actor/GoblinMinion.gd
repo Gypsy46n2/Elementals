@@ -38,8 +38,7 @@ func _ready() -> void:
 		armor_class_component.refresh()
 
 	# Roll HP: 2d6
-	max_hp = float(_rng.randi_range(1, 6) + _rng.randi_range(1, 6))
-	health_component.current_health = max_hp
+	max_hp = health_component.roll_max_health(2, 6, _rng)
 	
 	# Load Dagger weapon - overrides the default if found
 	var wl = get_node_or_null("/root/ItemsAutoload")

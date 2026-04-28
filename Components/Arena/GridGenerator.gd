@@ -12,6 +12,8 @@ var farmstead_interior_tiles: Array[HexTileData] = []
 var farmstead_perimeter_tiles: Array[HexTileData] = []
 var house_tile: HexTileData = null
 
+var _neighbor_cache: Dictionary = {}
+
 func setup(p_arena: ArenaGrid) -> void:
 	arena = p_arena
 
@@ -27,6 +29,7 @@ func initialize_grid() -> void:
 	
 	arena.tile_data_grid.clear()
 	arena.tile_counts.clear()
+	_neighbor_cache.clear()
 	for state in TileConstants.State.values():
 		arena.tile_counts[state] = 0
 	
@@ -210,7 +213,23 @@ func get_tile_surface_y(tile: HexTileData) -> float:
 	return float(tile.height_level) * arena.height_step
 
 ## Returns an array of neighboring tiles for the given tile.
+## This is a hotspot during generation and game logic, so we cache results
+## to avoid redoing the 6 directional lookups every time.
 func get_neighbors(tile: HexTileData) -> Array[HexTileData]:
+	# Cache hit: we already computed this tile's neighbors on a previous call.
+	# We skip the expensive grid math and return immediately.
+	if _neighbor_cache.has(tile):
+		# Return a shallow copy instead of the cached array itself.
+		# Some callers (e.g., farmstead planning, fire spreading) shuffle or
+		# otherwise mutate the returned array, so a copy keeps the cache safe.
+		var cached: Array = _neighbor_cache[tile]
+		var result: Array[HexTileData] = []
+		result.assign(cached)
+		return result
+	
+	# Cache miss: compute neighbors by walking the 6 hex directions.
+	# For each direction we convert grid coords, validate bounds, and index
+	# into the flat tile_data_grid. This is skipped entirely on future calls.
 	var result: Array[HexTileData] = []
 	var offsets = TileConstants.get_neighbor_offsets(tile.grid_coords.x)
 	for offset in offsets:
@@ -218,6 +237,9 @@ func get_neighbors(tile: HexTileData) -> Array[HexTileData]:
 		var ny = tile.grid_coords.y + offset.y
 		var n = get_tile_at_grid_coords(nx, ny)
 		if n: result.append(n)
+	
+	# Store the result so the next call for this tile is instant.
+	_neighbor_cache[tile] = result
 	return result
 
 ## Checks if any neighboring tiles are grass.
