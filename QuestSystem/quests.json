@@ -1,0 +1,76 @@
+{
+  "quests": [
+    {
+      "id": "starter_goblin_cleanup",
+      "title": "Goblin Cleanup",
+      "description": "The board marks a nearby goblin pocket. Accept the job, hunt them down, and collect the gold bounty.",
+      "repeatable": true,
+      "reward_gold": 25,
+      "objectives": [
+        {
+          "type": "kill",
+          "target": "goblin",
+          "label": "Defeat goblins",
+          "required": 3
+        }
+      ],
+      "spawns": [
+        {
+          "actor_type": "goblin",
+          "target_id": "goblin",
+          "count": 3,
+          "radius_min": 8.0,
+          "radius_max": 22.0
+        }
+      ]
+    },
+    {
+      "id": "bigger_goblin_problem",
+      "title": "Bigger Goblin Problem",
+      "description": "A larger goblin pack is harassing the edge of the arena. Spawn the pack, clear it, and take the better purse.",
+      "repeatable": true,
+      "reward_gold": 60,
+      "objectives": [
+        {
+          "type": "kill",
+          "target": "goblin",
+          "label": "Defeat the larger goblin pack",
+          "required": 6
+        }
+      ],
+      "spawns": [
+        {
+          "actor_type": "goblin",
+          "target_id": "goblin",
+          "count": 6,
+          "radius_min": 10.0,
+          "radius_max": 28.0
+        }
+      ]
+    },
+    {
+      "id": "dangerous_goblin_sweep",
+      "title": "Dangerous Goblin Sweep",
+      "description": "A risky bounty for testing bigger encounters. Bring a strong actor and clear the summoned goblin sweep.",
+      "repeatable": true,
+      "reward_gold": 100,
+      "objectives": [
+        {
+          "type": "kill",
+          "target": "goblin",
+          "label": "Defeat the dangerous goblin sweep",
+          "required": 10
+        }
+      ],
+      "spawns": [
+        {
+          "actor_type": "goblin",
+          "target_id": "goblin",
+          "count": 10,
+          "radius_min": 12.0,
+          "radius_max": 34.0
+        }
+      ]
+    }
+  ]
+}
