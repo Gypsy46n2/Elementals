@@ -75,6 +75,7 @@ func _ready() -> void:
 		player_input.select_initial_actor()
 	
 	GameEvents.actor_died.connect(_on_actor_died)
+	_setup_quest_system()
 
 # Instantiates and attaches core logic components.
 # Should not be moved (Orchestrates arena-specific components).
@@ -126,8 +127,16 @@ func _setup_components() -> void:
 func _on_actor_died(e: Node3D) -> void:
 	if actors.has(e):
 		actors.erase(e)
+
+	var was_controlled_actor: bool = e == current_controlled_actor
+	var was_playable_actor: bool = false
+	if e is Actor:
+		was_playable_actor = (e as Actor).is_playable
+	if was_controlled_actor or was_playable_actor:
+		if has_node("/root/QuestState"):
+			QuestState.fail_active_quest("You died. Quest failed and reset for the next play.")
 	
-	if e == current_controlled_actor:
+	if was_controlled_actor:
 		if player_input:
 			player_input.next_actor()
 	
@@ -267,3 +276,17 @@ func get_tiles_within_distance(world_position: Vector3, radius: float) -> Array[
 		if d.length_squared() <= radius_sq:
 			results.append(tile)
 	return results
+
+# Adds the modular Goatlandia-style quest/spawn addon without changing core arena combat.
+func _setup_quest_system() -> void:
+	if has_node("QuestStarterKit"):
+		return
+	var script_path: String = "res://QuestSystem/QuestStarterKit.gd"
+	if not ResourceLoader.exists(script_path):
+		return
+	var kit: Node = Node.new()
+	kit.name = "QuestStarterKit"
+	kit.set_script(load(script_path))
+	add_child(kit)
+	if kit.has_method("setup"):
+		kit.call("setup", self)
