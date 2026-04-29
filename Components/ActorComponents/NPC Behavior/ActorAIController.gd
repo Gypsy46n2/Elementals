@@ -36,6 +36,10 @@ const PERCEPTION_COOLDOWN: float = 1.0
 ## The state machine driving this controller's behavior.
 var state_machine: ActorStateMachine
 
+var _tile_signals: TileSignalComponent
+var _active_obstacles: Array[Dictionary] = []
+var _nearby_cliffs: Array[HexTileData] = []
+
 func _ready() -> void:
 	_rng.randomize()
 	if not actor and get_parent() is Actor:
@@ -52,6 +56,78 @@ func _ready() -> void:
 		call_deferred("_connect_stun_signals")
 		call_deferred("_connect_death_signals")
 		call_deferred("_choose_new_target")
+		call_deferred("_setup_tile_signals")
+
+func _setup_tile_signals() -> void:
+	if not actor or not actor._arena_grid:
+		return
+		
+	_tile_signals = TileSignalComponent.new()
+	add_child(_tile_signals)
+	_tile_signals.setup(actor._arena_grid)
+	_tile_signals.set_target_actor(actor)
+	_tile_signals.trigger_activated.connect(_on_obstacle_entered)
+	_tile_signals.trigger_deactivated.connect(_on_obstacle_exited)
+	
+	# Connect to actor's tile_changed to manage local neighbor lists (for cliffs)
+	actor.tile_changed.connect(_on_actor_tile_changed_npc)
+	
+	# Initial cliff scan
+	var current_tile = actor.tile_interaction_component.get_ground_tile()
+	if current_tile:
+		_on_actor_tile_changed_npc(current_tile)
+	
+	# Static obstacles are registered once and signals handle entry/exit
+	call_deferred("_register_static_obstacles")
+
+func _register_static_obstacles() -> void:
+	if not actor or not actor._arena_grid:
+		return
+		
+	for tile in actor._arena_grid.tile_data_grid:
+		var is_blocker = false
+		var weight = 1.0
+		
+		# Trees and Fences
+		if tile.feature:
+			if tile.feature is TreeFeature:
+				if tile.feature.current_state in [TreeFeature.State.TREE, TreeFeature.State.STUMP, TreeFeature.State.BURNT_STUMP]:
+					is_blocker = true
+					weight = 1.5
+			elif tile.feature is FenceFeature:
+				is_blocker = true
+				weight = 1.8
+		
+		# Stone Walls
+		if not is_blocker and tile.current_state == TileConstants.State.STONE:
+			is_blocker = true
+			weight = 2.0
+		
+		if is_blocker:
+			# Radius 2 for static obstacles
+			_tile_signals.register_trigger(tile, 2, Callable(), {"weight": weight})
+
+func _on_obstacle_entered(trigger: Dictionary) -> void:
+	if not trigger in _active_obstacles:
+		# Only track triggers that have weight (our obstacle triggers)
+		if trigger.has("metadata") and trigger["metadata"].has("weight"):
+			_active_obstacles.append(trigger)
+
+func _on_obstacle_exited(trigger: Dictionary) -> void:
+	_active_obstacles.erase(trigger)
+
+func _on_actor_tile_changed_npc(new_tile: HexTileData) -> void:
+	if not actor or not actor._arena_grid:
+		return
+	# Update nearby tiles for cliff detection (Radius 2)
+	var neighbors = actor._arena_grid._get_neighbors(new_tile)
+	var radius2: Array[HexTileData] = []
+	radius2.append_array(neighbors)
+	for n in neighbors:
+		for nn in actor._arena_grid._get_neighbors(n):
+			if nn != new_tile and not nn in radius2:
+				radius2.append(nn)
+	_nearby_cliffs = radius2
 
 ## Frame-update hook for non-physics state logic (animations, timers, etc.).
 func _process(delta: float) -> void:
@@ -131,63 +207,51 @@ func _get_obstacle_avoidance_vector() -> Vector3:
 	if ground_tile:
 		ground_y = actor._arena_grid._get_tile_surface_y(ground_tile)
 	
-	# Check a radius around the actor for obstacles (roughly 2 hexes away).
-	var nearby_tiles = actor._arena_grid.get_tiles_within_distance(my_pos, 3.5)
-	for tile in nearby_tiles:
-		var is_obstacle = false
-		var obstacle_weight = 1.0
+	# 1. Process active static obstacles from the signal system
+	for trigger in _active_obstacles:
+		var tile: HexTileData = trigger["center"]
+		var obstacle_weight: float = trigger["metadata"]["weight"]
+		avoidance += _calculate_repulsion(my_pos, tile.position, obstacle_weight)
+
+	# 2. Process nearby cliffs (Dynamic height avoidance)
+	for tile in _nearby_cliffs:
+		var tile_y = actor._arena_grid._get_tile_surface_y(tile)
+		var obstacle_weight = 0.0
 		
-		# 1. Check for Trees and Fences (Visual features that block movement)
-		if tile.feature:
-			if tile.feature is TreeFeature:
-				if tile.feature.current_state in [TreeFeature.State.TREE, TreeFeature.State.STUMP, TreeFeature.State.BURNT_STUMP]:
-					is_obstacle = true
-					obstacle_weight = 1.5 # Trees are solid and wide.
-			elif tile.feature is FenceFeature:
-				is_obstacle = true
-				obstacle_weight = 1.8 # Fences are narrow but must be navigated around.
+		if tile_y > ground_y + 0.3: # Stepping up onto high ground.
+			obstacle_weight = 1.4
+		elif tile_y < ground_y - 1.5: # Avoiding accidental falls off high ledges.
+			obstacle_weight = 0.8
 		
-		# 2. Check for Stone Walls (The hard boundaries of the arena)
-		if not is_obstacle and tile.current_state == TileConstants.State.STONE:
-			is_obstacle = true
-			obstacle_weight = 2.0 # Arena borders should be avoided aggressively.
-			
-		# 3. Check for Cliffs (Abrupt changes in height)
-		if not is_obstacle:
-			var tile_y = actor._arena_grid._get_tile_surface_y(tile)
-			if tile_y > ground_y + 0.3: # Stepping up onto high ground.
-				is_obstacle = true
-				obstacle_weight = 1.4
-			elif tile_y < ground_y - 1.5: # Avoiding accidental falls off high ledges.
-				is_obstacle = true
-				obstacle_weight = 0.8
-		
-		if is_obstacle:
-			var feature_pos = tile.position
-			var diff = my_pos - feature_pos
-			diff.y = 0
-			var dist = diff.length()
-			
-			# Avoidance threshold: slightly larger than a hex to ensure early detection.
-			var threshold = 2.2
-			if dist < threshold and dist > 0.1:
-				var weight = (threshold - dist) / threshold * obstacle_weight
-				var repulsion = diff.normalized() * weight
-				avoidance += repulsion
-				
-				# Add a "sidestep" force to break symmetry.
-				# This prevents the AI from jittering when heading perfectly straight at a wall.
-				var move_dir = Vector3(actor.velocity.x, 0, actor.velocity.z).normalized()
-				if move_dir.length_squared() > 0.1:
-					var dot = move_dir.dot(-diff.normalized())
-					if dot > 0.5: # Heading mostly at the obstacle.
-						var side_dir = Vector3(-diff.z, 0, diff.x).normalized()
-						# Bias towards the side we are already leaning towards.
-						if move_dir.dot(side_dir) < 0:
-							side_dir = -side_dir
-						avoidance += side_dir * weight * 1.0
+		if obstacle_weight > 0.0:
+			avoidance += _calculate_repulsion(my_pos, tile.position, obstacle_weight)
 				
 	return avoidance
+
+func _calculate_repulsion(my_pos: Vector3, obstacle_pos: Vector3, obstacle_weight: float) -> Vector3:
+	var diff = my_pos - obstacle_pos
+	diff.y = 0
+	var dist = diff.length()
+	
+	# Avoidance threshold: slightly larger than a hex to ensure early detection.
+	var threshold = 2.2
+	if dist < threshold and dist > 0.1:
+		var weight = (threshold - dist) / threshold * obstacle_weight
+		var repulsion = diff.normalized() * weight
+		
+		# Add a "sidestep" force to break symmetry.
+		var move_dir = Vector3(actor.velocity.x, 0, actor.velocity.z).normalized()
+		if move_dir.length_squared() > 0.1:
+			var dot = move_dir.dot(-diff.normalized())
+			if dot > 0.5: # Heading mostly at the obstacle.
+				var side_dir = Vector3(-diff.z, 0, diff.x).normalized()
+				# Bias towards the side we are already leaning towards.
+				if move_dir.dot(side_dir) < 0:
+					side_dir = -side_dir
+				repulsion += side_dir * weight * 1.0
+		
+		return repulsion
+	return Vector3.ZERO
 
 ## Selects a new adjacent tile to move toward.
 func _choose_new_target() -> void:
@@ -326,7 +390,7 @@ func _find_nearest_enemy() -> Node3D:
 			)
 			_perception_cooldown_timer = PERCEPTION_COOLDOWN
 			
-			if result.success:
+			if result["success"]:
 				_perceived_enemies[other] = PERCEPTION_EXPIRY
 				if dist < nearest_dist:
 					nearest = other
