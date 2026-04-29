@@ -104,34 +104,46 @@ func _process(delta: float) -> void:
 func _update_idle_animation(_delta: float) -> void:
 	if not _weapon_model or not _owner_actor: return
 	
-	var mouse_pos = get_viewport().get_mouse_position()
-	var camera = get_viewport().get_camera_3d()
-	if not camera: return
+	var dir: Vector3 = _get_actor_facing_dir()
 	
-	var ray_origin = camera.project_ray_origin(mouse_pos)
-	var ray_dir = camera.project_ray_normal(mouse_pos)
-	var plane = Plane(Vector3.UP, _owner_actor.global_position.y)
-	var target_3d = plane.intersects_ray(ray_origin, ray_dir)
+	var orbit_dist = 0.7
+	var float_height = 1.1
+	var t = Time.get_ticks_msec() * 0.002
+	var bob = sin(t) * 0.04
 	
-	if target_3d:
-		var actor_pos = _owner_actor.global_position
-		var dir = (target_3d - actor_pos).normalized()
-		dir.y = 0
-		if dir.length() < 0.01: 
-			dir = -_owner_actor.global_transform.basis.z
-		
-		var orbit_dist = 0.7
-		var float_height = 1.1
-		var t = Time.get_ticks_msec() * 0.002
-		var bob = sin(t) * 0.04
-		
-		# Position: Orbit the actor towards the mouse
-		var target_pos = dir * orbit_dist + Vector3(0, float_height + bob, 0)
-		_weapon_model.position = target_pos
-		
-		# Orientation: Handle towards actor, tip towards target
-		_weapon_model.look_at(_weapon_model.global_position + dir, Vector3.UP)
-		_weapon_model.rotate_object_local(Vector3.RIGHT, deg_to_rad(30))
+	# Position: Orbit the actor in the facing direction
+	var target_pos = dir * orbit_dist + Vector3(0, float_height + bob, 0)
+	_weapon_model.position = target_pos
+	
+	# Orientation: Handle towards actor, tip towards target
+	_weapon_model.look_at(_weapon_model.global_position + dir, Vector3.UP)
+	_weapon_model.rotate_object_local(Vector3.RIGHT, deg_to_rad(30))
+
+func _get_actor_facing_dir() -> Vector3:
+	if not _owner_actor: return Vector3.FORWARD
+	
+	var visual: ActorVisualComponent = _owner_actor.visual_component
+	if visual and visual.body_model:
+		var forward: Vector3 = visual.body_model.global_transform.basis.z
+		forward.y = 0
+		if forward.length() > 0.01:
+			return forward.normalized()
+	
+	# Fallback to velocity
+	var velocity: Vector3 = Vector3(_owner_actor.velocity.x, 0, _owner_actor.velocity.z)
+	if velocity.length() > 0.1:
+		return velocity.normalized()
+	
+	# Fallback to last attack direction
+	if visual and visual.last_attack_dir.length() > 0.01:
+		var attack_dir: Vector3 = visual.last_attack_dir
+		attack_dir.y = 0
+		return attack_dir.normalized()
+	
+	# Final fallback
+	var fallback: Vector3 = -_owner_actor.global_transform.basis.z
+	fallback.y = 0
+	return fallback.normalized()
 
 func get_weapon_model() -> Node3D:
 	return _weapon_model

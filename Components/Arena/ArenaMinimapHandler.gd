@@ -8,6 +8,7 @@ var minimap_camera: Camera3D
 var minimap_container: SubViewportContainer
 var _marker_container: Control
 var _active_markers: Array[MinimapQuestMarker] = []
+var _actor_markers: Dictionary = {} # Node -> MinimapActorMarker
 
 func setup(p_arena: Node3D) -> void:
 	arena = p_arena
@@ -17,6 +18,7 @@ func setup(p_arena: Node3D) -> void:
 		minimap_camera = minimap_viewport.get_node_or_null("MinimapCamera")
 	_setup_minimap()
 	_setup_marker_overlay()
+	_setup_actor_markers()
 	_connect_quest_signals()
 	call_deferred("_refresh_markers")
 
@@ -113,42 +115,99 @@ func _camp_has_live_actors(record: Dictionary) -> bool:
 	return false
 
 func _process(_delta: float) -> void:
-	if _active_markers.is_empty() or minimap_camera == null or minimap_viewport == null or minimap_container == null:
+	if minimap_camera == null or minimap_viewport == null or minimap_container == null:
 		return
-	var spawn_manager: Node = arena.get_node_or_null("QuestSpawnManager")
-	if spawn_manager == null:
-		return
-	var camp_records: Dictionary = _get_camp_records(spawn_manager)
 	var viewport_size: Vector2 = Vector2(minimap_viewport.size)
 	var container_size: Vector2 = minimap_container.size
 	if viewport_size.x <= 0 or viewport_size.y <= 0 or container_size.x <= 0 or container_size.y <= 0:
 		return
 	var scale_x: float = container_size.x / viewport_size.x
 	var scale_y: float = container_size.y / viewport_size.y
-	for marker in _active_markers:
-		if not is_instance_valid(marker):
+
+	# Update quest camp markers
+	var spawn_manager: Node = arena.get_node_or_null("QuestSpawnManager")
+	if spawn_manager != null and not _active_markers.is_empty():
+		var camp_records: Dictionary = _get_camp_records(spawn_manager)
+		for marker in _active_markers:
+			if not is_instance_valid(marker):
+				continue
+			var camp_id: String = String(marker.get_meta("camp_id", ""))
+			if camp_id.is_empty():
+				marker.visible = false
+				continue
+			var record_value: Variant = camp_records.get(camp_id, {})
+			if typeof(record_value) != TYPE_DICTIONARY:
+				marker.visible = false
+				continue
+			var record: Dictionary = record_value as Dictionary
+			if not _camp_has_live_actors(record):
+				marker.visible = false
+				continue
+			var center_value: Variant = record.get("center", null)
+			if center_value == null or not (center_value is Vector3):
+				marker.visible = false
+				continue
+			var world_pos: Vector3 = center_value as Vector3
+			var viewport_pos: Vector2 = minimap_camera.unproject_position(world_pos)
+			var local_pos: Vector2 = Vector2(viewport_pos.x * scale_x, viewport_pos.y * scale_y)
+			# Clamp to container bounds
+			local_pos.x = clampf(local_pos.x, 0.0, container_size.x - marker.size.x)
+			local_pos.y = clampf(local_pos.y, 0.0, container_size.y - marker.size.y)
+			marker.position = local_pos
+			marker.visible = true
+
+	# Update actor markers
+	_update_actor_markers(scale_x, scale_y, container_size)
+
+func _setup_actor_markers() -> void:
+	_clear_actor_markers()
+
+func _clear_actor_markers() -> void:
+	for marker in _actor_markers.values():
+		if is_instance_valid(marker):
+			marker.queue_free()
+	_actor_markers.clear()
+
+func _update_actor_markers(scale_x: float, scale_y: float, container_size: Vector2) -> void:
+	if arena == null:
+		return
+	var current_actors: Array[Node] = []
+	for actor in arena.actors:
+		if not is_instance_valid(actor):
 			continue
-		var camp_id: String = String(marker.get_meta("camp_id", ""))
-		if camp_id.is_empty():
-			marker.visible = false
+		if "is_dead" in actor and actor.is_dead:
 			continue
-		var record_value: Variant = camp_records.get(camp_id, {})
-		if typeof(record_value) != TYPE_DICTIONARY:
-			marker.visible = false
-			continue
-		var record: Dictionary = record_value as Dictionary
-		if not _camp_has_live_actors(record):
-			marker.visible = false
-			continue
-		var center_value: Variant = record.get("center", null)
-		if center_value == null or not (center_value is Vector3):
-			marker.visible = false
-			continue
-		var world_pos: Vector3 = center_value as Vector3
+		current_actors.append(actor)
+		var marker: MinimapActorMarker = _actor_markers.get(actor, null) as MinimapActorMarker
+		if marker == null:
+			marker = MinimapActorMarker.new()
+			marker.name = "ActorMarker_%s" % actor.name
+			_marker_container.add_child(marker)
+			_actor_markers[actor] = marker
+		marker.marker_color = _get_actor_marker_color(actor)
+		var world_pos: Vector3 = actor.global_position
 		var viewport_pos: Vector2 = minimap_camera.unproject_position(world_pos)
 		var local_pos: Vector2 = Vector2(viewport_pos.x * scale_x, viewport_pos.y * scale_y)
-		# Clamp to container bounds
 		local_pos.x = clampf(local_pos.x, 0.0, container_size.x - marker.size.x)
 		local_pos.y = clampf(local_pos.y, 0.0, container_size.y - marker.size.y)
 		marker.position = local_pos
 		marker.visible = true
+	# Remove markers for actors that no longer exist
+	for actor in _actor_markers.keys():
+		if not is_instance_valid(actor) or not current_actors.has(actor):
+			var marker: MinimapActorMarker = _actor_markers[actor] as MinimapActorMarker
+			if is_instance_valid(marker):
+				marker.queue_free()
+			_actor_markers.erase(actor)
+
+func _get_actor_marker_color(actor: Node) -> Color:
+	var faction: FactionComponent.Faction = FactionComponent.Faction.NEUTRAL
+	if "faction_component" in actor and actor.faction_component is FactionComponent:
+		faction = actor.faction_component.faction
+	match faction:
+		FactionComponent.Faction.PLAYER, FactionComponent.Faction.FARMSTEAD:
+			return Color(0.2, 0.9, 0.2, 0.95)
+		FactionComponent.Faction.GOBLINS, FactionComponent.Faction.WILDLIFE, FactionComponent.Faction.MONSTERS:
+			return Color(0.9, 0.2, 0.2, 0.95)
+		_:
+			return Color(0.6, 0.6, 0.6, 0.95)

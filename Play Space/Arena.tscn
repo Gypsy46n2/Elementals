@@ -3,9 +3,9 @@
 [ext_resource type="Script" uid="uid://dnnypgaoo7j51" path="res://Play Space/Arena.gd" id="1"]
 [ext_resource type="Script" uid="uid://c0bx554q5f7gv" path="res://Player/CameraFollower.gd" id="2"]
 [ext_resource type="Script" uid="uid://dhnqvq2reqag0" path="res://Play Space/ArenaDebug.gd" id="3"]
-[ext_resource type="Script" path="res://Play Space/OptionsMenu.gd" id="4_xxx"]
+[ext_resource type="Script" uid="uid://ctt3usv2vbaud" path="res://Play Space/OptionsMenu.gd" id="4_xxx"]
 [ext_resource type="PackedScene" path="res://UI/ControlsPanel.tscn" id="5_xxx"]
-[ext_resource type="PackedScene" path="res://UI/PlayerConsole.tscn" id="6_xxx"]
+[ext_resource type="PackedScene" uid="uid://dfugpdrbvku5s" path="res://UI/PlayerConsole.tscn" id="6_xxx"]
 
 [node name="Arena" type="Node3D"]
 script = ExtResource("1")

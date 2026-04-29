@@ -162,7 +162,7 @@ func _configure_quest_actor_faction(actor: Node3D, type: String) -> void:
 				"goblin":
 					actor_object.faction_component.setup(FactionComponent.Faction.GOBLINS)
 				"goat":
-					actor_object.faction_component.setup(FactionComponent.Faction.WILDLIFE)
+					actor_object.faction_component.setup(FactionComponent.Faction.NEUTRAL)
 				_:
 					actor_object.faction_component.setup(FactionComponent.Faction.MONSTERS)
 
@@ -288,7 +288,7 @@ func _configure_wild_goat(goat: Node3D) -> void:
 	var wild_goat: GoatActor = goat as GoatActor
 	wild_goat.is_playable = false
 	if wild_goat.faction_component:
-		wild_goat.faction_component.setup(FactionComponent.Faction.WILDLIFE)
+		wild_goat.faction_component.setup(FactionComponent.Faction.NEUTRAL)
 	if wild_goat.goat_data == null:
 		wild_goat.goat_data = _make_random_goat_data()
 

@@ -10,7 +10,7 @@ func _ready() -> void:
 	should_bob = false
 	
 	super._ready()
-	faction_component.setup(FactionComponent.Faction.FARMSTEAD)
+	faction_component.setup(FactionComponent.Faction.NEUTRAL)
 	
 	if health_component:
 		health_component.bar_visible_always = true
