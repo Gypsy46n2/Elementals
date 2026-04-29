@@ -1,5 +1,7 @@
 extends Node
 
+const CAMP_FIRE_SMOKE_SCENE_PATH: String = "res://QuestSystem/CampMarkerFire/QuestCampFireSmoke.tscn"
+
 # Quest spawns are routed through the arena's ArenaSpawnerComponent.
 # Camp bounties now spawn clustered goblins around visible goblin camps instead of loose random enemies.
 # Kill credit remains objective-based: camp goblins count, quest-spawned goblins count, and normal map goblins still count.
@@ -256,15 +258,8 @@ func _build_goblin_camp_visual(camp_id: String, camp_center: Vector3, camp_size:
 	hide_material.albedo_color = Color(0.32, 0.21, 0.12)
 	var cloth_material: StandardMaterial3D = StandardMaterial3D.new()
 	cloth_material.albedo_color = Color(0.16, 0.30, 0.12)
-	var fire_material: StandardMaterial3D = StandardMaterial3D.new()
-	fire_material.albedo_color = Color(1.0, 0.32, 0.04)
-	fire_material.emission_enabled = true
-	fire_material.emission = Color(1.0, 0.25, 0.04)
-
 	var camp_radius: float = _camp_spawn_radius_for_size(camp_size)
-	var fire: MeshInstance3D = _make_cylinder_mesh("Campfire", 0.38, 0.16, fire_material)
-	fire.position = Vector3(0.0, 0.18, 0.0)
-	root.add_child(fire)
+	_spawn_camp_fire_smoke(root)
 
 	var ring_count: int = maxi(5, mini(10, expected_count + 3))
 	for i in range(ring_count):
@@ -314,6 +309,34 @@ func _build_goblin_camp_visual(camp_id: String, camp_center: Vector3, camp_size:
 	root.add_child(marker)
 
 	return root
+
+func _spawn_camp_fire_smoke(root: Node3D) -> void:
+	var scene_resource: Resource = load(CAMP_FIRE_SMOKE_SCENE_PATH)
+	if scene_resource == null or not (scene_resource is PackedScene):
+		_spawn_fallback_campfire(root)
+		return
+
+	var fire_scene: PackedScene = scene_resource as PackedScene
+	var fire_instance: Node = fire_scene.instantiate()
+	if fire_instance == null or not (fire_instance is Node3D):
+		_spawn_fallback_campfire(root)
+		return
+
+	var fire_node: Node3D = fire_instance as Node3D
+	fire_node.name = "CampFireSmokeMarker"
+	fire_node.position = Vector3(0.0, 0.0, 0.0)
+	fire_node.scale = Vector3(0.85, 0.85, 0.85)
+	fire_node.add_to_group("quest_camp_marker_fire")
+	root.add_child(fire_node)
+
+func _spawn_fallback_campfire(root: Node3D) -> void:
+	var fallback_material: StandardMaterial3D = StandardMaterial3D.new()
+	fallback_material.albedo_color = Color(1.0, 0.32, 0.04)
+	fallback_material.emission_enabled = true
+	fallback_material.emission = Color(1.0, 0.25, 0.04)
+	var fallback_fire: MeshInstance3D = _make_cylinder_mesh("Campfire", 0.38, 0.16, fallback_material)
+	fallback_fire.position = Vector3(0.0, 0.18, 0.0)
+	root.add_child(fallback_fire)
 
 func _make_box_mesh(node_name: String, size: Vector3, material: Material) -> MeshInstance3D:
 	var mesh_instance: MeshInstance3D = MeshInstance3D.new()
