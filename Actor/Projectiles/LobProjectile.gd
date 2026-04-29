@@ -46,26 +46,36 @@ func _land() -> void:
 		queue_free()
 		return
 		
-	# Affect tiles in a radius
-	var tiles = _arena.get_tiles_within_distance(global_transform.origin, _landing_radius)
-	for tile in tiles:
-		if is_instance_valid(tile):
-			_arena.apply_element_to_tile(tile, element_type, _horizontal_dir)
-	
-	# Check for actors in radius (manual check since we are not using Area3D overlap here for landing)
-	var space_state = get_world_3d().direct_space_state
-	var query = PhysicsShapeQueryParameters3D.new()
-	var sphere = SphereShape3D.new()
-	sphere.radius = _landing_radius
-	query.shape = sphere
-	query.transform = global_transform
-	query.collision_mask = 2 # Actors are on layer 2
-	
-	var results = space_state.intersect_shape(query)
-	for result in results:
-		var body = result.collider
-		if body is Actor and body.element_type != element_type:
-			body.take_damage(damage_amount, "normal", (body.global_position - global_position).normalized())
+	var center = _arena.get_tile_at_world_position(global_transform.origin)
+	if center and _arena.tile_signals:
+		var hex_radius = int(ceil(_landing_radius / (1.732 * _arena.hex_size)))
+		
+	# Define the impact effect as a persistent trigger to avoid O(N) scanning
+		# Captured variables for the lambda
+		var dmg = damage_amount
+		var pos = global_position
+		var elem = element_type
+		
+		var impact_callback = func(actor: Node3D, _meta: Dictionary):
+			if is_instance_valid(actor) and actor is Actor and actor.element_type != elem:
+				actor.take_damage(dmg, "normal", (actor.global_position - pos).normalized())
+		
+		# Register the trigger. It will immediately fire for actors already in the radius.
+		var trigger = _arena.tile_signals.register_trigger(center, hex_radius, impact_callback)
+		
+		# Apply elemental effects to tiles (optimized BFS)
+		var tiles = _arena.get_tiles_in_radius(center, hex_radius)
+		for tile in tiles:
+			if is_instance_valid(tile):
+				_arena.apply_element_to_tile(tile, elem, _horizontal_dir)
+		
+		# Optional: remove the trigger after a short duration if it's just an explosion
+		# but the prompt implies we want to rely on the signal system's persistence.
+		# We'll let it linger for 0.5s to catch immediate movement.
+		get_tree().create_timer(0.5).timeout.connect(func():
+			if is_instance_valid(_arena) and _arena.tile_signals:
+				_arena.tile_signals.remove_trigger(trigger)
+		)
 			
 	queue_free()
 

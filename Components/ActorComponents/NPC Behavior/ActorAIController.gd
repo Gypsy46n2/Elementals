@@ -59,61 +59,35 @@ func _ready() -> void:
 		call_deferred("_setup_tile_signals")
 
 func _setup_tile_signals() -> void:
-	if not actor or not actor._arena_grid:
+	if not actor or not actor._arena_grid or not actor._arena_grid.tile_signals:
 		return
 		
-	_tile_signals = TileSignalComponent.new()
-	add_child(_tile_signals)
-	_tile_signals.setup(actor._arena_grid)
-	_tile_signals.set_target_actor(actor)
-	_tile_signals.trigger_activated.connect(_on_obstacle_entered)
-	_tile_signals.trigger_deactivated.connect(_on_obstacle_exited)
+	var signals = actor._arena_grid.tile_signals
+	signals.register_actor(actor)
+	signals.trigger_activated.connect(_on_global_trigger_entered)
+	signals.trigger_deactivated.connect(_on_global_trigger_exited)
 	
 	# Connect to actor's tile_changed to manage local neighbor lists (for cliffs)
-	actor.tile_changed.connect(_on_actor_tile_changed_npc)
+	if not actor.tile_changed.is_connected(_on_actor_tile_changed_npc):
+		actor.tile_changed.connect(_on_actor_tile_changed_npc)
 	
 	# Initial cliff scan
 	var current_tile = actor.tile_interaction_component.get_ground_tile()
 	if current_tile:
 		_on_actor_tile_changed_npc(current_tile)
-	
-	# Static obstacles are registered once and signals handle entry/exit
-	call_deferred("_register_static_obstacles")
 
-func _register_static_obstacles() -> void:
-	if not actor or not actor._arena_grid:
+func _on_global_trigger_entered(trigger: Dictionary, p_actor: Node3D) -> void:
+	if p_actor != actor:
 		return
 		
-	for tile in actor._arena_grid.tile_data_grid:
-		var is_blocker = false
-		var weight = 1.0
-		
-		# Trees and Fences
-		if tile.feature:
-			if tile.feature is TreeFeature:
-				if tile.feature.current_state in [TreeFeature.State.TREE, TreeFeature.State.STUMP, TreeFeature.State.BURNT_STUMP]:
-					is_blocker = true
-					weight = 1.5
-			elif tile.feature is FenceFeature:
-				is_blocker = true
-				weight = 1.8
-		
-		# Stone Walls
-		if not is_blocker and tile.current_state == TileConstants.State.STONE:
-			is_blocker = true
-			weight = 2.0
-		
-		if is_blocker:
-			# Radius 2 for static obstacles
-			_tile_signals.register_trigger(tile, 2, Callable(), {"weight": weight})
-
-func _on_obstacle_entered(trigger: Dictionary) -> void:
 	if not trigger in _active_obstacles:
 		# Only track triggers that have weight (our obstacle triggers)
 		if trigger.has("metadata") and trigger["metadata"].has("weight"):
 			_active_obstacles.append(trigger)
 
-func _on_obstacle_exited(trigger: Dictionary) -> void:
+func _on_global_trigger_exited(trigger: Dictionary, p_actor: Node3D) -> void:
+	if p_actor != actor:
+		return
 	_active_obstacles.erase(trigger)
 
 func _on_actor_tile_changed_npc(new_tile: HexTileData) -> void:

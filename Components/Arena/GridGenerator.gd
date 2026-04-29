@@ -280,6 +280,39 @@ func get_adjacent_dirt(tile: HexTileData) -> HexTileData:
 func get_tile_at_grid_coords(x: int, y: int) -> HexTileData:
 	return _tile_lookup.get(Vector2i(x, y), null)
 
+## Returns an array of tiles within a hexagonal radius of the center tile.
+## Uses a breadth-first search on the neighbor cache for O(Radius^2) complexity.
+func get_tiles_in_radius(center: HexTileData, radius: int) -> Array[HexTileData]:
+	var results: Array[HexTileData] = []
+	if not center or radius < 0:
+		return results
+	
+	results.append(center)
+	if radius == 0:
+		return results
+		
+	var visited: Dictionary = {center: true}
+	var queue: Array = [[center, 0]]
+	
+	var head: int = 0
+	while head < queue.size():
+		var current: Array = queue[head]
+		head += 1
+		
+		var tile: HexTileData = current[0]
+		var dist: int = current[1]
+		
+		if dist >= radius:
+			continue
+			
+		for n in get_neighbors(tile):
+			if not visited.has(n):
+				visited[n] = true
+				results.append(n)
+				queue.append([n, dist + 1])
+	
+	return results
+
 func _grid_width_clamped() -> int: return max(1, arena.grid_width)
 func _grid_height_clamped() -> int: return max(1, arena.grid_height)
 

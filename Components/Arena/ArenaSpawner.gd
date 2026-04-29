@@ -236,6 +236,8 @@ func spawn_selected_actor_at_tile(tile: HexTileData) -> Node3D:
 
 		arena.add_child(actor)
 		arena.actors.append(actor)
+		if arena.get("tile_signals"):
+			arena.tile_signals.register_actor(actor)
 
 		if actor is Actor:
 			(actor as Actor).faction_component.setup(FactionComponent.Faction.PLAYER)
@@ -276,6 +278,8 @@ func spawn_actor_at_tile(type: String, tile: HexTileData) -> Node3D:
 		actor.transform.origin = tile.position + Vector3(0, arena._get_tile_surface_y(tile) + 1.0, 0)
 		arena.add_child(actor)
 		arena.actors.append(actor)
+		if arena.get("tile_signals"):
+			arena.tile_signals.register_actor(actor)
 		if type == "goat":
 			_configure_wild_goat(actor)
 		_log_spawn(actor, type)

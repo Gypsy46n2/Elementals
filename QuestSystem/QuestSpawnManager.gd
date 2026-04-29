@@ -120,7 +120,7 @@ func _get_tile_near_edge(edge_index: int) -> Variant:
 			return tile
 	return _get_spawn_tile(10, 40)
 
-func _on_camp_trigger_activated(metadata: Dictionary) -> void:
+func _on_camp_trigger_activated(actor: Node3D, metadata: Dictionary) -> void:
 	var quest_id: String = metadata.get("quest_id", "")
 	var camp_index: int = metadata.get("camp_index", -1)
 	var camp_id: String = metadata.get("camp_id", "")

@@ -26,6 +26,7 @@ var renderer: HexGridRenderer
 var tile_system: TileSystem
 var physics: ArenaPhysics
 var tile_interaction: ArenaTileInteractionComponent
+var tile_signals: TileSignalComponent
 var ui_component: Node # ArenaUIHandler
 var minimap_component: Node # ArenaMinimapHandler
 var actor_spawner: ArenaSpawnerComponent
@@ -77,6 +78,9 @@ func _ready() -> void:
 	
 	GameEvents.actor_died.connect(_on_actor_died)
 	_setup_quest_system()
+	
+	# Register static world obstacles with the tile signal system
+	call_deferred("_register_static_obstacles")
 
 # Instantiates and attaches core logic components.
 # Should not be moved (Orchestrates arena-specific components).
@@ -101,6 +105,11 @@ func _setup_components() -> void:
 	tile_interaction.name = "ArenaTileInteractionComponent"
 	tile_interaction.setup(self)
 	add_child(tile_interaction)
+	
+	tile_signals = TileSignalComponent.new()
+	tile_signals.name = "TileSignalComponent"
+	add_child(tile_signals)
+	tile_signals.setup(self)
 	
 	actor_spawner = ArenaSpawnerComponent.new()
 	actor_spawner.name = "ArenaSpawner"
@@ -272,17 +281,34 @@ func get_tile_data_at_world_position(world_position: Vector3) -> HexTileData:
 func get_tile_at_world_position(world_position: Vector3) -> HexTileData:
 	return get_tile_data_at_world_position(world_position)
 
+## Returns an array of tiles within a hexagonal radius of the center tile.
+## Uses optimized BFS lookup instead of O(N) grid scan.
+func get_tiles_in_radius(center: HexTileData, radius: int) -> Array[HexTileData]:
+	if grid_generator:
+		return grid_generator.get_tiles_in_radius(center, radius)
+	return []
+
 # Initializes physics collision for the grid.
 func _setup_physics() -> void:
 	if physics:
 		physics.setup_physics(tile_data_grid, hex_size, tile_scale, height_step, grid_width, grid_height)
 
 # Returns an array of tiles within a given world-space radius.
-# Could be moved to a GridManager component.
+# DEPRECATED: Use get_tiles_in_radius() for hexagonal grid logic.
+# This implementation is now optimized using BFS via get_tiles_in_radius.
 func get_tiles_within_distance(world_position: Vector3, radius: float) -> Array[HexTileData]:
+	var center = get_tile_at_world_position(world_position)
+	if not center:
+		return []
+		
+	# Convert world radius to approximate hex radius
+	# Distance between centers is SQRT3 * hex_size
+	var hex_radius = ceil(radius / (SQRT3 * hex_size)) + 1
+	var candidates = get_tiles_in_radius(center, int(hex_radius))
+	
 	var results: Array[HexTileData] = []
 	var radius_sq = radius * radius
-	for tile in tile_data_grid:
+	for tile in candidates:
 		var d = tile.position - world_position
 		d.y = 0
 		if d.length_squared() <= radius_sq:
@@ -302,3 +328,32 @@ func _setup_quest_system() -> void:
 	add_child(kit)
 	if kit.has_method("setup"):
 		kit.call("setup", self)
+
+## Scans the grid once and registers static obstacles (trees, fences, stone)
+## with the TileSignalComponent. This avoids repeated O(N) scans by AI agents.
+func _register_static_obstacles() -> void:
+	if not tile_signals:
+		return
+		
+	for tile in tile_data_grid:
+		var is_blocker = false
+		var weight = 1.0
+		
+		# Trees and Fences
+		if tile.feature:
+			if tile.feature is TreeFeature:
+				if tile.feature.current_state in [TreeFeature.State.TREE, TreeFeature.State.STUMP, TreeFeature.State.BURNT_STUMP]:
+					is_blocker = true
+					weight = 1.5
+			elif tile.feature is FenceFeature:
+				is_blocker = true
+				weight = 1.8
+		
+		# Stone Walls
+		if not is_blocker and tile.current_state == TileConstants.State.STONE:
+			is_blocker = true
+			weight = 2.0
+		
+		if is_blocker:
+			# Radius 2 for static obstacles
+			tile_signals.register_trigger(tile, 2, Callable(), {"weight": weight, "is_static_obstacle": true})
