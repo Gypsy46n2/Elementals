@@ -27,6 +27,7 @@ var tile_system: TileSystem
 var physics: ArenaPhysics
 var tile_interaction: ArenaTileInteractionComponent
 var ui_component: Node # ArenaUIHandler
+var minimap_component: Node # ArenaMinimapHandler
 var actor_spawner: ArenaSpawnerComponent
 var player_input: PlayerInputComponent
 var grid_generator: GridGenerator
@@ -113,6 +114,10 @@ func _setup_components() -> void:
 	ui_component.name = "ArenaUIHandler"
 	add_child(ui_component)
 	
+	minimap_component = ArenaMinimapHandler.new()
+	minimap_component.name = "ArenaMinimapHandler"
+	add_child(minimap_component)
+	
 	grid_generator = GridGenerator.new()
 	grid_generator.name = "GridGenerator"
 	add_child(grid_generator)
@@ -121,6 +126,7 @@ func _setup_components() -> void:
 	actor_spawner.setup(self)
 	player_input.setup(self)
 	ui_component.setup(self)
+	minimap_component.setup(self)
 
 # Handles cleanup and logic when an actor dies, including game over checks.
 # Should not be moved (Maintains high-level game session state).

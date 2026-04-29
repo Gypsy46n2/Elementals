@@ -85,5 +85,9 @@ func _apply_volume(value: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		var board_nodes: Array = get_tree().get_nodes_in_group("quest_board_ui")
+		for node in board_nodes:
+			if node.has_method("is_open") and node.call("is_open"):
+				return
 		toggle()
 		get_viewport().set_input_as_handled()

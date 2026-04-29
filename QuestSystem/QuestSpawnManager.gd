@@ -248,7 +248,7 @@ func _build_goblin_camp_visual(camp_id: String, camp_center: Vector3, camp_size:
 
 	var root: Node3D = Node3D.new()
 	root.name = "GoblinCamp_%s" % camp_id
-	root.global_position = camp_center
+	root.position = camp_center
 	root.add_to_group("quest_goblin_camp")
 	arena.add_child(root)
 

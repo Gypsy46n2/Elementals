@@ -1,5 +1,5 @@
 ## Component that manages the Arena's UI elements related to character status and control.
-## It handles the reticle, health/mana labels, minimap, and main UI buttons.
+## It handles the reticle, health/mana labels, and main UI buttons.
 class_name ArenaUIHandler
 extends Node
 
@@ -8,7 +8,6 @@ var arena: Node3D # ArenaGrid
 var target_label: Label
 var prev_button: Button
 var next_button: Button
-var minimap_viewport: SubViewport
 var options_menu: OptionsMenu
 var options_button: Button
 var reticle: Control
@@ -21,13 +20,11 @@ func setup(p_arena: Node3D) -> void:
 	target_label = arena.get_node_or_null("UI/HBoxContainer/TargetLabel")
 	prev_button = arena.get_node_or_null("UI/HBoxContainer/PrevButton")
 	next_button = arena.get_node_or_null("UI/HBoxContainer/NextButton")
-	minimap_viewport = arena.get_node_or_null("UI/MinimapFrame/MinimapContainer/SubViewport")
 	options_menu = arena.get_node_or_null("UI/OptionsMenu")
 	options_button = arena.get_node_or_null("UI/OptionsButton")
 	
 	_setup_reticle()
 	_setup_ui_connections()
-	_setup_minimap()
 
 func _setup_reticle() -> void:
 	var canvas_layer = CanvasLayer.new()
@@ -59,22 +56,6 @@ func _setup_ui_connections() -> void:
 	var ui_node = arena.get_node_or_null("UI")
 	if ui_node:
 		ui_node.add_child(finish_button)
-
-func _setup_minimap() -> void:
-	if not minimap_viewport: return
-	var camera = minimap_viewport.get_node_or_null("MinimapCamera")
-	if camera:
-		var w_total = arena._grid_width_clamped() + 2
-		var h_total = arena._grid_height_clamped() + 2
-		var center_x = (1.5 * (float(w_total - 1) * 0.5)) * arena.hex_size
-		var center_z = (SQRT3() * (float(h_total - 1) * 0.5 + 0.25)) * arena.hex_size
-		camera.position = Vector3(center_x, 100.0, center_z)
-		camera.rotation_degrees = Vector3(-90, 0, 0)
-		camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-		camera.size = max(w_total * 1.5 * arena.hex_size, h_total * SQRT3() * arena.hex_size) * 1.1
-
-func SQRT3() -> float:
-	return sqrt(3.0)
 
 func update_for_actor(actor: Actor) -> void:
 	if _current_actor:

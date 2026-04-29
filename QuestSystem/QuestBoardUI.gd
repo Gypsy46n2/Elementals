@@ -19,6 +19,7 @@ func _connect_signals() -> void:
 		QuestEvents.quest_log_changed.connect(_refresh_overlay)
 
 func open_board() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_rebuild_overlay()
 
 func close_board() -> void:
@@ -29,6 +30,7 @@ func _rebuild_overlay() -> void:
 		return
 	_is_rebuilding = true
 	_close_overlay()
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 	overlay = CanvasLayer.new()
 	overlay.name = "QuestBoardOverlay"
@@ -274,6 +276,9 @@ func _add_wrapped(parent: Control, text: String, color: Color) -> void:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	parent.add_child(label)
 
+func is_open() -> bool:
+	return overlay != null and is_instance_valid(overlay)
+
 func _refresh_overlay() -> void:
 	if overlay != null and is_instance_valid(overlay):
 		call_deferred("_rebuild_overlay")
@@ -281,5 +286,6 @@ func _refresh_overlay() -> void:
 func _close_overlay() -> void:
 	if overlay != null and is_instance_valid(overlay):
 		overlay.queue_free()
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	overlay = null
 	_is_rebuilding = false
