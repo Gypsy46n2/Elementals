@@ -98,6 +98,61 @@ func spawn_quest_actor(type: String, quest_id: String, target_id: String, radius
 	_configure_quest_actor_faction(actor, clean_type)
 	return actor
 
+
+func spawn_quest_actor_near(type: String, quest_id: String, target_id: String, camp_center: Vector3, camp_radius: float = 5.0) -> Node3D:
+	var clean_type: String = type.to_lower().strip_edges()
+	if clean_type.is_empty():
+		clean_type = "goblin"
+	var safe_radius: float = maxf(1.5, camp_radius)
+	var spawn_tile: HexTileData = _get_random_spawn_tile_near(camp_center, 0.0, safe_radius)
+	if spawn_tile == null:
+		spawn_tile = _get_random_spawn_tile_near(camp_center, 0.0, safe_radius * 1.8)
+	if spawn_tile == null:
+		spawn_tile = _get_random_spawn_tile()
+	if spawn_tile == null:
+		return null
+	var actor: Node3D = spawn_actor_at_tile(clean_type, spawn_tile)
+	if actor == null:
+		return null
+	actor.set_meta("quest_id", quest_id)
+	actor.set_meta("quest_target_id", target_id)
+	actor.set_meta("quest_enemy_type", clean_type)
+	_configure_quest_actor_faction(actor, clean_type)
+	return actor
+
+func get_quest_camp_tile(origin_position: Vector3, radius_min: float, radius_max: float, existing_positions: Array, min_spacing: float = 9.0) -> HexTileData:
+	if not arena or arena.tile_data_grid.is_empty():
+		return null
+	var origin: Vector3 = origin_position
+	if origin == Vector3.ZERO:
+		origin = _get_default_spawn_origin()
+	var safe_radius_min: float = maxf(4.0, radius_min)
+	var safe_radius_max: float = maxf(safe_radius_min + 2.0, radius_max)
+	var safe_spacing: float = maxf(3.0, min_spacing)
+	var attempts: int = 0
+	while attempts < 260:
+		attempts += 1
+		var tile: HexTileData = arena.tile_data_grid.pick_random()
+		if not _is_valid_actor_spawn_tile(tile):
+			continue
+		var distance: float = Vector2(tile.position.x - origin.x, tile.position.z - origin.z).length()
+		if distance < safe_radius_min or distance > safe_radius_max:
+			continue
+		var too_close_to_other_camp: bool = false
+		for raw_position in existing_positions:
+			if typeof(raw_position) != TYPE_VECTOR3:
+				continue
+			var existing_position: Vector3 = raw_position
+			var camp_distance: float = Vector2(tile.position.x - existing_position.x, tile.position.z - existing_position.z).length()
+			if camp_distance < safe_spacing:
+				too_close_to_other_camp = true
+				break
+		if too_close_to_other_camp:
+			continue
+		return tile
+	return null
+
+
 func _configure_quest_actor_faction(actor: Node3D, type: String) -> void:
 	if actor is Actor:
 		var actor_object: Actor = actor as Actor

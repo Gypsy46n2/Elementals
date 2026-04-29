@@ -1,32 +1,32 @@
-# Quest Spawn Addon - Death/Kill Tracking Fix
+# Quest Goblin Camp Patch for Elementals / Goatlandia
 
-Drop this patch into the root of the Elementals project and allow overwrites.
+Drop this zip into the root of the Godot project and allow overwrite.
 
-## Fixes included
+## What this patch changes
 
-- Quest kills now track from actual `GameEvents.actor_died` events.
-- Quest enemies are tracked by metadata, instance id, groups, and actor type fallback.
-- Player/controlled actor death now fails the active quest and clears it from save state.
-- Failed or abandoned quests despawn any remaining quest-spawned enemies.
-- Quest enemies still spawn through `Components/Arena/ArenaSpawner.gd`.
-- Random wild goats now spawn through `ArenaSpawner` during arena startup.
-- Quest goblins remain hostile goblins and do not use the selected player/goat actor type.
+- Quest board bounties no longer scatter loose goblins randomly.
+- Accepting a goblin quest now creates one or more visible goblin camps.
+- Goblins spawn clustered around the camp through `Components/Arena/ArenaSpawner.gd`.
+- Each camp gets a floating `QUEST CAMP` marker.
+- The marker updates with how many spawned camp goblins are still alive.
+- The marker disappears once that camp is wiped out.
+- Quest completion/failure clears leftover quest camp markers, props, and spawned quest goblins.
+- Existing non-quest goblins still count toward goblin kill objectives so the last fix is not regressed.
 
-## Test flow
+## Files patched
+
+- `Components/Arena/ArenaSpawner.gd`
+- `QuestSystem/QuestSpawnManager.gd`
+- `QuestSystem/quests.json`
+
+## Test
 
 1. Open the arena.
-2. Confirm wild goats appear in the arena as wildlife.
-3. Walk to the Quest Board near the farm/spawn.
-4. Press `B`, accept Goblin Cleanup.
-5. Kill the quest goblins.
-6. The tracker should update `1/3`, `2/3`, `3/3` and pay gold.
-7. Accept another quest, then let the player/controlled actor die.
-8. The tracker should clear and the quest should not remain active on the next play.
+2. Walk to the Quest Board.
+3. Accept `Small Goblin Camp`.
+4. Follow the gold quest marker.
+5. Kill the camp goblins.
+6. The camp marker should disappear when the camp is dead.
+7. The quest should complete and pay gold when the objective count is met.
 
-© 2026 Micheal Chapin
-
-
-FIX NOTES - SMALL BOARD/KILL PATCH:
-- B only opens the quest board when the player is currently within board range.
-- Goblin bounty objectives now count quest-spawned goblins and existing/random map goblins.
-- Existing saved quests using the older quest_goblin target still receive goblin kill credit.
+No `.ziva` files are included.

@@ -2,15 +2,15 @@
   "quests": [
     {
       "id": "starter_goblin_cleanup",
-      "title": "Goblin Cleanup",
-      "description": "The board marks a nearby goblin pocket. Accept the job, hunt them down, and collect the gold bounty.",
+      "title": "Small Goblin Camp",
+      "description": "The board marks a small goblin camp nearby. Follow the quest marker, clear the camp, and collect the gold bounty.",
       "repeatable": true,
       "reward_gold": 25,
       "objectives": [
         {
           "type": "kill",
           "target": "goblin",
-          "label": "Defeat goblins",
+          "label": "Clear the small goblin camp",
           "required": 3
         }
       ],
@@ -19,22 +19,26 @@
           "actor_type": "goblin",
           "target_id": "goblin",
           "count": 3,
-          "radius_min": 8.0,
-          "radius_max": 22.0
+          "camp_count": 1,
+          "camp_size": "small",
+          "camp_spawn_radius": 3.75,
+          "camp_spacing": 9.0,
+          "radius_min": 9.0,
+          "radius_max": 24.0
         }
       ]
     },
     {
       "id": "bigger_goblin_problem",
-      "title": "Bigger Goblin Problem",
-      "description": "A larger goblin pack is harassing the edge of the arena. Spawn the pack, clear it, and take the better purse.",
+      "title": "Two Goblin Camps",
+      "description": "Two goblin camps have appeared on the edge of the arena. Follow the quest markers and wipe both camps out.",
       "repeatable": true,
       "reward_gold": 60,
       "objectives": [
         {
           "type": "kill",
           "target": "goblin",
-          "label": "Defeat the larger goblin pack",
+          "label": "Clear the goblin camps",
           "required": 6
         }
       ],
@@ -43,22 +47,26 @@
           "actor_type": "goblin",
           "target_id": "goblin",
           "count": 6,
-          "radius_min": 10.0,
-          "radius_max": 28.0
+          "camp_count": 2,
+          "camp_size": "medium",
+          "camp_spawn_radius": 5.0,
+          "camp_spacing": 12.0,
+          "radius_min": 12.0,
+          "radius_max": 31.0
         }
       ]
     },
     {
       "id": "dangerous_goblin_sweep",
-      "title": "Dangerous Goblin Sweep",
-      "description": "A risky bounty for testing bigger encounters. Bring a strong actor and clear the summoned goblin sweep.",
+      "title": "Large Goblin Warcamp",
+      "description": "A larger goblin warcamp is forming farther out. Follow the marker, break the camp, and claim the larger purse.",
       "repeatable": true,
       "reward_gold": 100,
       "objectives": [
         {
           "type": "kill",
           "target": "goblin",
-          "label": "Defeat the dangerous goblin sweep",
+          "label": "Clear the goblin warcamp",
           "required": 10
         }
       ],
@@ -67,8 +75,12 @@
           "actor_type": "goblin",
           "target_id": "goblin",
           "count": 10,
-          "radius_min": 12.0,
-          "radius_max": 34.0
+          "camp_count": 1,
+          "camp_size": "large",
+          "camp_spawn_radius": 6.5,
+          "camp_spacing": 14.0,
+          "radius_min": 14.0,
+          "radius_max": 36.0
         }
       ]
     }

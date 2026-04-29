@@ -10,6 +10,8 @@ var _is_rebuilding: bool = false
 func _ready() -> void:
 	add_to_group("quest_board_ui")
 	layer = 85
+	set_process_input(true)
+	set_process_unhandled_input(true)
 	_connect_signals()
 
 func _connect_signals() -> void:
@@ -156,14 +158,26 @@ func _rebuild_overlay() -> void:
 
 	_is_rebuilding = false
 
+func _input(event: InputEvent) -> void:
+	if _should_close_from_escape(event):
+		_close_overlay()
+		get_viewport().set_input_as_handled()
+
 func _unhandled_input(event: InputEvent) -> void:
+	if _should_close_from_escape(event):
+		_close_overlay()
+		get_viewport().set_input_as_handled()
+
+func _should_close_from_escape(event: InputEvent) -> bool:
 	if overlay == null or not is_instance_valid(overlay):
-		return
+		return false
 	if event is InputEventKey:
 		var key_event: InputEventKey = event as InputEventKey
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_ESCAPE:
-			_close_overlay()
-			get_viewport().set_input_as_handled()
+			return true
+	if event.is_action_pressed("ui_cancel"):
+		return true
+	return false
 
 func _add_available_quest_card(parent: Control, quest: Dictionary) -> void:
 	var card: PanelContainer = _make_card(parent)
