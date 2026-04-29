@@ -8,7 +8,12 @@ extends ActorController
 ## Maximum distance from the starting position the actor will roam.
 @export var roam_radius: float = 22.0
 ## Distance at which the actor can detect enemies.
-@export var detection_range: float = 15.0
+## Computed from Wisdom: base 10 + (Wisdom modifier × 2).
+var detection_range: float:
+	get:
+		if actor and actor.ability_scores_component:
+			return 10.0 + (actor.ability_scores_component.wisdom * 2.0)
+		return 10.0
 ## Distance at which the actor will begin attacking.
 @export var attack_range: float = 10.0
 ## Health percentage below which the actor will attempt to flee.
@@ -20,6 +25,13 @@ var _previous_tile: HexTileData
 var _movement_target: Vector3
 ## Local RNG for randomized movement decisions.
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
+## Tracks enemies this actor has successfully perceived.
+var _perceived_enemies: Dictionary = {}
+## Cooldown timer to prevent perception roll spam.
+var _perception_cooldown_timer: float = 0.0
+const PERCEPTION_EXPIRY: float = 3.0
+const PERCEPTION_COOLDOWN: float = 1.0
 
 ## The state machine driving this controller's behavior.
 var state_machine: ActorStateMachine
@@ -45,6 +57,22 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if state_machine:
 		state_machine.update(delta)
+	
+	# Update perception cooldown
+	if _perception_cooldown_timer > 0:
+		_perception_cooldown_timer -= delta
+	
+	# Decrement perceived enemy timers and remove expired
+	var expired: Array = []
+	for enemy in _perceived_enemies.keys():
+		if not is_instance_valid(enemy):
+			expired.append(enemy)
+			continue
+		_perceived_enemies[enemy] -= delta
+		if _perceived_enemies[enemy] <= 0:
+			expired.append(enemy)
+	for enemy in expired:
+		_perceived_enemies.erase(enemy)
 
 func _physics_process(delta: float) -> void:
 	# Stun is now handled as an affected state inside the state machine.
@@ -256,20 +284,54 @@ func _on_actor_resurrected() -> void:
 	if state_machine:
 		state_machine.change_state("roam")
 
-## Finds the nearest enemy actor within detection_range.
+## Finds the nearest enemy actor that has been successfully perceived.
+## Perception check: d20 + Wisdom modifier vs DC = distance + target's Dexterity modifier.
 func _find_nearest_enemy() -> Node3D:
 	if not actor or not actor._arena_grid:
 		return null
+	
+	var current_detection_range: float = detection_range
 	var nearest: Node3D = null
 	var nearest_dist: float = INF
+	
 	for other in actor._arena_grid.actors:
 		if not is_instance_valid(other) or other == actor:
 			continue
-		if actor.is_enemy(other):
-			var dist: float = actor.global_position.distance_to(other.global_position)
-			if dist < detection_range and dist < nearest_dist:
+		if not actor.is_enemy(other):
+			continue
+		
+		var dist: float = actor.global_position.distance_to(other.global_position)
+		if dist > current_detection_range:
+			continue
+		
+		# Already perceived and not expired
+		if _perceived_enemies.has(other) and _perceived_enemies[other] > 0:
+			if dist < nearest_dist:
 				nearest = other
 				nearest_dist = dist
+			continue
+		
+		# Attempt a new perception check if cooldown allows
+		if _perception_cooldown_timer <= 0 and actor.skill_check_component:
+			var target_dex: float = 0.0
+			if other.get("ability_scores_component"):
+				target_dex = other.ability_scores_component.dexterity
+			
+			var dc: float = dist + target_dex
+			var result: Dictionary = actor.skill_check_component.perform_check(
+				actor.ability_scores_component.wisdom,
+				dc,
+				"Perception",
+				other
+			)
+			_perception_cooldown_timer = PERCEPTION_COOLDOWN
+			
+			if result.success:
+				_perceived_enemies[other] = PERCEPTION_EXPIRY
+				if dist < nearest_dist:
+					nearest = other
+					nearest_dist = dist
+	
 	return nearest
 
 ## Returns true if the actor's health is below the flee threshold.

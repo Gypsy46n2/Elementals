@@ -40,8 +40,8 @@ func physics_update(delta: float) -> void:
 	# Face target
 	controller._face_target(_target_actor.global_position)
 
-	# Lose interest if target gets too far for too long
-	if dist_to_target > controller.detection_range:
+	# Lose interest if target gets too far for too long (2× detection range)
+	if dist_to_target > controller.detection_range * 2.0:
 		_lose_interest_timer -= delta
 		if _lose_interest_timer <= 0.0:
 			state_machine.change_state("roam")

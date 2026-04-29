@@ -77,7 +77,22 @@ func _check_for_attack() -> void:
 	
 	if target:
 		var d = actor.global_position.distance_to(target.global_position)
-		if d < 12.0:
+		var attack_distance: float = 12.0
+		var should_throw: bool = false
+		if actor.weapon_component and actor.weapon_component.weapon_data:
+			var wd: WeaponData = actor.weapon_component.weapon_data
+			if not wd.is_ranged and not wd.is_thrown:
+				attack_distance = wd.reach * 2.0
+			elif wd.is_thrown:
+				if actor.weapon_component.current_ammo > 1:
+					should_throw = true
+				else:
+					attack_distance = wd.reach * 2.0
+		
+		if d <= attack_distance:
 			# Aim at target
 			if actor.weapon_component:
-				actor.weapon_component.launch_projectile_at(target.global_position)
+				if should_throw:
+					actor.weapon_component.throw_weapon_at(target.global_position)
+				else:
+					actor.weapon_component.launch_projectile_at(target.global_position)

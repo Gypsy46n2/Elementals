@@ -15,8 +15,8 @@ func setup(p_arena: Node3D) -> void:
 	arena = p_arena
 
 func spawn_initial_actors() -> void:
-	# Spawn 6 starting goblins at random locations away from the farmstead.
-	for i in range(6):
+	# Spawn 1 starting goblins at random locations away from the farmstead.
+	for i in range(1):
 		var spawn_tile: HexTileData = _get_random_spawn_tile()
 		if spawn_tile:
 			spawn_actor_at_tile("goblin", spawn_tile)
