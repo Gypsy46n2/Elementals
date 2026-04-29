@@ -9,6 +9,7 @@ var arena: Node = null
 var prompt_label: Label3D = null
 var area: Area3D = null
 var _player_near: bool = false
+var _board_tile: HexTileData = null
 var _built: bool = false
 
 const OPEN_DISTANCE: float = 5.5
@@ -23,9 +24,23 @@ func _ready() -> void:
 		arena = get_parent()
 	_build_once()
 	call_deferred("_place_near_spawn")
+	
+	var timer = Timer.new()
+	timer.name = "PlayerConnectionTimer"
+	timer.wait_time = 1.0
+	timer.autostart = true
+	timer.timeout.connect(_check_player_connection)
+	add_child(timer)
 
-func _process(_delta: float) -> void:
-	_update_player_near()
+func _check_player_connection() -> void:
+	var player_node: Node3D = _get_player_node()
+	if player_node != null and player_node.has_signal("tile_changed"):
+		if not player_node.tile_changed.is_connected(_on_player_tile_changed):
+			player_node.tile_changed.connect(_on_player_tile_changed)
+	
+	# Fallback proximity check every second in case signals are missed 
+	# or player is moving within a single tile.
+	_on_player_tile_changed(null)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -40,7 +55,6 @@ func _build_once() -> void:
 		return
 	_built = true
 	add_to_group("quest_board_world")
-	set_process(true)
 	set_process_unhandled_input(true)
 
 	var post_material: StandardMaterial3D = StandardMaterial3D.new()
@@ -92,6 +106,7 @@ func _build_once() -> void:
 	prompt_label.outline_size = 6
 	prompt_label.outline_modulate = Color.BLACK
 	prompt_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	prompt_label.visible = false
 	add_child(prompt_label)
 
 	area = Area3D.new()
@@ -127,6 +142,20 @@ func _place_near_spawn() -> void:
 		base_position = _get_farm_position()
 	var desired_position: Vector3 = base_position + Vector3(4.0, 0.0, 1.5)
 	global_position = _snap_to_ground(desired_position)
+	
+	if arena.has_method("get_tile_data_at_world_position"):
+		_board_tile = arena.call("get_tile_data_at_world_position", global_position)
+
+	if player_node != null and player_node.has_signal("tile_changed"):
+		if not player_node.tile_changed.is_connected(_on_player_tile_changed):
+			player_node.tile_changed.connect(_on_player_tile_changed)
+		
+		var player_tile = null
+		if player_node.get("tile_interaction_component"):
+			player_tile = player_node.tile_interaction_component.get_ground_tile()
+		if player_tile:
+			_on_player_tile_changed(player_tile)
+	
 	if base_position != Vector3.ZERO:
 		look_at(Vector3(base_position.x, global_position.y, base_position.z), Vector3.UP)
 		rotate_y(PI)
@@ -175,13 +204,17 @@ func _snap_to_ground(world_position: Vector3) -> Vector3:
 	return Vector3(world_position.x, maxf(world_position.y - 1.0, 0.0), world_position.z)
 
 func _update_player_near() -> void:
-	_player_near = _can_player_open_board()
 	if prompt_label != null:
-		prompt_label.visible = true
 		if _player_near:
+			prompt_label.visible = true
 			prompt_label.text = "Press B / Click to open Quest Board"
 		else:
+			prompt_label.visible = false
 			prompt_label.text = "Quest Board"
+
+func _on_player_tile_changed(_new_tile: HexTileData) -> void:
+	_player_near = _can_player_open_board()
+	_update_player_near()
 
 func _can_player_open_board() -> bool:
 	var player_node: Node3D = _get_player_node()

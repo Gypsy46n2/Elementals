@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="TreeSpecies" load_steps=13 format=3 uid="uid://dsrm8cy5ponwk"]
 
-[ext_resource type="Texture2D" uid="uid://q0wt5nblhtye" path="res://assets/generated/burnt_stump_simple_1774734102.png" id="2_7x3dn"]
+[ext_resource type="Texture2D" uid="uid://powghy8h0ghx" path="res://assets/generated/burnt_stump_simple_1774734102.png" id="2_7x3dn"]
 [ext_resource type="Script" uid="uid://dcflkh02k7vhl" path="res://Play Space/TreeStates/TreeStateData.gd" id="2_statedata"]
-[ext_resource type="Texture2D" uid="uid://ci4x68ry88vmv" path="res://assets/generated/tree_simple_frame_0_1774919983.png" id="3_tree"]
-[ext_resource type="Texture2D" uid="uid://cc0lno6puwinx" path="res://assets/generated/pinecone_frame_0_1774919979.png" id="4_pinecone"]
-[ext_resource type="Texture2D" uid="uid://62iikr7l0bpf" path="res://assets/generated/sapling_frame_0_1774919985.png" id="5_sapling"]
-[ext_resource type="Texture2D" uid="uid://bwjvth06urcra" path="res://assets/generated/stump_simple_1774734105.png" id="6_stump"]
+[ext_resource type="Texture2D" uid="uid://nw62b0k1ilwr" path="res://assets/generated/tree_simple_frame_0_1774919983.png" id="3_tree"]
+[ext_resource type="Texture2D" uid="uid://cl80uga4ylxjt" path="res://assets/generated/pinecone_frame_0_1774919979.png" id="4_pinecone"]
+[ext_resource type="Texture2D" uid="uid://cnr3nkm6jrvug" path="res://assets/generated/sapling_frame_0_1774919985.png" id="5_sapling"]
+[ext_resource type="Texture2D" uid="uid://dqktgk2yvqaho" path="res://assets/generated/stump_simple_1774734105.png" id="6_stump"]
 [ext_resource type="Script" uid="uid://c0jh7yc5e2xg7" path="res://Play Space/TreeStates/TreeSpecies.gd" id="7_species"]
 
 [sub_resource type="Resource" id="Resource_burnt"]

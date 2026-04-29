@@ -26,6 +26,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_current_zoom_dist = clamp(_current_zoom_dist + zoom_speed, min_zoom, max_zoom)
 
+# TODO(Optimization): Cache follow_offset.normalized() to avoid per-frame vector normalization (~0.1% CPU)
 func _process(delta: float) -> void:
 	if not _follow_target:
 		return

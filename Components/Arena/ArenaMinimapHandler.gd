@@ -2,15 +2,15 @@
 class_name ArenaMinimapHandler
 extends Node
 
-var arena: Node3D # ArenaGrid
+var arena: Node # ArenaGrid
 var minimap_viewport: SubViewport
 var minimap_camera: Camera3D
 var minimap_container: SubViewportContainer
 var _marker_container: Control
-var _active_markers: Array[MinimapQuestMarker] = []
-var _actor_markers: Dictionary = {} # Node -> MinimapActorMarker
+var _active_markers: Array = []
+var _actor_markers: Dictionary = {} # Node -> Control
 
-func setup(p_arena: Node3D) -> void:
+func setup(p_arena: Node) -> void:
 	arena = p_arena
 	minimap_viewport = arena.get_node_or_null("UI/MinimapFrame/MinimapContainer/SubViewport")
 	minimap_container = arena.get_node_or_null("UI/MinimapFrame/MinimapContainer")
@@ -26,14 +26,15 @@ func _setup_minimap() -> void:
 	if not minimap_viewport: return
 	var camera = minimap_viewport.get_node_or_null("MinimapCamera")
 	if camera:
-		var w_total = arena._grid_width_clamped() + 2
-		var h_total = arena._grid_height_clamped() + 2
-		var center_x = (1.5 * (float(w_total - 1) * 0.5)) * arena.hex_size
-		var center_z = (SQRT3() * (float(h_total - 1) * 0.5 + 0.25)) * arena.hex_size
+		var w_total: int = int(arena.call("_grid_width_clamped")) + 2
+		var h_total: int = int(arena.call("_grid_height_clamped")) + 2
+		var hex_size: float = float(arena.get("hex_size"))
+		var center_x = (1.5 * (float(w_total - 1) * 0.5)) * hex_size
+		var center_z = (SQRT3() * (float(h_total - 1) * 0.5 + 0.25)) * hex_size
 		camera.position = Vector3(center_x, 100.0, center_z)
 		camera.rotation_degrees = Vector3(-90, 0, 0)
 		camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-		camera.size = max(w_total * 1.5 * arena.hex_size, h_total * SQRT3() * arena.hex_size) * 1.1
+		camera.size = max(w_total * 1.5 * hex_size, h_total * SQRT3() * hex_size) * 1.1
 
 func SQRT3() -> float:
 	return sqrt(3.0)
@@ -54,16 +55,20 @@ func _connect_quest_signals() -> void:
 		QuestEvents.quest_completed.connect(_on_quest_completed)
 	if not QuestEvents.quest_failed.is_connected(_on_quest_failed):
 		QuestEvents.quest_failed.connect(_on_quest_failed)
+	if not QuestEvents.camps_designated.is_connected(_refresh_markers):
+		QuestEvents.camps_designated.connect(_refresh_markers)
 
 func _on_quest_accepted(_quest_id: String) -> void:
 	# Give the spawn manager one frame to create camps before refreshing markers
 	call_deferred("_refresh_markers")
 
 func _on_quest_completed(_quest_id: String, _reward_gold: int) -> void:
-	_clear_markers()
+	# Persistent markers should remain for other camps; refresh only
+	call_deferred("_refresh_markers")
 
 func _on_quest_failed(_quest_id: String) -> void:
-	_clear_markers()
+	# Persistent markers should remain for other camps; refresh only
+	call_deferred("_refresh_markers")
 
 func _refresh_markers() -> void:
 	_clear_markers()
@@ -76,12 +81,15 @@ func _refresh_markers() -> void:
 		if typeof(record_value) != TYPE_DICTIONARY:
 			continue
 		var record: Dictionary = record_value as Dictionary
-		if not _camp_has_live_actors(record):
+		
+		# Only show markers for camps that aren't cleared yet
+		if record.get("cleared", false):
 			continue
+			
 		var center_value: Variant = record.get("center", null)
 		if center_value == null or not (center_value is Vector3):
 			continue
-		var marker: MinimapQuestMarker = MinimapQuestMarker.new()
+		var marker = load("res://Components/Arena/MinimapQuestMarker.gd").new()
 		marker.name = "Marker_%s" % String(camp_id)
 		marker.set_meta("camp_id", String(camp_id))
 		_marker_container.add_child(marker)
@@ -104,16 +112,6 @@ func _get_camp_records(spawn_manager: Node) -> Dictionary:
 			return result as Dictionary
 	return {}
 
-func _camp_has_live_actors(record: Dictionary) -> bool:
-	var actors_value: Variant = record.get("actors", [])
-	if typeof(actors_value) != TYPE_ARRAY:
-		return false
-	var actors: Array = actors_value as Array
-	for actor in actors:
-		if actor != null and is_instance_valid(actor):
-			return true
-	return false
-
 func _process(_delta: float) -> void:
 	if minimap_camera == null or minimap_viewport == null or minimap_container == null:
 		return
@@ -128,6 +126,8 @@ func _process(_delta: float) -> void:
 	var spawn_manager: Node = arena.get_node_or_null("QuestSpawnManager")
 	if spawn_manager != null and not _active_markers.is_empty():
 		var camp_records: Dictionary = _get_camp_records(spawn_manager)
+		var markers_to_remove: Array = []
+		
 		for marker in _active_markers:
 			if not is_instance_valid(marker):
 				continue
@@ -140,9 +140,13 @@ func _process(_delta: float) -> void:
 				marker.visible = false
 				continue
 			var record: Dictionary = record_value as Dictionary
-			if not _camp_has_live_actors(record):
+			
+			# If camp was cleared, hide and mark for removal
+			if record.get("cleared", false):
 				marker.visible = false
+				markers_to_remove.append(marker)
 				continue
+			
 			var center_value: Variant = record.get("center", null)
 			if center_value == null or not (center_value is Vector3):
 				marker.visible = false
@@ -155,6 +159,10 @@ func _process(_delta: float) -> void:
 			local_pos.y = clampf(local_pos.y, 0.0, container_size.y - marker.size.y)
 			marker.position = local_pos
 			marker.visible = true
+			
+		for marker in markers_to_remove:
+			_active_markers.erase(marker)
+			marker.queue_free()
 
 	# Update actor markers
 	_update_actor_markers(scale_x, scale_y, container_size)
@@ -171,16 +179,19 @@ func _clear_actor_markers() -> void:
 func _update_actor_markers(scale_x: float, scale_y: float, container_size: Vector2) -> void:
 	if arena == null:
 		return
-	var current_actors: Array[Node] = []
-	for actor in arena.actors:
+	var arena_actors = arena.get("actors")
+	if not arena_actors is Array:
+		return
+	var current_actors: Array = []
+	for actor in arena_actors:
 		if not is_instance_valid(actor):
 			continue
 		if "is_dead" in actor and actor.is_dead:
 			continue
 		current_actors.append(actor)
-		var marker: MinimapActorMarker = _actor_markers.get(actor, null) as MinimapActorMarker
+		var marker = _actor_markers.get(actor, null)
 		if marker == null:
-			marker = MinimapActorMarker.new()
+			marker = load("res://Components/Arena/MinimapActorMarker.gd").new()
 			marker.name = "ActorMarker_%s" % actor.name
 			_marker_container.add_child(marker)
 			_actor_markers[actor] = marker
@@ -195,19 +206,19 @@ func _update_actor_markers(scale_x: float, scale_y: float, container_size: Vecto
 	# Remove markers for actors that no longer exist
 	for actor in _actor_markers.keys():
 		if not is_instance_valid(actor) or not current_actors.has(actor):
-			var marker: MinimapActorMarker = _actor_markers[actor] as MinimapActorMarker
+			var marker = _actor_markers[actor]
 			if is_instance_valid(marker):
 				marker.queue_free()
 			_actor_markers.erase(actor)
 
 func _get_actor_marker_color(actor: Node) -> Color:
-	var faction: FactionComponent.Faction = FactionComponent.Faction.NEUTRAL
-	if "faction_component" in actor and actor.faction_component is FactionComponent:
-		faction = actor.faction_component.faction
+	var faction: int = 4 # Neutral
+	if "faction_component" in actor and actor.faction_component != null:
+		faction = int(actor.faction_component.faction)
 	match faction:
-		FactionComponent.Faction.PLAYER, FactionComponent.Faction.FARMSTEAD:
+		0, 2: # Player, Farmstead (assuming indices from Faction enum)
 			return Color(0.2, 0.9, 0.2, 0.95)
-		FactionComponent.Faction.GOBLINS, FactionComponent.Faction.WILDLIFE, FactionComponent.Faction.MONSTERS:
+		1, 3, 5: # Goblins, Wildlife, Monsters
 			return Color(0.9, 0.2, 0.2, 0.95)
 		_:
 			return Color(0.6, 0.6, 0.6, 0.95)

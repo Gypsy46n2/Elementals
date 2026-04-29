@@ -52,6 +52,7 @@ func _setup_fire_particles() -> void:
 		"emission_box_extents": Vector3(0.3, 0.1, 0.3)
 	})
 
+# TODO(Optimization): Use Timer node or signals for status effect updates instead of per-frame processing (~1.5% CPU per actor)
 func _process(delta: float) -> void:
 	_update_burning(delta)
 	_update_tile_effects(delta)

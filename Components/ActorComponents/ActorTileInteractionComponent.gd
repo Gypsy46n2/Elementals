@@ -7,10 +7,15 @@ var _actor: Node3D
 func setup(actor: Node3D) -> void:
 	_actor = actor
 
+signal tile_changed(new_tile: HexTileData)
+
 func _physics_process(_delta: float) -> void:
 	if _actor and _actor.has_method("is_on_floor") and _actor.is_on_floor():
+		var old_tile: HexTileData = _ground_tile
 		update_tile_below()
-		apply_ground_effects()
+		if _ground_tile != old_tile:
+			tile_changed.emit(_ground_tile)
+			apply_ground_effects()
 
 func update_tile_below() -> void:
 	if _actor and _actor.get("_arena_grid"):

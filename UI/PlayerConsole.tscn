@@ -87,6 +87,9 @@ theme_override_constants/separation = 10
 [node name="WeaponCard" parent="Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox" instance=ExtResource("2_w4v5c")]
 unique_name_in_owner = true
 layout_mode = 2
+highlight_color = null
+base_color = null
+hover_color = null
 
 [node name="AbilityCard" parent="Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox" instance=ExtResource("3_a4v5c")]
 unique_name_in_owner = true

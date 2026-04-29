@@ -17,16 +17,17 @@ var weapon_data: WeaponData:
 		setup(v)
 
 func setup(p_data: Resource) -> void:
+	var previous_weapon: WeaponData = weapon_data
 	super.setup(p_data)
+	if previous_weapon and previous_weapon.ammo_changed.is_connected(_on_ammo_changed):
+		previous_weapon.ammo_changed.disconnect(_on_ammo_changed)
+	if weapon_data and not weapon_data.ammo_changed.is_connected(_on_ammo_changed):
+		weapon_data.ammo_changed.connect(_on_ammo_changed)
 
 func _ready() -> void:
 	super._ready()
 	_update_ui()
 	equip_button.pressed.connect(_on_equip_pressed)
-
-func _process(_delta: float) -> void:
-	if not visible or not weapon_data: return
-	_update_ammo_display()
 
 func _update_ammo_display() -> void:
 	if not weapon_data: return
@@ -88,3 +89,6 @@ func _on_equip_pressed() -> void:
 func _handle_selection() -> void:
 	_on_equip_pressed()
 	super._handle_selection()
+
+func _on_ammo_changed(current_ammo: int, max_ammo: int) -> void:
+	_update_ammo_display()

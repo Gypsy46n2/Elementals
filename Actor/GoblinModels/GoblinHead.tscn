@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://difcukmej5l7j"]
+[gd_scene format=3 uid="uid://difcukmej5l7j"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_green"]
 albedo_color = Color(0.2, 0.6, 0.2, 1)
@@ -9,33 +9,33 @@ albedo_color = Color(0.3, 0.7, 0.3, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_green"]
 albedo_color = Color(0.1, 0.3, 0.1, 1)
 
-[node name="GoblinHead" type="Node3D"]
+[node name="GoblinHead" type="Node3D" unique_id=943333482]
 
-[node name="Head" type="CSGSphere3D" parent="."]
+[node name="Head" type="CSGSphere3D" parent="." unique_id=468665817]
 radius = 0.6
 material = SubResource("StandardMaterial3D_green")
 
-[node name="Nose" type="CSGBox3D" parent="Head"]
+[node name="Nose" type="CSGBox3D" parent="Head" unique_id=1470949162]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.6)
 size = Vector3(0.15, 0.15, 0.5)
 material = SubResource("StandardMaterial3D_nose")
 
-[node name="EarL" type="CSGBox3D" parent="Head"]
+[node name="EarL" type="CSGBox3D" parent="Head" unique_id=945869925]
 transform = Transform3D(0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0, 0, 1, -0.6, 0.1, 0)
 size = Vector3(0.6, 0.2, 0.1)
 material = SubResource("StandardMaterial3D_green")
 
-[node name="EarR" type="CSGBox3D" parent="Head"]
+[node name="EarR" type="CSGBox3D" parent="Head" unique_id=37539286]
 transform = Transform3D(0.965926, -0.258819, 0, 0.258819, 0.965926, 0, 0, 0, 1, 0.6, 0.1, 0)
 size = Vector3(0.6, 0.2, 0.1)
 material = SubResource("StandardMaterial3D_green")
 
-[node name="EyebrowL" type="CSGBox3D" parent="Head"]
+[node name="EyebrowL" type="CSGBox3D" parent="Head" unique_id=854448286]
 transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, -0.25, 0.35, 0.5)
 size = Vector3(0.4, 0.2, 0.1)
 material = SubResource("StandardMaterial3D_dark_green")
 
-[node name="EyebrowR" type="CSGBox3D" parent="Head"]
+[node name="EyebrowR" type="CSGBox3D" parent="Head" unique_id=1706475332]
 transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0.25, 0.35, 0.5)
 size = Vector3(0.4, 0.2, 0.1)
 material = SubResource("StandardMaterial3D_dark_green")

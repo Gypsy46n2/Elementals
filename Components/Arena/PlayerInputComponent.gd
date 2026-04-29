@@ -147,6 +147,7 @@ func _find_playable_actor(start_index: int, step: int) -> int:
 	return -1
 
 ## Uses a raycast from the mouse position to find the world-space coordinate.
+# TODO(Optimization): Avoid repeated camera/project_ray/intersect_ray computations; cache camera and ray params to reduce CPU (~0.5% CPU)
 func _get_mouse_3d_position() -> Vector3:
 	var camera = get_viewport().get_camera_3d()
 	if not camera:

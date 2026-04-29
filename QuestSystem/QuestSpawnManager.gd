@@ -11,29 +11,254 @@ var spawned_by_quest: Dictionary = {}
 var spawned_records_by_instance_id: Dictionary = {}
 var camp_records_by_id: Dictionary = {}
 var camp_index_counter: int = 0
+var _designated_camps: Dictionary = {} # quest_id -> Array[Dictionary]
+var _active_quest_id: String = ""
 
 func setup(p_arena: Node) -> void:
 	arena = p_arena
-	_connect_signals()
+	_init_connections()
+	call_deferred("_designate_all_camp_tiles")
 
-func _ready() -> void:
-	if arena == null:
-		arena = get_parent()
-	_connect_signals()
-
-func _connect_signals() -> void:
+func _init_connections() -> void:
 	if not QuestEvents.quest_spawn_requested.is_connected(_on_quest_spawn_requested):
 		QuestEvents.quest_spawn_requested.connect(_on_quest_spawn_requested)
 	if not QuestEvents.quest_failed.is_connected(_on_quest_failed):
 		QuestEvents.quest_failed.connect(_on_quest_failed)
 	if not QuestEvents.quest_completed.is_connected(_on_quest_completed):
 		QuestEvents.quest_completed.connect(_on_quest_completed)
-	var events: Node = get_node_or_null("/root/GameEvents")
-	if events != null and not GameEvents.actor_died.is_connected(_on_actor_died):
+	if not GameEvents.actor_died.is_connected(_on_actor_died):
 		GameEvents.actor_died.connect(_on_actor_died)
 
+func _designate_all_camp_tiles() -> void:
+	if arena == null:
+		return
+	var quests: Array = QuestDatabase.get_all_quests()
+	var spawner: Node = _get_actor_spawner()
+	if spawner == null:
+		return
+	
+	var edge_index: int = 0
+	
+	for quest in quests:
+		var quest_id: String = String(quest.get("id", ""))
+		var spawns: Array = QuestDatabase.get_spawns(quest_id)
+		var quest_camps: Array = []
+		
+		# Assign each quest type to a different map edge
+		var current_edge: int = edge_index % 4
+		edge_index += 1
+		
+		for raw_spawn in spawns:
+			var spawn_data: Dictionary = raw_spawn as Dictionary
+			var count: int = maxi(1, int(spawn_data.get("count", 1)))
+			var camp_count: int = maxi(1, int(spawn_data.get("camp_count", _suggest_camp_count(count))))
+			var camp_size: String = String(spawn_data.get("camp_size", "small"))
+			
+			for i in range(camp_count):
+				var camp_tile = _get_tile_near_edge(current_edge)
+				if camp_tile != null:
+					var camp_center: Vector3 = _tile_world_center(camp_tile)
+					
+					var camp_data: Dictionary = {
+						"tile": camp_tile,
+						"center": camp_center,
+						"spawn_data": spawn_data,
+						"spawned": false,
+						"quest_id": quest_id
+					}
+					quest_camps.append(camp_data)
+					
+					camp_index_counter += 1
+					var camp_id: String = "%s_camp_%02d" % [quest_id, camp_index_counter]
+					
+					# Register the trigger for enemy spawning
+					var tile_signal_comp: Node = arena.get_node_or_null("TileSignalComponent")
+					if tile_signal_comp != null:
+						tile_signal_comp.call("register_trigger", camp_tile, 8, _on_camp_trigger_activated, {
+							"quest_id": quest_id, 
+							"camp_index": quest_camps.size() - 1,
+							"camp_id": camp_id
+						})
+					
+					# Register data only to allow minimap markers to show, but no visuals yet
+					var member_count: int = maxi(1, int(ceil(float(count) / float(camp_count))))
+					_register_camp_data(quest_id, camp_id, camp_center, camp_size, member_count)
+		
+		_designated_camps[quest_id] = quest_camps
+	
+	QuestEvents.message("All quest camps pre-placed. Discovery triggers active.")
+	QuestEvents.camps_designated.emit()
+
+func _get_tile_near_edge(edge_index: int) -> Variant:
+	if arena == null: return null
+	var grid_width: int = int(arena.get("grid_width"))
+	var grid_height: int = int(arena.get("grid_height"))
+	
+	var attempts: int = 0
+	while attempts < 300:
+		attempts += 1
+		var x: int
+		var y: int
+		match edge_index % 4:
+			0: # North
+				x = randi() % grid_width
+				y = randi() % 4
+			1: # South
+				x = randi() % grid_width
+				y = (grid_height - 1) - (randi() % 4)
+			2: # East
+				x = (grid_width - 1) - (randi() % 4)
+				y = randi() % grid_height
+			3: # West
+				x = randi() % 4
+				y = randi() % grid_height
+		
+		var tile = null
+		if arena.has_method("get_tile_at_grid_coords"):
+			tile = arena.get_tile_at_grid_coords(x, y)
+		if tile != null and not _tile_is_blocked(tile):
+			return tile
+	return _get_spawn_tile(10, 40)
+
+func _on_camp_trigger_activated(metadata: Dictionary) -> void:
+	var quest_id: String = metadata.get("quest_id", "")
+	var camp_index: int = metadata.get("camp_index", -1)
+	var camp_id: String = metadata.get("camp_id", "")
+	
+	# Visuals and enemies spawn on discovery regardless of quest status
+	_activate_camp_for_quest(quest_id, camp_index, camp_id)
+
+func _activate_camp_for_quest(quest_id: String, camp_index: int, camp_id: String) -> void:
+	if not _designated_camps.has(quest_id):
+		return
+	var camps: Array = _designated_camps[quest_id]
+	if camp_index < 0 or camp_index >= camps.size():
+		return
+	
+	var camp_data: Dictionary = camps[camp_index]
+	if camp_data.get("visuals_spawned", false):
+		return
+	
+	camp_data["visuals_spawned"] = true
+	
+	# Spawn visual structures
+	var record: Dictionary = camp_records_by_id.get(camp_id, {})
+	if not record.is_empty():
+		var camp_center: Vector3 = record.get("center", Vector3.ZERO)
+		var camp_size: String = record.get("size", "small")
+		var expected: int = record.get("expected", 1)
+		
+		var camp_root: Node3D = _build_goblin_camp_visual(camp_id, camp_center, camp_size, expected)
+		var marker: Node3D = null
+		if camp_root != null and camp_root.has_node("QuestCampMarker"):
+			marker = camp_root.get_node("QuestCampMarker") as Node3D
+		
+		record["root"] = camp_root
+		record["marker"] = marker
+		camp_records_by_id[camp_id] = record
+		
+		# Show world marker only if quest is active
+		if is_instance_valid(marker):
+			marker.visible = QuestState.active_quests.has(quest_id)
+	
+	# Spawn enemies
+	_spawn_enemies_at_designated_camp(quest_id, camp_index, camp_id)
+
+func _spawn_enemies_at_designated_camp(quest_id: String, camp_index: int, camp_id: String) -> void:
+	if not _designated_camps.has(quest_id):
+		return
+	var camps: Array = _designated_camps[quest_id]
+	if camp_index < 0 or camp_index >= camps.size():
+		return
+	
+	var camp_data: Dictionary = camps[camp_index]
+	if camp_data.spawned:
+		# If enemies were already spawned for this quest instance, don't do it again
+		# but if quest was failed/reset, camp_data.spawned should be false.
+		return
+	
+	camp_data.spawned = true
+	
+	var spawner: Node = _get_actor_spawner()
+	var spawn_data: Dictionary = camp_data.spawn_data
+	var camp_center: Vector3 = camp_data.center
+	
+	var actor_type: String = String(spawn_data.get("actor_type", "goblin")).to_lower().strip_edges()
+	var target_id: String = String(spawn_data.get("target_id", actor_type)).strip_edges()
+	var count: int = maxi(1, int(spawn_data.get("count", 1)))
+	var camp_count: int = maxi(1, int(spawn_data.get("camp_count", 1)))
+	var camp_spawn_radius: float = float(spawn_data.get("camp_spawn_radius", 3.75))
+	
+	var member_count: int = maxi(1, int(ceil(float(count) / float(camp_count))))
+	
+	for i in range(member_count):
+		var actor: Node = _spawn_camp_actor(spawner, actor_type, quest_id, target_id, camp_id, camp_center, camp_spawn_radius)
+		if actor == null:
+			continue
+		_configure_spawned_actor(actor, quest_id, target_id, actor_type, i + 1, camp_id)
+		_add_actor_to_camp(camp_id, actor)
+	
+	_update_camp_marker(camp_id, null)
+	QuestEvents.message("Quest camp discovered! Clear the area.")
+
+func _spawn_designated_camp(quest_id: String, camp_index: int) -> void:
+	# This is now handled by _spawn_enemies_at_designated_camp via the trigger
+	pass
+
+func get_camp_records() -> Dictionary:
+	return camp_records_by_id
+
 func _on_quest_spawn_requested(quest_id: String) -> void:
-	spawn_quest_enemies(quest_id)
+	_active_quest_id = quest_id
+	QuestEvents.message("Quest accepted. Find the goblin camp in the arena.")
+	_update_all_camp_marker_visibility()
+	
+	# Check for already cleared camps to credit progress immediately
+	_check_for_pre_cleared_camps(quest_id)
+	
+	# Check if player is ALREADY near a camp when quest starts
+	var tile_signal_comp: Node = arena.get_node_or_null("TileSignalComponent")
+	if tile_signal_comp != null:
+		var player_node = arena.get("current_controlled_actor")
+		if player_node != null:
+			var interaction = player_node.get("tile_interaction_component")
+			if interaction != null:
+				var tile = interaction.call("get_ground_tile")
+				if tile != null:
+					tile_signal_comp.call("_on_player_tile_changed", tile)
+
+func _check_for_pre_cleared_camps(quest_id: String) -> void:
+	var total_to_credit: int = 0
+	var target_id: String = ""
+	
+	for camp_id in camp_records_by_id.keys():
+		var record: Dictionary = camp_records_by_id[camp_id]
+		if record.get("quest_id", "") == quest_id:
+			if record.get("cleared", false):
+				var expected: int = int(record.get("expected", 0))
+				total_to_credit += expected
+				# Try to find target_id from spawn_data in designated_camps
+				if target_id == "":
+					target_id = _get_target_id_for_quest(quest_id)
+	
+	if total_to_credit > 0 and not target_id.is_empty():
+		QuestEvents.message("Synchronizing pre-cleared camp progress...")
+		QuestState.notify_kill(target_id, total_to_credit)
+
+func _get_target_id_for_quest(quest_id: String) -> String:
+	var spawns: Array = QuestDatabase.get_spawns(quest_id)
+	for raw_spawn in spawns:
+		var spawn_data: Dictionary = raw_spawn as Dictionary
+		var actor_type: String = String(spawn_data.get("actor_type", "goblin")).to_lower().strip_edges()
+		return String(spawn_data.get("target_id", actor_type)).strip_edges()
+	return "goblin"
+
+func _update_all_camp_marker_visibility() -> void:
+	for camp_id in camp_records_by_id.keys():
+		var record: Dictionary = camp_records_by_id[camp_id]
+		var marker: Node3D = record.get("marker", null)
+		if is_instance_valid(marker):
+			marker.visible = QuestState.active_quests.has(record.get("quest_id", ""))
 
 func spawn_quest_enemies(quest_id: String) -> void:
 	if arena == null:
@@ -217,11 +442,24 @@ func _configure_spawned_actor(actor: Node, quest_id: String, target_id: String, 
 				_:
 					actor_object.faction_component.setup(FactionComponent.Faction.MONSTERS)
 
+func _register_camp_data(quest_id: String, camp_id: String, camp_center: Vector3, camp_size: String, expected_count: int) -> void:
+	camp_records_by_id[camp_id] = {
+		"quest_id": quest_id,
+		"camp_id": camp_id,
+		"center": camp_center,
+		"size": camp_size,
+		"expected": expected_count,
+		"actors": [],
+		"root": null,
+		"marker": null
+	}
+
 func _create_camp_record(quest_id: String, camp_id: String, camp_center: Vector3, camp_size: String, expected_count: int) -> void:
 	var camp_root: Node3D = _build_goblin_camp_visual(camp_id, camp_center, camp_size, expected_count)
 	var marker: Node3D = null
 	if camp_root != null and camp_root.has_node("QuestCampMarker"):
 		marker = camp_root.get_node("QuestCampMarker") as Node3D
+	
 	camp_records_by_id[camp_id] = {
 		"quest_id": quest_id,
 		"camp_id": camp_id,
@@ -232,6 +470,9 @@ func _create_camp_record(quest_id: String, camp_id: String, camp_center: Vector3
 		"root": camp_root,
 		"marker": marker
 	}
+	
+	if is_instance_valid(marker):
+		marker.visible = QuestState.active_quests.has(quest_id)
 
 func _add_actor_to_camp(camp_id: String, actor: Node) -> void:
 	if camp_id.is_empty() or not camp_records_by_id.has(camp_id):
@@ -529,11 +770,24 @@ func _is_player_death(actor: Node) -> bool:
 
 func _on_quest_failed(quest_id: String) -> void:
 	_despawn_live_quest_actors(quest_id)
-	_remove_quest_camps(quest_id, true)
+	_reset_designated_camps(quest_id)
+	if _active_quest_id == quest_id:
+		_active_quest_id = ""
+	_update_all_camp_marker_visibility()
 
 func _on_quest_completed(quest_id: String, _reward_gold: int) -> void:
 	_despawn_live_quest_actors(quest_id)
-	_remove_quest_camps(quest_id, true)
+	_reset_designated_camps(quest_id)
+	if _active_quest_id == quest_id:
+		_active_quest_id = ""
+	_update_all_camp_marker_visibility()
+
+func _reset_designated_camps(quest_id: String) -> void:
+	if _designated_camps.has(quest_id):
+		var camps: Array = _designated_camps[quest_id]
+		for camp in camps:
+			camp.spawned = false
+			camp["visuals_spawned"] = false
 
 func _despawn_live_quest_actors(quest_id: String) -> void:
 	if quest_id.is_empty() or not spawned_by_quest.has(quest_id):
@@ -573,22 +827,22 @@ func _update_camp_marker(camp_id: String, dead_actor: Node) -> void:
 		if is_instance_valid(raw_actor):
 			cleaned.append(raw_actor)
 	record["actors"] = cleaned
-	camp_records_by_id[camp_id] = record
-
+	
 	var marker_value: Variant = record.get("marker", null)
-	if marker_value == null or not is_instance_valid(marker_value):
-		return
-	var marker: Node3D = marker_value as Node3D
-	if cleaned.is_empty():
-		marker.queue_free()
-		record["marker"] = null
-		camp_records_by_id[camp_id] = record
-		return
-
-	var label_node: Node = marker.get_node_or_null("MarkerLabel")
-	if label_node != null and label_node is Label3D:
-		var label: Label3D = label_node as Label3D
-		label.text = "QUEST CAMP\n%d goblins left" % cleaned.size()
+	if marker_value != null and is_instance_valid(marker_value):
+		var marker: Node3D = marker_value as Node3D
+		if cleaned.is_empty():
+			marker.queue_free()
+			record["marker"] = null
+			record["cleared"] = true
+			QuestEvents.message("Quest camp cleared!")
+		else:
+			var label_node: Node = marker.get_node_or_null("MarkerLabel")
+			if label_node != null and label_node is Label3D:
+				var label: Label3D = label_node as Label3D
+				label.text = "QUEST CAMP\n%d goblins left" % cleaned.size()
+	
+	camp_records_by_id[camp_id] = record
 
 func _remove_quest_camps(quest_id: String, remove_roots: bool) -> void:
 	var ids_to_remove: Array[String] = []

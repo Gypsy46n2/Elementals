@@ -11,6 +11,7 @@ signal quest_progressed(quest_id: String, objective_index: int, current: int, re
 signal quest_ready_to_complete(quest_id: String)
 signal quest_completed(quest_id: String, reward_gold: int)
 signal quest_failed(quest_id: String)
+signal camps_designated
 signal gold_changed(new_gold: int)
 
 func message(text: String) -> void:

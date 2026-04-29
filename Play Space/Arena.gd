@@ -204,6 +204,11 @@ func set_tile_state(tile: HexTileData, new_state: int) -> void:
 	tile_counts[new_state] += 1
 	tile_counts_changed.emit(tile_counts)
 	
+	if old_state == TileConstants.State.GRASS or new_state == TileConstants.State.GRASS:
+		var grass_layer = get_node_or_null("GrassPatchLayer")
+		if grass_layer:
+			grass_layer.regenerate()
+	
 	tile_system.check_activeness(tile)
 	for n in _get_neighbors(tile):
 		tile_system.check_activeness(n)
@@ -232,6 +237,7 @@ func apply_element_to_tile(tile: HexTileData, element: String, direction: Vector
 	return false
 
 # Converts a world position to tile data using hexagonal math.
+# TODO(Optimization): Cache spatial lookup or use spatial partitioning for tile queries to reduce heavy math operations (~1% CPU)
 func get_tile_data_at_world_position(world_position: Vector3) -> HexTileData:
 	var local_pos = to_local(world_position)
 	var x = local_pos.x

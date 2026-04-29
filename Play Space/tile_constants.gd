@@ -14,12 +14,12 @@ const COLORS = {
 }
 
 const TEXTURES = {
-	State.GRASS: preload("res://assets/generated/grass_hex_tile_frame_0_1774844697.png"),
-	State.DIRT: preload("res://assets/generated/dirt_hex_tile_frame_0_1774844719.png"),
-	State.MUD: preload("res://assets/generated/mud_hex_tile_frame_0_1774844756.png"),
+	State.GRASS: preload("res://assets/generated/grass_hex_tile_organic_frame_0_1777431864.png"),
+	State.DIRT: preload("res://assets/generated/dirt_hex_tile_organic_frame_0_1777434292.png"),
+	State.MUD: preload("res://assets/generated/mud_hex_tile_organic_frame_0_1777434292.png"),
 	State.PUDDLE: preload("res://assets/generated/water_hex_tile_1774844916.png"),
 	State.STONE: null,
-	State.FIRE: preload("res://assets/generated/dirt_hex_tile_frame_0_1774844719.png"),
+	State.FIRE: preload("res://assets/generated/dirt_hex_tile_organic_frame_0_1777434292.png"),
 }
 
 const CLIFF_TEXTURES = {

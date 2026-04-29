@@ -110,10 +110,14 @@ func _setup_multimeshes(max_instances: int) -> void:
 				mat.set_shader_parameter("edge_noise_amplitude", 0.45) # Extreme overhang for grass
 				mat.set_shader_parameter("edge_noise_frequency", 18.0)
 				mat.set_shader_parameter("edge_noise_bias", 0.25) # Pull down even further
+				mat.set_shader_parameter("top_noise_scale", 0.25)
+				mat.set_shader_parameter("top_noise_strength", 0.8)
 			TileConstants.State.DIRT, TileConstants.State.MUD:
 				mat.set_shader_parameter("edge_noise_amplitude", 0.3) # High crumbling noise
 				mat.set_shader_parameter("edge_noise_frequency", 14.0)
 				mat.set_shader_parameter("edge_noise_bias", -0.15) # Jagged/recessed edge
+				mat.set_shader_parameter("top_noise_scale", 0.25)
+				mat.set_shader_parameter("top_noise_strength", 0.7)
 			TileConstants.State.STONE:
 				mat.set_shader_parameter("edge_noise_amplitude", 0.12)
 				mat.set_shader_parameter("edge_noise_frequency", 8.0)

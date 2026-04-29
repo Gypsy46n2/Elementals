@@ -12,6 +12,10 @@ uniform float side_animation_speed : hint_range(-10.0, 10.0) = 0.0;
 uniform sampler2D overlay_texture : source_color, hint_default_transparent, filter_nearest;
 uniform float overlay_animation_speed : hint_range(-10.0, 10.0) = 0.0;
 
+// Top UV distortion for organic flow
+uniform float top_noise_scale : hint_range(0.0, 2.0) = 0.15;
+uniform float top_noise_strength : hint_range(0.0, 2.0) = 0.4;
+
 // NEW: Top edge blending parameters
 uniform float top_edge_darkening : hint_range(0.0, 1.0) = 0.15;
 uniform float top_edge_softness : hint_range(0.0, 0.5) = 0.1;
@@ -48,13 +52,46 @@ float noise1d(float x) {
 	return mix(a, b, smoothstep(0.0, 1.0, f));
 }
 
+float noise2d(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	float a = hash(i);
+	float b = hash(i + vec2(1.0, 0.0));
+	float c = hash(i + vec2(0.0, 1.0));
+	float d = hash(i + vec2(1.0, 1.0));
+	vec2 u = f * f * (3.0 - 2.0 * f);
+	return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm2d(vec2 p) {
+	float value = 0.0;
+	float amplitude = 0.5;
+	for (int i = 0; i < 4; i++) {
+		value += amplitude * noise2d(p);
+		p *= 2.0;
+		amplitude *= 0.5;
+	}
+	return value;
+}
+
 void fragment() {
+	// Organic world-space noise distortion to break the square grid
+	vec2 noise_pos = v_world_pos.xz * top_noise_scale;
+	float n_x = fbm2d(noise_pos);
+	float n_z = fbm2d(noise_pos + vec2(31.7, 12.3));
+	vec2 distortion = (vec2(n_x, n_z) - vec2(0.5)) * top_noise_strength;
+	
 	// Add subtle tiling noise to break up repetitions
 	float noise = hash(v_world_pos.xz * 1.5) * texture_tiling_noise;
 	
 	// Top color from world-space coordinates for consistency and zero corner stretch
-	vec2 top_uv = v_world_pos.xz * top_texture_scale + vec2(noise * 0.05);
+	vec2 top_uv = (v_world_pos.xz + distortion) * top_texture_scale + vec2(noise * 0.05);
 	vec4 top_col = texture(top_texture, top_uv);
+	
+	// Multi-scale sampling to destroy visible tiling patterns
+	vec4 top_col2 = texture(top_texture, top_uv * 2.7 + vec2(0.3, 0.7));
+	float detail_blend = fbm2d(v_world_pos.xz * 0.08 + vec2(17.0, 43.0));
+	top_col = mix(top_col, top_col2, 0.25 + detail_blend * 0.35);
 	
 	// Hexagonal distance for accurate edge effects (Normalized to 1.0 at edges)
 	// Points are rotated 30 degrees to match Arena.gd mesh rotation

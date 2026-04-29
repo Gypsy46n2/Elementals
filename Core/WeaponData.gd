@@ -1,6 +1,8 @@
 class_name WeaponData
 extends Resource
 
+signal ammo_changed(current: int, max: int)
+
 @export var name: String = ""
 @export var cost: String = ""
 @export var damage: String = ""
@@ -26,7 +28,13 @@ extends Resource
 @export var cone_width: float = 90.0
 @export var cooldown: float = 0.6
 @export var max_ammo: int = -1 # -1 means infinite
-@export var current_ammo: int = -1
+var _current_ammo: int = -1
+
+@export var current_ammo: int:
+	get: return _current_ammo
+	set(v):
+		_current_ammo = v
+		ammo_changed.emit(_current_ammo, max_ammo)
 
 func _init(p_name: String = "", p_cost: String = "", p_damage: String = "", p_type: String = "", p_weight: float = 0.0, p_notes: String = "", p_proj_path: String = "") -> void:
 	name = p_name

@@ -121,6 +121,7 @@ func flash_red() -> void:
 					Color.RED, base_color, 0.1
 				)
 
+# TODO(Optimization): Cache viewport camera and update visuals only on state/direction change to reduce per-frame work (~2% CPU per actor)
 func _process(delta: float) -> void:
 	if actor:
 		if actor.is_dead:

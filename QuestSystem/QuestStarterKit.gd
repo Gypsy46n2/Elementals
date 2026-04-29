@@ -14,10 +14,24 @@ func _ready() -> void:
 func _install() -> void:
 	if arena == null:
 		return
+	# Ensure clean slate for discovery-based system
+	QuestState.active_quests.clear()
+	
 	_ensure_spawn_manager()
+	_ensure_tile_signal_component()
 	_ensure_tracker_hud()
 	_ensure_board_ui()
 	call_deferred("_ensure_world_board")
+
+func _ensure_tile_signal_component() -> void:
+	if arena.has_node("TileSignalComponent"):
+		return
+	var node: Node = Node.new()
+	node.name = "TileSignalComponent"
+	node.set_script(load("res://Components/Arena/TileSignalComponent.gd"))
+	arena.add_child(node)
+	if node.has_method("setup"):
+		node.call("setup", arena)
 
 func _ensure_spawn_manager() -> void:
 	if arena.has_node("QuestSpawnManager"):

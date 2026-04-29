@@ -113,6 +113,7 @@ var equipped_weapon: WeaponData:
 signal mana_changed(new_mana: float, max_mana: float)
 signal died()
 signal resurrected()
+signal tile_changed(new_tile: HexTileData)
 
 var is_dead: bool = false
 
@@ -183,6 +184,7 @@ func _setup_components() -> void:
 	# 5. Tile Interaction & Navigation
 	tile_interaction_component = _add_comp(ActorTileInteractionComponent.new())
 	tile_interaction_component.setup(self)
+	tile_interaction_component.tile_changed.connect(func(tile: HexTileData): tile_changed.emit(tile))
 
 	tile_navigation_component = _add_comp(ActorTileNavigationComponent.new())
 	tile_navigation_component.actor = self

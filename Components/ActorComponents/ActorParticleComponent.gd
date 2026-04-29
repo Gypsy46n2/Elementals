@@ -61,6 +61,7 @@ func setup(p_actor: Actor) -> void:
 var actor: Actor
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
+# TODO(Optimization): Throttle mana particle updates or use GPU particles for animations to reduce CPU (~1% CPU per actor)
 func _process(delta: float) -> void:
 	if actor and actor.mana_component:
 		update_mana_visuals(delta, actor.mana_component.current_mana, actor.mana_component.shot_mana_cost)
