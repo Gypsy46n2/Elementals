@@ -326,6 +326,8 @@ func _disable_living_components() -> void:
 		collision.set_deferred("disabled", true)
 
 func _enable_living_components() -> void:
+	if visual_component:
+		visual_component.process_mode = Node.PROCESS_MODE_INHERIT
 	if movement_component:
 		movement_component.process_mode = Node.PROCESS_MODE_INHERIT
 	if projectile_component:

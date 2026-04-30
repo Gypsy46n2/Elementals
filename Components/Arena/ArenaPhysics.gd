@@ -1,7 +1,13 @@
 class_name ArenaPhysics
 extends StaticBody3D
 
+var _height_step: float = 1.0
+var _tile_scale: float = 1.5
+
 func setup_physics(tile_data_grid: Array[HexTileData], hex_size: float, tile_scale: float, height_step: float, grid_width: int, grid_height: int) -> void:
+	_height_step = height_step
+	_tile_scale = tile_scale
+	
 	# Clear existing children if any
 	for child in get_children():
 		child.queue_free()
@@ -39,9 +45,24 @@ func setup_physics(tile_data_grid: Array[HexTileData], hex_size: float, tile_sca
 		tile_shape.height = height
 		
 		var tile_col = CollisionShape3D.new()
+		tile_col.name = "Tile_%d_%d" % [tile.grid_coords.x, tile.grid_coords.y]
 		tile_col.shape = tile_shape
 		tile_col.position = tile.position + Vector3(0, center_y, 0)
 		add_child(tile_col)
+
+func update_tile_collision(tile: HexTileData) -> void:
+	var tile_name = "Tile_%d_%d" % [tile.grid_coords.x, tile.grid_coords.y]
+	var col = get_node_or_null(tile_name)
+	if col and col is CollisionShape3D:
+		var surface_y = _get_tile_surface_y(tile, _height_step)
+		var bottom_y = -10.0
+		var height = surface_y - bottom_y
+		var center_y = (surface_y + bottom_y) / 2.0
+		
+		var tile_shape = col.shape as CylinderShape3D
+		if tile_shape:
+			tile_shape.height = height
+		col.position = tile.position + Vector3(0, center_y, 0)
 
 func _get_tile_surface_y(tile: HexTileData, height_step: float) -> float:
 	if tile.current_state == TileConstants.State.STONE:

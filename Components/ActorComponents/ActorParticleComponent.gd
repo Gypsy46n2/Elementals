@@ -57,14 +57,31 @@ func setup(p_actor: Actor) -> void:
 	actor = p_actor
 	_rng.randomize()
 	_mana_phase = _rng.randf_range(0, 100)
+	
+	if actor.is_node_ready():
+		_connect_mana_component()
+	else:
+		actor.ready.connect(_connect_mana_component, CONNECT_ONE_SHOT)
+
+func _connect_mana_component() -> void:
+	if not actor: return
+	if not actor.mana_changed.is_connected(_on_mana_changed):
+		actor.mana_changed.connect(_on_mana_changed)
+	_update_mana_particle_count()
+
+func _on_mana_changed(_new_mana: float, _max_mana: float) -> void:
+	_update_mana_particle_count()
 
 var actor: Actor
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
-# TODO(Optimization): Throttle mana particle updates or use GPU particles for animations to reduce CPU (~1% CPU per actor)
+# TODO(Optimization): Use GPU particles for animations to reduce CPU (~1% CPU per actor)
 func _process(delta: float) -> void:
-	if actor and actor.mana_component:
-		update_mana_visuals(delta, actor.mana_component.current_mana, actor.mana_component.shot_mana_cost)
+	if mana_particles.is_empty():
+		return
+	
+	_mana_phase += delta
+	_animate_mana_particles()
 
 # Mana Particle Visuals (Sprite3D based)
 var mana_particles: Array[Sprite3D] = []
@@ -78,49 +95,56 @@ func setup_mana_visuals(texture: Texture2D) -> void:
 	if not mana_particles_container:
 		mana_particles_container = Node3D.new()
 		mana_particles_container.name = "ManaParticlesContainer"
-		actor.add_child(mana_particles_container)
+		if actor:
+			actor.add_child(mana_particles_container)
 	
-	var body = actor.get_node_or_null("Body")
-	if body:
-		mana_particles_container.position.y = body.position.y
+	if actor:
+		var body = actor.get_node_or_null("Body")
+		if body:
+			mana_particles_container.position.y = body.position.y
+		
+		_update_mana_particle_count()
 
-func update_mana_visuals(delta: float, current_mana: float, shot_mana_cost: float) -> void:
-	if not _mana_texture:
+func _update_mana_particle_count() -> void:
+	if not _mana_texture or not actor or not actor.mana_component:
 		for p in mana_particles:
 			if is_instance_valid(p): p.queue_free()
 		mana_particles.clear()
 		return
 		
 	var charges: int = 0
-	if shot_mana_cost > 0:
-		charges = int(current_mana / 5) # Matches original logic
+	if actor.mana_component.shot_mana_cost > 0:
+		charges = int(actor.mana_component.current_mana / 5)
 	
 	while mana_particles.size() < charges:
-		var sprite: Sprite3D = Sprite3D.new()
-		sprite.texture = _mana_texture
-		sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		sprite.pixel_size = 0.03
-		sprite.render_priority = 5
-		sprite.transparent = true
-		sprite.shaded = false
-		
-		var rand_axis: Vector3 = Vector3(_rng.randf_range(-1,1), _rng.randf_range(-1,1), _rng.randf_range(-1,1)).normalized()
-		if rand_axis == Vector3.ZERO: rand_axis = Vector3.UP
-		var orbit_basis: Basis = Basis(rand_axis, _rng.randf_range(0, TAU))
-		
-		sprite.set_meta("orbit_rotation", orbit_basis)
-		sprite.set_meta("phase_offset", _rng.randf_range(0, TAU))
-		sprite.set_meta("speed_mult", _rng.randf_range(0.3, 0.6))
-		
-		mana_particles_container.add_child(sprite)
-		mana_particles.append(sprite)
+		_create_mana_particle()
 		
 	while mana_particles.size() > charges:
 		var sprite: Sprite3D = mana_particles.pop_back()
 		if is_instance_valid(sprite):
 			sprite.queue_free()
-		
-	_mana_phase += delta
+
+func _create_mana_particle() -> void:
+	var sprite: Sprite3D = Sprite3D.new()
+	sprite.texture = _mana_texture
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.pixel_size = 0.03
+	sprite.render_priority = 5
+	sprite.transparent = true
+	sprite.shaded = false
+	
+	var rand_axis: Vector3 = Vector3(_rng.randf_range(-1,1), _rng.randf_range(-1,1), _rng.randf_range(-1,1)).normalized()
+	if rand_axis == Vector3.ZERO: rand_axis = Vector3.UP
+	var orbit_basis: Basis = Basis(rand_axis, _rng.randf_range(0, TAU))
+	
+	sprite.set_meta("orbit_rotation", orbit_basis)
+	sprite.set_meta("phase_offset", _rng.randf_range(0, TAU))
+	sprite.set_meta("speed_mult", _rng.randf_range(0.3, 0.6))
+	
+	mana_particles_container.add_child(sprite)
+	mana_particles.append(sprite)
+
+func _animate_mana_particles() -> void:
 	var orbit_radius: float = 1.1
 	for i in range(mana_particles.size()):
 		var sprite: Sprite3D = mana_particles[i]

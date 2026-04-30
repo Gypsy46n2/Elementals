@@ -17,6 +17,23 @@ var _name_label: Label3D
 var _flash_tween: Tween
 var _goat_base_color: Color = Color.WHITE
 
+# Caching for optimization
+var _camera: Camera3D
+var _last_mouse_pos: Vector2 = Vector2.ZERO
+var _last_actor_pos: Vector3 = Vector3.ZERO
+var _cached_mouse_dir: Vector3 = Vector3.ZERO
+var _last_cam_right: Vector3 = Vector3.ZERO
+var _last_target_dir: Vector3 = Vector3.ZERO
+
+func _ready() -> void:
+	# Initial camera fetch
+	_camera = get_viewport().get_camera_3d()
+
+func _get_camera() -> Camera3D:
+	if not is_instance_valid(_camera):
+		_camera = get_viewport().get_camera_3d()
+	return _camera
+
 func setup(p_actor: Actor, p_body: Node3D) -> void:
 	actor = p_actor
 	body = p_body
@@ -123,15 +140,19 @@ func flash_red() -> void:
 
 # TODO(Optimization): Cache viewport camera and update visuals only on state/direction change to reduce per-frame work (~2% CPU per actor)
 func _process(delta: float) -> void:
-	if actor:
-		if actor.is_dead:
-			return
-		if body_sprite:
-			_update_sprite_flip()
-		elif body_model:
-			_update_model_rotation(delta)
+	if not actor or actor.is_dead:
+		return
+	
+	var cam = _get_camera()
+	if not cam:
+		return
+		
+	if body_sprite:
+		_update_sprite_flip(cam)
+	elif body_model:
+		_update_model_rotation(delta, cam)
 
-func _update_model_rotation(delta: float) -> void:
+func _update_model_rotation(delta: float, p_camera: Camera3D) -> void:
 	if not body_model: return
 	
 	var target_dir: Vector3 = Vector3.ZERO
@@ -140,40 +161,37 @@ func _update_model_rotation(delta: float) -> void:
 	if actor.weapon_component and actor.weapon_component.is_on_cooldown():
 		target_dir = last_attack_dir
 	else:
-		# If player controlled, face mouse (same mechanics as weapon idle)
+		# If player controlled, face mouse
 		if actor.is_controlled:
-			target_dir = _get_mouse_direction()
+			target_dir = _get_mouse_direction(p_camera)
 		
 		# If still no direction (not player or no mouse hit), or if we prefer movement dir when moving
 		var velocity = actor.velocity
 		var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
 		if horizontal_velocity.length() > 0.1:
-			# For NPCs, movement direction is the default
-			# For players, we might want to still face mouse even when moving, 
-			# but many games face movement direction if no target is active.
-			# However, "facing the same way as the weapon" implies facing the mouse.
 			if target_dir.length() < 0.1:
 				target_dir = horizontal_velocity.normalized()
 
 	if target_dir.length() > 0.1:
-		# Basis.looking_at(target_dir, UP) makes -Z face target_dir.
-		# Since the goblin model faces +Z, we rotate the result by 180 degrees (PI).
 		var target_basis = Basis.looking_at(target_dir, Vector3.UP).rotated(Vector3.UP, PI)
-		
-		# Slerp the normalized basis to keep rotation smooth
 		var current_basis = body_model.global_transform.basis.orthonormalized()
-		var next_basis = current_basis.slerp(target_basis, delta * 15.0).orthonormalized()
 		
-		# Re-apply the initial scale to ensure the model doesn't grow/shrink
+		# Optimization: skip slerp if already reached target
+		if current_basis.is_equal_approx(target_basis):
+			return
+			
+		var next_basis = current_basis.slerp(target_basis, delta * 15.0).orthonormalized()
 		body_model.global_transform.basis = next_basis.scaled(initial_model_scale)
 
-func _get_mouse_direction() -> Vector3:
+func _get_mouse_direction(p_camera: Camera3D) -> Vector3:
 	var mouse_pos = get_viewport().get_mouse_position()
-	var camera = get_viewport().get_camera_3d()
-	if not camera: return Vector3.ZERO
 	
-	var ray_origin = camera.project_ray_origin(mouse_pos)
-	var ray_dir = camera.project_ray_normal(mouse_pos)
+	# Optimization: skip raycast if mouse and actor haven't moved
+	if mouse_pos == _last_mouse_pos and actor.global_position.is_equal_approx(_last_actor_pos):
+		return _cached_mouse_dir
+	
+	var ray_origin = p_camera.project_ray_origin(mouse_pos)
+	var ray_dir = p_camera.project_ray_normal(mouse_pos)
 	
 	# Create a plane at actor's height
 	var plane = Plane(Vector3.UP, actor.global_position.y)
@@ -182,26 +200,33 @@ func _get_mouse_direction() -> Vector3:
 	if target_3d:
 		var dir = (target_3d - actor.global_position).normalized()
 		dir.y = 0
+		
+		_last_mouse_pos = mouse_pos
+		_last_actor_pos = actor.global_position
+		_cached_mouse_dir = dir
 		return dir
 	return Vector3.ZERO
 
-func _update_sprite_flip() -> void:
-	var camera = get_viewport().get_camera_3d()
-	if not camera:
-		return
-		
-	var cam_right = camera.global_transform.basis.x
+func _update_sprite_flip(p_camera: Camera3D) -> void:
+	var cam_right = p_camera.global_transform.basis.x
 	var target_dir: Vector3 = Vector3.ZERO
 	
 	if actor.weapon_component and actor.weapon_component.is_on_cooldown():
 		target_dir = last_attack_dir
 	elif actor.is_controlled:
-		target_dir = _get_mouse_direction()
+		target_dir = _get_mouse_direction(p_camera)
 	else:
 		var velocity = actor.velocity
 		target_dir = Vector3(velocity.x, 0, velocity.z)
 		
 	if target_dir.length() > 0.1:
+		# Optimization: skip if direction and camera haven't changed
+		if target_dir.is_equal_approx(_last_target_dir) and cam_right.is_equal_approx(_last_cam_right):
+			return
+			
+		_last_target_dir = target_dir
+		_last_cam_right = cam_right
+		
 		var dot_right = target_dir.dot(cam_right)
 		
 		# Determine horizontal flip based on screen-space direction
@@ -218,7 +243,7 @@ func update_attack_direction(target_position: Vector3) -> void:
 	last_dir = get_cardinal_direction(dir)
 
 func get_cardinal_direction(dir: Vector3) -> StringName:
-	var camera: Camera3D = get_viewport().get_camera_3d()
+	var camera: Camera3D = _get_camera()
 	if not camera: return &"down"
 	
 	var cam_basis: Basis = camera.global_transform.basis

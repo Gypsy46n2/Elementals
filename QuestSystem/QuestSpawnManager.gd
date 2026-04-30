@@ -1,6 +1,7 @@
 extends Node
 
 const CAMP_FIRE_SMOKE_SCENE_PATH: String = "res://QuestSystem/CampMarkerFire/QuestCampFireSmoke.tscn"
+const VISUAL_STEP_DELAY: float = 0.1
 
 # Optimization: Shared resources to reduce memory and draw calls
 var _wood_material: StandardMaterial3D = null
@@ -28,6 +29,7 @@ var camp_records_by_id: Dictionary = {}
 var camp_index_counter: int = 0
 var _designated_camps: Dictionary = {} # quest_id -> Array[Dictionary]
 var _active_quest_id: String = ""
+var _quest_stone_walls: Dictionary = {} # quest_id -> HexTileData
 
 func setup(p_arena: Node) -> void:
 	arena = p_arena
@@ -52,16 +54,17 @@ func _designate_all_camp_tiles() -> void:
 	if spawner == null:
 		return
 	
-	var edge_index: int = 0
+	var edge_index: int = randi() % 4
 	
 	for quest in quests:
 		var quest_id: String = String(quest.get("id", ""))
 		var spawns: Array = QuestDatabase.get_spawns(quest_id)
 		var quest_camps: Array = []
 		
-		# Assign each quest type to a different map edge
-		var current_edge: int = edge_index % 4
-		edge_index += 1
+		# Assign a stone wall tile for this quest's edge
+		var stone_wall = _find_stone_tile_near_edge(edge_index % 4)
+		if stone_wall:
+			_quest_stone_walls[quest_id] = stone_wall
 		
 		for raw_spawn in spawns:
 			var spawn_data: Dictionary = raw_spawn as Dictionary
@@ -70,7 +73,8 @@ func _designate_all_camp_tiles() -> void:
 			var camp_size: String = String(spawn_data.get("camp_size", "small"))
 			
 			for i in range(camp_count):
-				var camp_tile = _get_tile_near_edge(current_edge)
+				var camp_tile = _get_tile_near_edge(edge_index % 4)
+				edge_index += 1
 				if camp_tile != null:
 					var camp_center: Vector3 = _tile_world_center(camp_tile)
 					
@@ -247,7 +251,7 @@ func _on_quest_spawn_requested(quest_id: String) -> void:
 			if interaction != null:
 				var tile = interaction.call("get_ground_tile")
 				if tile != null:
-					tile_signal_comp.call("_on_player_tile_changed", tile)
+					tile_signal_comp.call("_on_actor_tile_changed", tile, player_node)
 
 func _check_for_pre_cleared_camps(quest_id: String) -> void:
 	var total_to_credit: int = 0
@@ -876,11 +880,90 @@ func _on_quest_failed(quest_id: String) -> void:
 	_update_all_camp_marker_visibility()
 
 func _on_quest_completed(quest_id: String, _reward_gold: int) -> void:
+	_lower_quest_stone_wall(quest_id)
 	_despawn_live_quest_actors(quest_id)
 	_reset_designated_camps(quest_id)
 	if _active_quest_id == quest_id:
 		_active_quest_id = ""
 	_update_all_camp_marker_visibility()
+
+func _lower_quest_stone_wall(quest_id: String) -> void:
+	if not _quest_stone_walls.has(quest_id):
+		return
+	
+	var tile = _quest_stone_walls[quest_id]
+	if tile == null:
+		return
+	
+	# Lowering logic
+	var generator: Node = arena.get_node_or_null("GridGenerator")
+	if generator == null: return
+	
+	var max_neighbor_h: float = -10.0
+	var neighbors: Array = generator.call("get_neighbors", tile)
+	var height_step: float = float(arena.get("height_step"))
+	for n in neighbors:
+		if n.current_state != TileConstants.State.STONE:
+			max_neighbor_h = max(max_neighbor_h, float(n.height_level) * height_step)
+	
+	if max_neighbor_h > -10.0:
+		tile.set_meta("stone_height", max_neighbor_h)
+	else:
+		tile.set_meta("stone_height", float(tile.height_level) * height_step)
+	
+	# Update visuals
+	var renderer: Node = arena.get_node_or_null("HexGridRenderer")
+	if renderer != null:
+		renderer.call("remove_tile", tile)
+		renderer.call("add_tile", tile)
+	
+	# Update physics if method exists
+	var physics: Node = arena.get_node_or_null("ArenaPhysics")
+	if physics != null and physics.has_method("update_tile_collision"):
+		physics.call("update_tile_collision", tile)
+
+	QuestEvents.message("A stone barrier on the edge has been lowered!")
+
+func _find_stone_tile_near_edge(edge_index: int) -> Variant:
+	if arena == null: return null
+	var grid: Array = _get_tile_grid()
+	var stone_tiles: Array = []
+	for tile in grid:
+		if tile.current_state == TileConstants.State.STONE:
+			stone_tiles.append(tile)
+	
+	if stone_tiles.is_empty(): return null
+	
+	var grid_width: int = int(arena.get("grid_width"))
+	var grid_height: int = int(arena.get("grid_height"))
+	
+	var candidates: Array = []
+	for tile in stone_tiles:
+		var x = tile.grid_coords.x
+		var y = tile.grid_coords.y
+		match edge_index % 4:
+			0: # North: low y
+				if y < 5: candidates.append(tile)
+			1: # South: high y
+				if y > grid_height - 6: candidates.append(tile)
+			2: # East: high x
+				if x > grid_width - 6: candidates.append(tile)
+			3: # West: low x
+				if x < 5: candidates.append(tile)
+	
+	if candidates.is_empty():
+		return stone_tiles[randi() % stone_tiles.size()]
+	
+	# Try to pick one that isn't already assigned
+	var unassigned: Array = []
+	for c in candidates:
+		if c not in _quest_stone_walls.values():
+			unassigned.append(c)
+	
+	if not unassigned.is_empty():
+		return unassigned[randi() % unassigned.size()]
+	
+	return candidates[randi() % candidates.size()]
 
 func _reset_designated_camps(quest_id: String) -> void:
 	if _designated_camps.has(quest_id):
