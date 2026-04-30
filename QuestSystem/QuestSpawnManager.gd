@@ -2,6 +2,21 @@ extends Node
 
 const CAMP_FIRE_SMOKE_SCENE_PATH: String = "res://QuestSystem/CampMarkerFire/QuestCampFireSmoke.tscn"
 
+# Optimization: Shared resources to reduce memory and draw calls
+var _wood_material: StandardMaterial3D = null
+var _hide_material: StandardMaterial3D = null
+var _cloth_material: StandardMaterial3D = null
+var _marker_material: StandardMaterial3D = null
+
+var _stone_mesh: BoxMesh = null
+var _tent_mesh: BoxMesh = null
+var _pole_mesh: BoxMesh = null
+var _crate_mesh: BoxMesh = null
+var _banner_mesh: BoxMesh = null
+var _rag_mesh: BoxMesh = null
+var _beacon_mesh: CylinderMesh = null
+var _arrow_mesh: BoxMesh = null
+
 # Quest spawns are routed through the arena's ArenaSpawnerComponent.
 # Camp bounties now spawn clustered goblins around visible goblin camps instead of loose random enemies.
 # Kill credit remains objective-based: camp goblins count, quest-spawned goblins count, and normal map goblins still count.
@@ -180,6 +195,9 @@ func _spawn_enemies_at_designated_camp(quest_id: String, camp_index: int, camp_i
 	camp_data.spawned = true
 	
 	var spawner: Node = _get_actor_spawner()
+	if spawner == null:
+		return
+	
 	var spawn_data: Dictionary = camp_data.spawn_data
 	var camp_center: Vector3 = camp_data.center
 	
@@ -193,10 +211,14 @@ func _spawn_enemies_at_designated_camp(quest_id: String, camp_index: int, camp_i
 	
 	for i in range(member_count):
 		var actor: Node = _spawn_camp_actor(spawner, actor_type, quest_id, target_id, camp_id, camp_center, camp_spawn_radius)
-		if actor == null:
-			continue
-		_configure_spawned_actor(actor, quest_id, target_id, actor_type, i + 1, camp_id)
-		_add_actor_to_camp(camp_id, actor)
+		if actor != null:
+			_configure_spawned_actor(actor, quest_id, target_id, actor_type, i + 1, camp_id)
+			_add_actor_to_camp(camp_id, actor)
+		
+		# Spawn one goblin per half second until all camp goblins have spawned
+		if i < member_count - 1:
+			if not is_inside_tree(): break
+			await get_tree().create_timer(0.5).timeout
 	
 	_update_camp_marker(camp_id, null)
 	QuestEvents.message("Quest camp discovered! Clear the area.")
@@ -320,11 +342,14 @@ func spawn_quest_enemies(quest_id: String) -> void:
 
 			for i in range(camp_member_count):
 				var actor: Node = _spawn_camp_actor(spawner, actor_type, quest_id, target_id, camp_id, camp_center, camp_spawn_radius)
-				if actor == null:
-					continue
-				_configure_spawned_actor(actor, quest_id, target_id, actor_type, total_spawned + 1, camp_id)
-				_add_actor_to_camp(camp_id, actor)
-				total_spawned += 1
+				if actor != null:
+					_configure_spawned_actor(actor, quest_id, target_id, actor_type, total_spawned + 1, camp_id)
+					_add_actor_to_camp(camp_id, actor)
+					total_spawned += 1
+				
+				if i < camp_member_count - 1:
+					if not is_inside_tree(): break
+					await get_tree().create_timer(0.5).timeout
 
 			_update_camp_marker(camp_id, null)
 
@@ -334,6 +359,9 @@ func spawn_quest_enemies(quest_id: String) -> void:
 		QuestEvents.message("Quest accepted, but no camp found valid spawn tiles.")
 
 func _spawn_camp_actor(spawner: Node, actor_type: String, quest_id: String, target_id: String, camp_id: String, camp_center: Vector3, camp_radius: float) -> Node:
+	if spawner == null:
+		return null
+		
 	if spawner.has_method("spawn_quest_actor_near"):
 		var camp_actor_value: Variant = spawner.call("spawn_quest_actor_near", actor_type, quest_id, target_id, camp_center, camp_radius)
 		if camp_actor_value != null and camp_actor_value is Node:
@@ -483,9 +511,68 @@ func _add_actor_to_camp(camp_id: String, actor: Node) -> void:
 	record["actors"] = actors
 	camp_records_by_id[camp_id] = record
 
+func _init_resources() -> void:
+	if _wood_material != null:
+		return
+	
+	_wood_material = StandardMaterial3D.new()
+	_wood_material.albedo_color = Color(0.24, 0.12, 0.05)
+	
+	_hide_material = StandardMaterial3D.new()
+	_hide_material.albedo_color = Color(0.32, 0.21, 0.12)
+	
+	_cloth_material = StandardMaterial3D.new()
+	_cloth_material.albedo_color = Color(0.16, 0.30, 0.12)
+	
+	_marker_material = StandardMaterial3D.new()
+	_marker_material.albedo_color = Color(1.0, 0.82, 0.16)
+	_marker_material.emission_enabled = true
+	_marker_material.emission = Color(1.0, 0.62, 0.10)
+	
+	_stone_mesh = BoxMesh.new()
+	_stone_mesh.size = Vector3(0.28, 0.16, 0.20)
+	
+	_tent_mesh = BoxMesh.new()
+	_tent_mesh.size = Vector3(1.6, 0.85, 1.15)
+	
+	_pole_mesh = BoxMesh.new()
+	_pole_mesh.size = Vector3(0.12, 1.25, 0.12)
+	
+	_crate_mesh = BoxMesh.new()
+	_crate_mesh.size = Vector3(0.55, 0.45, 0.55)
+	
+	_banner_mesh = BoxMesh.new()
+	_banner_mesh.size = Vector3(0.14, 2.2, 0.14)
+	
+	_rag_mesh = BoxMesh.new()
+	_rag_mesh.size = Vector3(0.75, 0.52, 0.08)
+	
+	_beacon_mesh = CylinderMesh.new()
+	_beacon_mesh.top_radius = 0.12
+	_beacon_mesh.bottom_radius = 0.12
+	_beacon_mesh.height = 2.8
+	_beacon_mesh.radial_segments = 12
+	
+	_arrow_mesh = BoxMesh.new()
+	_arrow_mesh.size = Vector3(1.2, 0.22, 1.2)
+
+func _create_multimesh_instance(mesh: Mesh, material: Material, transforms: Array[Transform3D]) -> MultiMeshInstance3D:
+	var mmi: MultiMeshInstance3D = MultiMeshInstance3D.new()
+	var mm: MultiMesh = MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = mesh
+	mm.instance_count = transforms.size()
+	for i in range(transforms.size()):
+		mm.set_instance_transform(i, transforms[i])
+	mmi.multimesh = mm
+	mmi.material_override = material
+	return mmi
+
 func _build_goblin_camp_visual(camp_id: String, camp_center: Vector3, camp_size: String, expected_count: int) -> Node3D:
 	if arena == null or not is_instance_valid(arena):
 		return null
+
+	_init_resources()
 
 	var root: Node3D = Node3D.new()
 	root.name = "GoblinCamp_%s" % camp_id
@@ -493,63 +580,74 @@ func _build_goblin_camp_visual(camp_id: String, camp_center: Vector3, camp_size:
 	root.add_to_group("quest_goblin_camp")
 	arena.add_child(root)
 
-	var wood_material: StandardMaterial3D = StandardMaterial3D.new()
-	wood_material.albedo_color = Color(0.24, 0.12, 0.05)
-	var hide_material: StandardMaterial3D = StandardMaterial3D.new()
-	hide_material.albedo_color = Color(0.32, 0.21, 0.12)
-	var cloth_material: StandardMaterial3D = StandardMaterial3D.new()
-	cloth_material.albedo_color = Color(0.16, 0.30, 0.12)
-	var camp_radius: float = _camp_spawn_radius_for_size(camp_size)
+	# 1. Fire and Marker (most important visual cues, added immediately)
 	_spawn_camp_fire_smoke(root)
-
-	var ring_count: int = maxi(5, mini(10, expected_count + 3))
-	for i in range(ring_count):
-		var angle: float = TAU * float(i) / float(ring_count)
-		var stone: MeshInstance3D = _make_box_mesh("CampfireStone_%02d" % i, Vector3(0.28, 0.16, 0.20), hide_material)
-		stone.position = Vector3(cos(angle) * 0.58, 0.08, sin(angle) * 0.58)
-		stone.rotation.y = -angle
-		root.add_child(stone)
-
-	var tent_count: int = 1
-	if camp_size == "medium":
-		tent_count = 2
-	elif camp_size == "large":
-		tent_count = 3
-
-	for i in range(tent_count):
-		var angle: float = TAU * float(i) / float(tent_count) + 0.45
-		var tent: MeshInstance3D = _make_box_mesh("HideTent_%02d" % i, Vector3(1.6, 0.85, 1.15), cloth_material)
-		tent.position = Vector3(cos(angle) * camp_radius * 0.55, 0.42, sin(angle) * camp_radius * 0.55)
-		tent.rotation.y = -angle
-		root.add_child(tent)
-
-		var tent_pole: MeshInstance3D = _make_box_mesh("TentPole_%02d" % i, Vector3(0.12, 1.25, 0.12), wood_material)
-		tent_pole.position = tent.position + Vector3(0.0, 0.38, 0.0)
-		root.add_child(tent_pole)
-
-	var crate_count: int = 2 if camp_size == "small" else 4
-	if camp_size == "large":
-		crate_count = 6
-	for i in range(crate_count):
-		var angle: float = TAU * float(i) / float(crate_count) + 0.2
-		var crate: MeshInstance3D = _make_box_mesh("LootCrate_%02d" % i, Vector3(0.55, 0.45, 0.55), wood_material)
-		crate.position = Vector3(cos(angle) * camp_radius * 0.78, 0.22, sin(angle) * camp_radius * 0.78)
-		crate.rotation.y = randf_range(0.0, TAU)
-		root.add_child(crate)
-
-	if camp_size == "large":
-		for i in range(2):
-			var banner: MeshInstance3D = _make_box_mesh("GoblinBanner_%02d" % i, Vector3(0.14, 2.2, 0.14), wood_material)
-			banner.position = Vector3(-1.0 + (2.0 * float(i)), 1.0, -camp_radius * 0.75)
-			root.add_child(banner)
-			var rag: MeshInstance3D = _make_box_mesh("GoblinBannerRag_%02d" % i, Vector3(0.75, 0.52, 0.08), cloth_material)
-			rag.position = banner.position + Vector3(0.32, 0.65, 0.0)
-			root.add_child(rag)
-
 	var marker: Node3D = _make_camp_marker(expected_count)
 	root.add_child(marker)
 
+	# 2. Populate the rest over multiple frames to avoid frame stutters
+	_populate_camp_visuals_deferred(root, camp_size, expected_count)
+
 	return root
+
+func _populate_camp_visuals_deferred(root: Node3D, camp_size: String, expected_count: int) -> void:
+	if not is_instance_valid(root) or not root.is_inside_tree():
+		return
+
+	var camp_radius: float = _camp_spawn_radius_for_size(camp_size)
+
+	# Stones (MultiMesh)
+	await get_tree().process_frame
+	if not is_instance_valid(root): return
+	var ring_count: int = maxi(5, mini(10, expected_count + 3))
+	var stone_transforms: Array[Transform3D] = []
+	for i in range(ring_count):
+		var angle: float = TAU * float(i) / float(ring_count)
+		stone_transforms.append(Transform3D(Basis().rotated(Vector3.UP, -angle), Vector3(cos(angle) * 0.58, 0.08, sin(angle) * 0.58)))
+	root.add_child(_create_multimesh_instance(_stone_mesh, _hide_material, stone_transforms))
+
+	# Tents and Poles (MultiMesh)
+	await get_tree().process_frame
+	if not is_instance_valid(root): return
+	var tent_count: int = 1
+	if camp_size == "medium": tent_count = 2
+	elif camp_size == "large": tent_count = 3
+	
+	var tent_transforms: Array[Transform3D] = []
+	var pole_transforms: Array[Transform3D] = []
+	for i in range(tent_count):
+		var angle: float = TAU * float(i) / float(tent_count) + 0.45
+		var pos: Vector3 = Vector3(cos(angle) * camp_radius * 0.55, 0.42, sin(angle) * camp_radius * 0.55)
+		tent_transforms.append(Transform3D(Basis().rotated(Vector3.UP, -angle), pos))
+		pole_transforms.append(Transform3D(Basis(), pos + Vector3(0.0, 0.38, 0.0)))
+	
+	root.add_child(_create_multimesh_instance(_tent_mesh, _cloth_material, tent_transforms))
+	root.add_child(_create_multimesh_instance(_pole_mesh, _wood_material, pole_transforms))
+
+	# Crates (MultiMesh)
+	await get_tree().process_frame
+	if not is_instance_valid(root): return
+	var crate_count: int = 2 if camp_size == "small" else 4
+	if camp_size == "large": crate_count = 6
+	var crate_transforms: Array[Transform3D] = []
+	for i in range(crate_count):
+		var angle: float = TAU * float(i) / float(crate_count) + 0.2
+		var pos: Vector3 = Vector3(cos(angle) * camp_radius * 0.78, 0.22, sin(angle) * camp_radius * 0.78)
+		crate_transforms.append(Transform3D(Basis().rotated(Vector3.UP, randf_range(0.0, TAU)), pos))
+	root.add_child(_create_multimesh_instance(_crate_mesh, _wood_material, crate_transforms))
+
+	# Banners (MultiMesh, large only)
+	if camp_size == "large":
+		await get_tree().process_frame
+		if not is_instance_valid(root): return
+		var banner_transforms: Array[Transform3D] = []
+		var rag_transforms: Array[Transform3D] = []
+		for i in range(2):
+			var pos: Vector3 = Vector3(-1.0 + (2.0 * float(i)), 1.0, -camp_radius * 0.75)
+			banner_transforms.append(Transform3D(Basis(), pos))
+			rag_transforms.append(Transform3D(Basis(), pos + Vector3(0.32, 0.65, 0.0)))
+		root.add_child(_create_multimesh_instance(_banner_mesh, _wood_material, banner_transforms))
+		root.add_child(_create_multimesh_instance(_rag_mesh, _cloth_material, rag_transforms))
 
 func _spawn_camp_fire_smoke(root: Node3D) -> void:
 	var scene_resource: Resource = load(CAMP_FIRE_SMOKE_SCENE_PATH)
@@ -601,20 +699,22 @@ func _make_cylinder_mesh(node_name: String, radius: float, height: float, materi
 	return mesh_instance
 
 func _make_camp_marker(expected_count: int) -> Node3D:
+	_init_resources()
 	var marker: Node3D = Node3D.new()
 	marker.name = "QuestCampMarker"
 	marker.position = Vector3(0.0, 4.0, 0.0)
 
-	var marker_material: StandardMaterial3D = StandardMaterial3D.new()
-	marker_material.albedo_color = Color(1.0, 0.82, 0.16)
-	marker_material.emission_enabled = true
-	marker_material.emission = Color(1.0, 0.62, 0.10)
-
-	var beacon: MeshInstance3D = _make_cylinder_mesh("MarkerBeacon", 0.12, 2.8, marker_material)
+	var beacon: MeshInstance3D = MeshInstance3D.new()
+	beacon.name = "MarkerBeacon"
+	beacon.mesh = _beacon_mesh
+	beacon.material_override = _marker_material
 	beacon.position = Vector3(0.0, -1.05, 0.0)
 	marker.add_child(beacon)
 
-	var arrow: MeshInstance3D = _make_box_mesh("MarkerArrow", Vector3(1.2, 0.22, 1.2), marker_material)
+	var arrow: MeshInstance3D = MeshInstance3D.new()
+	arrow.name = "MarkerArrow"
+	arrow.mesh = _arrow_mesh
+	arrow.material_override = _marker_material
 	arrow.position = Vector3(0.0, 0.25, 0.0)
 	arrow.rotation.y = PI * 0.25
 	marker.add_child(arrow)
