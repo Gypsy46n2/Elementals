@@ -60,6 +60,14 @@ func _ready() -> void:
 	
 	# Ensure mouse is visible for the menu
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
+	_style_all_buttons()
+
+func _style_all_buttons() -> void:
+	var container: VBoxContainer = $CenterContainer/VBoxContainer
+	for child in container.find_children("*", "Button", true):
+		if child is Button:
+			UIStyle.apply_button_theme(child as Button)
 
 func _populate_actor_selection() -> void:
 	for child in actor_buttons_container.get_children():
@@ -69,12 +77,14 @@ func _populate_actor_selection() -> void:
 	var current_type = gs.selected_actor_type if gs else "fire"
 	
 	for actor_name in ACTOR_SCENES:
-		var btn = Button.new()
+		var btn: Button = Button.new()
 		btn.text = actor_name.capitalize()
 		btn.custom_minimum_size = Vector2(120, 48)
 		btn.toggle_mode = true
 		btn.button_pressed = (actor_name == current_type)
 		btn.pressed.connect(_on_actor_button_pressed.bind(actor_name))
+		btn.add_to_group("main_menu_buttons")
+		UIStyle.apply_button_theme(btn)
 		actor_buttons_container.add_child(btn)
 
 func _on_actor_button_pressed(actor_name: String) -> void:

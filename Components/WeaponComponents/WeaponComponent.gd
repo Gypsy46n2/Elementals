@@ -153,6 +153,18 @@ func _process(delta: float) -> void:
 func is_on_cooldown() -> bool:
 	return _cooldown > 0
 
+## Returns the effective attack range for the current weapon state.
+## For melee weapons (or thrown weapons with 1 or less ammo), returns the weapon's effective_range.
+## For ranged/thrown weapons with ammo, returns a default long range value.
+func get_attack_range() -> float:
+	if not weapon_data:
+		return 12.0
+	if not weapon_data.is_ranged and not weapon_data.is_thrown:
+		return weapon_data.effective_range
+	if weapon_data.is_thrown and current_ammo <= 1:
+		return weapon_data.effective_range
+	return 12.0
+
 func get_main_action_progress() -> float:
 	if weapon_data and weapon_data.cooldown > 0:
 		return 1.0 - (_cooldown / weapon_data.cooldown)
@@ -187,6 +199,15 @@ func secondary_attack_at(target_position: Vector3) -> void:
 ## Forces the current weapon to be thrown, regardless of its default behavior.
 func throw_weapon_at(target_position: Vector3) -> void:
 	secondary_attack(target_position, true)
+
+## Attacks the specified target position using the most appropriate attack mode.
+## For thrown weapons with more than one ammo remaining, performs a throw.
+## For all other weapons (melee, ranged, thrown with 1 ammo), performs a standard attack.
+## Returns true if the attack was initiated, false if on cooldown or otherwise unable to attack.
+func attack_target(target_position: Vector3) -> bool:
+	if weapon_data and weapon_data.is_thrown and current_ammo > 1:
+		return secondary_attack(target_position, true)
+	return swing(target_position)
 
 func _can_attack() -> bool:
 	if not _owner_actor or is_on_cooldown() or _owner_actor.is_stunned() or weapon_data == null:

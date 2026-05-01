@@ -1,3 +1,4 @@
+class_name QuestTrackerHUD
 extends CanvasLayer
 
 var panel: PanelContainer
@@ -26,12 +27,7 @@ func _build_ui() -> void:
 	panel.name = "QuestTrackerPanel"
 	panel.position = Vector2(18, 155)
 	panel.custom_minimum_size = Vector2(360, 130)
-	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.04, 0.045, 0.06, 0.82)
-	sb.border_color = Color(0.90, 0.68, 0.25, 0.85)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(10)
-	panel.add_theme_stylebox_override("panel", sb)
+	panel.add_theme_stylebox_override("panel", UIStyle.make_main_panel_style())
 	add_child(panel)
 
 	var margin: MarginContainer = MarginContainer.new()

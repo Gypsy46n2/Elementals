@@ -22,7 +22,6 @@ func physics_update(delta: float) -> void:
 
 	# Determine effective attack distance based on weapon
 	var is_melee := false
-	var should_throw: bool = false
 	var effective_attack_range: float = controller.attack_range
 	var min_approach_dist: float = 0.0
 	if actor.weapon_component and actor.weapon_component.weapon_data:
@@ -31,14 +30,11 @@ func physics_update(delta: float) -> void:
 			is_melee = true
 			effective_attack_range = wd.reach * 1.5
 			min_approach_dist = wd.reach * 0.5
-		elif wd.is_thrown:
-			# Throw daggers while ammo > 1; save the last for melee
-			if actor.weapon_component.current_ammo <= 1:
-				is_melee = true
-				effective_attack_range = wd.reach * 1.5
-				min_approach_dist = wd.reach * 0.5
-			else:
-				should_throw = true
+		elif wd.is_thrown and actor.weapon_component.current_ammo <= 1:
+			# Save the last thrown weapon ammo for melee
+			is_melee = true
+			effective_attack_range = wd.reach * 1.5
+			min_approach_dist = wd.reach * 0.5
 
 	# If target moved out of attack range, chase
 	if dist_to_target > controller.attack_range:
@@ -88,8 +84,8 @@ func physics_update(delta: float) -> void:
 		controller.movement_component.apply_gravity(delta)
 		
 		# Attack when within effective range
-		if dist_to_target <= effective_attack_range:
-			actor.weapon_component.launch_projectile_at(_target_actor.global_position)
+		if dist_to_target <= effective_attack_range and actor.weapon_component:
+			actor.weapon_component.attack_target(_target_actor.global_position)
 		
 		if controller._should_flee():
 			state_machine.change_state("flee")
@@ -102,10 +98,7 @@ func physics_update(delta: float) -> void:
 
 	# Combat: weapon attack or auto-fire when mana is full
 	if actor.weapon_component:
-		if should_throw:
-			actor.weapon_component.throw_weapon_at(_target_actor.global_position)
-		else:
-			actor.weapon_component.launch_projectile_at(_target_actor.global_position)
+		actor.weapon_component.attack_target(_target_actor.global_position)
 	elif actor.mana_component and actor.projectile_component:
 		if actor.mana_component.current_mana >= actor.mana_component.max_mana and not actor.is_stunned():
 			actor.projectile_component.launch_projectile_ai(actor.mana_component)

@@ -56,7 +56,8 @@ func _process(delta: float) -> void:
 func execute_ability(type: String, value = null) -> void:
 	if not actor or actor.is_stunned(): return
 	for action in actions:
-		action.execute(type, value)
+		if action.can_execute(type):
+			action.execute(type, value)
 
 func on_damage_taken() -> void:
 	for action in actions:

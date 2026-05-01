@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://dy747yc6bbcs3"]
+[gd_scene load_steps=11 format=3 uid="uid://dy747yc6bbcs3"]
 
 [ext_resource type="Script" uid="uid://dnnypgaoo7j51" path="res://Play Space/Arena.gd" id="1"]
 [ext_resource type="Script" uid="uid://c0bx554q5f7gv" path="res://Player/CameraFollower.gd" id="2"]
@@ -6,6 +6,54 @@
 [ext_resource type="Script" uid="uid://ctt3usv2vbaud" path="res://Play Space/OptionsMenu.gd" id="4_xxx"]
 [ext_resource type="PackedScene" path="res://UI/ControlsPanel.tscn" id="5_xxx"]
 [ext_resource type="PackedScene" uid="uid://dfugpdrbvku5s" path="res://UI/PlayerConsole.tscn" id="6_xxx"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_arena_opt"]
+bg_color = Color(0.055, 0.06, 0.075, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.90, 0.68, 0.25, 0.94)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_norm"]
+bg_color = Color(0.08, 0.085, 0.11, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.46, 0.36, 0.18, 0.88)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hov"]
+bg_color = Color(0.10, 0.105, 0.13, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.90, 0.68, 0.25, 0.94)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_press"]
+bg_color = Color(0.055, 0.06, 0.075, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.90, 0.68, 0.25, 0.94)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="Arena" type="Node3D"]
 script = ExtResource("1")
@@ -94,6 +142,12 @@ offset_bottom = 41.0
 grow_horizontal = 0
 focus_mode = 0
 text = "OPTIONS"
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hov")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
+theme_override_colors/font_color = Color(0.82, 0.80, 0.72, 1)
+theme_override_colors/font_hover_color = Color(1.0, 0.86, 0.32, 1)
+theme_override_colors/font_pressed_color = Color(1.0, 0.86, 0.32, 1)
 
 [node name="OptionsMenu" type="Control" parent="UI"]
 visible = false
@@ -127,6 +181,7 @@ offset_right = 150.0
 offset_bottom = 200.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_arena_opt")
 
 [node name="MarginContainer" type="MarginContainer" parent="UI/OptionsMenu/PanelContainer"]
 layout_mode = 2

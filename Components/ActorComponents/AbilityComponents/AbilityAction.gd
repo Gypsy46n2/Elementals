@@ -23,6 +23,9 @@ func get_ability_data() -> AbilityData:
 	data.icon = ability_icon
 	return data
 
+func can_execute(_type: String) -> bool:
+	return true
+
 func execute(_type: String, _value = null) -> void:
 	pass
 

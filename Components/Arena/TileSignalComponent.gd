@@ -118,10 +118,22 @@ func _deactivate_trigger_for_actor(trigger: Dictionary, actor: Node3D) -> void:
 func _get_hex_distance(a: Vector2i, b: Vector2i) -> int:
 	return (abs(a.x - b.x) + abs(a.x + a.y - b.x - b.y) + abs(a.y - b.y)) / 2
 
-func _get_player_node() -> Node3D:
-	if arena == null:
-		return null
-	var actor_value: Variant = arena.get("current_controlled_actor")
-	if actor_value != null and is_instance_valid(actor_value) and actor_value is Node3D:
-		return actor_value as Node3D
-	return null
+func update_trigger_center(trigger: Dictionary, new_tile: Object) -> void:
+	if trigger.get("center") == new_tile:
+		return
+	trigger["center"] = new_tile
+	
+	for tracked_actor in _actor_tiles.keys():
+		if not is_instance_valid(tracked_actor):
+			continue
+		var tile = _actor_tiles[tracked_actor]
+		if tile == null:
+			continue
+		var distance: int = _get_hex_distance(tile.axial_coords, new_tile.axial_coords)
+		var is_inside: bool = distance <= trigger["radius"]
+		var was_inside: bool = tracked_actor in trigger["active_actors"]
+		
+		if is_inside and not was_inside:
+			_activate_trigger_for_actor(trigger, tracked_actor)
+		elif not is_inside and was_inside:
+			_deactivate_trigger_for_actor(trigger, tracked_actor)

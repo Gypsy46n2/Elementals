@@ -141,7 +141,7 @@ func _show_hitbox_animation(origin: Vector3, dir: Vector3) -> void:
 	_hitbox_visual.rotation = Vector3(0, angle, 0)
 	_hitbox_visual.visible = true
 	_hitbox_visual.scale = Vector3.ZERO
-	var target_scale = _weapon_data.reach * 2.0
+	var target_scale = _weapon_data.effective_range
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(_hitbox_visual, "scale", Vector3(target_scale, 1.0, target_scale), 0.1)

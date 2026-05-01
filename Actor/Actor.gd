@@ -321,6 +321,10 @@ func _disable_living_components() -> void:
 		tile_navigation_component.process_mode = Node.PROCESS_MODE_DISABLED
 	if debug_component:
 		debug_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if weapon_component:
+		weapon_component.process_mode = Node.PROCESS_MODE_DISABLED
+	if controller:
+		controller.process_mode = Node.PROCESS_MODE_DISABLED
 	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if collision:
 		collision.set_deferred("disabled", true)
@@ -346,6 +350,10 @@ func _enable_living_components() -> void:
 		tile_navigation_component.process_mode = Node.PROCESS_MODE_INHERIT
 	if debug_component:
 		debug_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if weapon_component:
+		weapon_component.process_mode = Node.PROCESS_MODE_INHERIT
+	if controller:
+		controller.process_mode = Node.PROCESS_MODE_INHERIT
 	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if collision:
 		collision.set_deferred("disabled", false)

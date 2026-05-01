@@ -7,24 +7,36 @@ var is_hidden: bool = false
 var is_disengaged: bool = false
 var _is_hiding_intent: bool = false
 var _hide_check_timer: float = 0.0
+var _cooldown_timer: float = 0.0
 const HIDE_CHECK_INTERVAL: float = 3.0
+const NIMBLE_ESCAPE_COOLDOWN: float = 4.0
 
 func _init(p_actor: Actor, p_component: Node) -> void:
 	super(p_actor, p_component)
 	ability_name = "Nimble Escape"
 	ability_description = "A versatile maneuver allowing the user to Disengage or Hide."
 	ability_usage = "Tap SHIFT to Disengage (Dash away). Hold SHIFT to Hide (Stealth)."
+	_cooldown_timer = randf_range(0.0, NIMBLE_ESCAPE_COOLDOWN)
+
+func can_execute(type: String) -> bool:
+	return _cooldown_timer <= 0.0
 
 func execute(type: String, value = null) -> void:
+	if _cooldown_timer > 0.0:
+		return
 	match type:
 		"hide":
 			var active: bool = value if value is bool else !_is_hiding_intent
 			_set_hide_active(active)
+			_cooldown_timer = NIMBLE_ESCAPE_COOLDOWN
 		"disengage":
 			var direction: Vector3 = value if value is Vector3 else Vector3.ZERO
 			_disengage(direction)
+			_cooldown_timer = NIMBLE_ESCAPE_COOLDOWN
 
 func update(delta: float) -> void:
+	if _cooldown_timer > 0.0:
+		_cooldown_timer -= delta
 	if _is_hiding_intent:
 		if actor and actor.velocity.length() > 0.1:
 			_hide_check_timer += delta

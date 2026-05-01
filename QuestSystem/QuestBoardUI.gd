@@ -1,3 +1,4 @@
+class_name QuestBoardUI
 extends CanvasLayer
 
 # Modal quest board UI for the Elementals/Goatlandia quest addon.
@@ -60,12 +61,7 @@ func _rebuild_overlay() -> void:
 	card.name = "QuestBoardCard"
 	card.custom_minimum_size = Vector2(780, 560)
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	var card_style: StyleBoxFlat = StyleBoxFlat.new()
-	card_style.bg_color = Color(0.055, 0.06, 0.075, 0.98)
-	card_style.border_color = Color(0.90, 0.68, 0.25, 0.94)
-	card_style.set_border_width_all(2)
-	card_style.set_corner_radius_all(12)
-	card.add_theme_stylebox_override("panel", card_style)
+	card.add_theme_stylebox_override("panel", UIStyle.make_main_panel_style())
 	center.add_child(card)
 
 	var margin: MarginContainer = MarginContainer.new()
@@ -221,12 +217,7 @@ func _add_active_quest_card(parent: Control, quest: Dictionary) -> void:
 func _make_card(parent: Control) -> PanelContainer:
 	var card: PanelContainer = PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	var card_style: StyleBoxFlat = StyleBoxFlat.new()
-	card_style.bg_color = Color(0.08, 0.085, 0.11, 0.94)
-	card_style.border_color = Color(0.46, 0.36, 0.18, 0.88)
-	card_style.set_border_width_all(1)
-	card_style.set_corner_radius_all(8)
-	card.add_theme_stylebox_override("panel", card_style)
+	card.add_theme_stylebox_override("panel", UIStyle.make_card_style())
 	parent.add_child(card)
 	var margin: MarginContainer = MarginContainer.new()
 	margin.name = "Margin"

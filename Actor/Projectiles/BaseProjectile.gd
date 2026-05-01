@@ -164,8 +164,8 @@ func _input(event: InputEvent) -> void:
 
 ## Finalizes the retrieval process, granting ammo to the actor and damaging the host if applicable.
 func _pick_up(actor: Actor) -> void:
-	# Deal \"ripping out\" damage to host if alive
-	if is_instance_valid(_host_actor) and _host_actor.is_inside_tree():
+	# Deal "ripping out" damage to host if alive
+	if is_instance_valid(_host_actor) and _host_actor.is_inside_tree() and not _host_actor.is_dead:
 		var pull_damage: int = randi_range(2, 5)
 		print("[Projectile] Dealing ", pull_damage, " pull-out damage to ", _host_actor.name)
 		_host_actor.take_damage(float(pull_damage), "normal", -_direction)
@@ -280,15 +280,19 @@ func _stick(target: Node3D = null) -> void:
 	
 	if target is Actor:
 		_host_actor = target
-		# Detach from world, attach to actor
-		var current_global_pos = global_position
-		var current_global_rot = global_rotation
 		
-		# We must use call_deferred for reparenting in collision callbacks
-		_reparent_to_host.call_deferred(target, current_global_pos, current_global_rot)
-		
-		if not GameEvents.actor_died.is_connected(_on_host_died):
-			GameEvents.actor_died.connect(_on_host_died)
+		if _host_actor.is_dead:
+			_on_host_died(_host_actor)
+		else:
+			# Detach from world, attach to actor
+			var current_global_pos = global_position
+			var current_global_rot = global_rotation
+			
+			# We must use call_deferred for reparenting in collision callbacks
+			_reparent_to_host.call_deferred(target, current_global_pos, current_global_rot)
+			
+			if not GameEvents.actor_died.is_connected(_on_host_died):
+				GameEvents.actor_died.connect(_on_host_died)
 	
 	# Cleanup damage component
 	if damage_component:

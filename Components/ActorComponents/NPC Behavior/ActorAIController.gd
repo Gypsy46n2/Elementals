@@ -36,9 +36,10 @@ const PERCEPTION_COOLDOWN: float = 1.0
 ## The state machine driving this controller's behavior.
 var state_machine: ActorStateMachine
 
-var _tile_signals: TileSignalComponent
 var _active_obstacles: Array[Dictionary] = []
 var _nearby_cliffs: Array[HexTileData] = []
+var _perception_trigger: Dictionary = {}
+var _actors_in_detection_range: Dictionary = {} # actors within detection_range, maintained by TileSignalComponent
 
 func _ready() -> void:
 	_rng.randomize()
@@ -86,13 +87,38 @@ func _on_global_trigger_entered(trigger: Dictionary, p_actor: Node3D) -> void:
 			_active_obstacles.append(trigger)
 
 func _on_global_trigger_exited(trigger: Dictionary, p_actor: Node3D) -> void:
+	if trigger == _perception_trigger:
+		_actors_in_detection_range.erase(p_actor)
+		_perceived_enemies.erase(p_actor)
+		return
 	if p_actor != actor:
 		return
 	_active_obstacles.erase(trigger)
 
+func _on_perception_trigger_entered(other_actor: Node3D, _metadata: Dictionary) -> void:
+	if other_actor == actor:
+		return
+	_actors_in_detection_range[other_actor] = true
+
 func _on_actor_tile_changed_npc(new_tile: HexTileData) -> void:
 	if not actor or not actor._arena_grid:
 		return
+	
+	# Update mobile perception trigger
+	var signals = actor._arena_grid.tile_signals
+	if signals:
+		if _perception_trigger.is_empty():
+			var hex_size: float = actor._arena_grid.hex_size if actor._arena_grid.get("hex_size") else 1.5
+			var hex_radius: int = int(ceil(detection_range / (sqrt(3.0) * hex_size))) + 1
+			_perception_trigger = signals.register_trigger(
+				new_tile,
+				max(hex_radius, 1),
+				_on_perception_trigger_entered,
+				{"type": "perception", "owner": actor}
+			)
+		else:
+			signals.update_trigger_center(_perception_trigger, new_tile)
+	
 	# Update nearby tiles for cliff detection (Radius 2)
 	var neighbors = actor._arena_grid._get_neighbors(new_tile)
 	var radius2: Array[HexTileData] = []
@@ -123,6 +149,14 @@ func _process(delta: float) -> void:
 			expired.append(enemy)
 	for enemy in expired:
 		_perceived_enemies.erase(enemy)
+	
+	# Clean up stale actors in detection range
+	var stale_actors: Array = []
+	for other in _actors_in_detection_range.keys():
+		if not is_instance_valid(other):
+			stale_actors.append(other)
+	for other in stale_actors:
+		_actors_in_detection_range.erase(other)
 
 func _physics_process(delta: float) -> void:
 	# Stun is now handled as an affected state inside the state machine.
@@ -328,19 +362,16 @@ func _find_nearest_enemy() -> Node3D:
 	if not actor or not actor._arena_grid:
 		return null
 	
-	var current_detection_range: float = detection_range
 	var nearest: Node3D = null
 	var nearest_dist: float = INF
 	
-	for other in actor._arena_grid.actors:
+	for other in _actors_in_detection_range.keys():
 		if not is_instance_valid(other) or other == actor:
 			continue
 		if not actor.is_enemy(other):
 			continue
 		
 		var dist: float = actor.global_position.distance_to(other.global_position)
-		if dist > current_detection_range:
-			continue
 		
 		# Already perceived and not expired
 		if _perceived_enemies.has(other) and _perceived_enemies[other] > 0:

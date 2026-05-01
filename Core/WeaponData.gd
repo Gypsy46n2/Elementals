@@ -25,6 +25,8 @@ signal ammo_changed(current: int, max: int)
 @export var is_loading: bool = false
 @export var is_heavy: bool = false
 @export var reach: float = 2.0
+var effective_range: float:
+	get: return reach * 2.0
 @export var cone_width: float = 90.0
 @export var cooldown: float = 0.6
 @export var max_ammo: int = -1 # -1 means infinite

@@ -6,20 +6,16 @@
 [ext_resource type="PackedScene" uid="uid://becy15jcmkmob" path="res://UI/DisplayCard/ActorCard.tscn" id="4_actor_card"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o6x3k"]
-bg_color = Color(0, 0, 0, 0.4)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 1, 1, 0.2)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-expand_margin_left = 5.0
-expand_margin_top = 5.0
-expand_margin_right = 5.0
-expand_margin_bottom = 5.0
+bg_color = Color(0.08, 0.085, 0.11, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.46, 0.36, 0.18, 0.88)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="PlayerConsole" type="CanvasLayer"]
 script = ExtResource("1_p_console")
