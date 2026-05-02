@@ -1,49 +1,43 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://cdrxnlhypw3u0"]
 
 [ext_resource type="PackedScene" path="res://QuestSystem/CampMarkerFire/Scenes/3d_fire.tscn" id="1_fire"]
 [ext_resource type="PackedScene" path="res://QuestSystem/CampMarkerFire/Scenes/smoke_particle_1.tscn" id="2_smokea"]
-[ext_resource type="PackedScene" path="res://QuestSystem/CampMarkerFire/Scenes/smoke_particle_2.tscn" id="3_smokeb"]
-[ext_resource type="ArrayMesh" path="res://QuestSystem/CampMarkerFire/Models/timber.obj" id="4_timber"]
+[ext_resource type="ArrayMesh" uid="uid://bvgh3uwuhl8vr" path="res://QuestSystem/CampMarkerFire/Models/timber.obj" id="4_timber"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
 albedo_color = Color(0.243137, 0.117647, 0.0313726, 1)
 
-[node name="QuestCampFireSmoke" type="Node3D"]
+[node name="QuestCampFireSmoke" type="Node3D" unique_id=679905801]
 
-[node name="3DFire" parent="." instance=ExtResource("1_fire")]
+[node name="3DFire" parent="." unique_id=471423768 instance=ExtResource("1_fire")]
 transform = Transform3D(-2.18557e-08, 0, 0.5, 0, 0.5, 0, -0.5, 0, -2.18557e-08, 0, 0.437072, -0.135039)
 
-[node name="SmokeParticle1" parent="." instance=ExtResource("2_smokea")]
+[node name="SmokeParticle1" parent="." unique_id=874574184 instance=ExtResource("2_smokea")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00973874, 0.948762, -0.16701)
 
-[node name="SmokeParticle2" parent="." instance=ExtResource("3_smokeb")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0220734, 0.541112, -0.107621)
-visible = false
-
-[node name="OmniLight3D" type="OmniLight3D" parent="."]
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=2068214307]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0284452, 0.570878, -0.150969)
 light_color = Color(1, 0.78, 0.235294, 1)
 light_energy = 2.2
-omni_range = 5.0
 
-[node name="Logs" type="Node3D" parent="."]
+[node name="Logs" type="Node3D" parent="." unique_id=1872670231]
 
-[node name="Timber0" type="MeshInstance3D" parent="Logs"]
+[node name="Timber0" type="MeshInstance3D" parent="Logs" unique_id=1414021653]
 transform = Transform3D(1, 0, 0, 0, 0.34202, -0.939693, 0, 0.939693, 0.34202, 0, 0.269237, 0)
 material_override = SubResource("StandardMaterial3D_wood")
 mesh = ExtResource("4_timber")
 
-[node name="Timber1" type="MeshInstance3D" parent="Logs"]
+[node name="Timber1" type="MeshInstance3D" parent="Logs" unique_id=962991780]
 transform = Transform3D(0.0366437, 0.939062, 0.34179, 0, 0.34202, -0.939693, -0.999328, 0.0344338, 0.0125329, 0.128355, 0.269237, -0.163663)
 material_override = SubResource("StandardMaterial3D_wood")
 mesh = ExtResource("4_timber")
 
-[node name="Timber2" type="MeshInstance3D" parent="Logs"]
+[node name="Timber2" type="MeshInstance3D" parent="Logs" unique_id=1354164456]
 transform = Transform3D(-0.994522, -0.0982242, -0.0357507, 0, 0.34202, -0.939693, 0.104528, -0.934545, -0.340146, -0.0219564, 0.269237, -0.313303)
 material_override = SubResource("StandardMaterial3D_wood")
 mesh = ExtResource("4_timber")
 
-[node name="Timber3" type="MeshInstance3D" parent="Logs"]
+[node name="Timber3" type="MeshInstance3D" parent="Logs" unique_id=2112852945]
 transform = Transform3D(-0.0348995, -0.93912, -0.341812, 0, 0.34202, -0.939693, 0.999391, -0.0327948, -0.0119363, -0.174095, 0.269237, -0.147272)
 material_override = SubResource("StandardMaterial3D_wood")
 mesh = ExtResource("4_timber")
