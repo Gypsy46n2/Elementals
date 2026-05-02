@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b3gxqf7r8y9k2"]
+
+[ext_resource type="Script" path="res://Actor/DormantVisual3D.gd" id="1_abc123"]
+
+[node name="DormantVisual3D" type="Node3D"]
+script = ExtResource("1_abc123")

@@ -19,6 +19,7 @@ extends Node
 @export var max_safe_depth_below_floor: float = 0.75
 
 signal stuck
+signal tile_changed(tile: HexTileData, previous_tile: HexTileData)
 
 var speed_multiplier: float = 1.0
 var armor_speed_multiplier: float = 1.0
@@ -27,6 +28,10 @@ var external_velocity: Vector3 = Vector3.ZERO
 var _wall_stuck_timer: float = 0.0
 var _is_interpolating: bool = false
 var _lerp_target: Vector3
+var _current_tile: HexTileData
+var _last_tile_key: String = ""  # Used to detect tile changes
+var _last_horizontal_pos: Vector2 = Vector2.INF
+var _last_surface_y: float = 0.0
 signal interpolation_finished
 
 func _ready() -> void:
@@ -78,12 +83,31 @@ func _sanitize_character_body(cb: CharacterBody3D) -> void:
 		external_velocity = Vector3.ZERO
 		_wall_stuck_timer = 0.0
 
+	# Only do expensive grid lookup when needed (moved horizontally or haven't checked yet)
+	var horizontal_pos := Vector2(cb.global_position.x, cb.global_position.z)
+	var has_moved_horizontally := horizontal_pos.distance_squared_to(_last_horizontal_pos) > 0.001
+	
 	var surface_y: float = 0.0
 	var has_surface: bool = false
-	var surface_result: Dictionary = _get_surface_y(cb.global_position)
-	if bool(surface_result.get("found", false)):
-		has_surface = true
-		surface_y = float(surface_result.get("y", 0.0))
+	
+	if has_moved_horizontally or _current_tile == null:
+		var surface_result: Dictionary = _get_surface_data(cb.global_position)
+		if bool(surface_result.get("found", false)):
+			has_surface = true
+			surface_y = float(surface_result.get("y", 0.0))
+			_last_surface_y = surface_y
+			# Detect tile change
+			var tile: HexTileData = surface_result.get("tile") as HexTileData
+			_check_and_emit_tile_changed(tile)
+		else:
+			# No tile found at this position
+			_check_and_emit_tile_changed(null)
+		
+		_last_horizontal_pos = horizontal_pos
+	else:
+		# Use cached values
+		has_surface = _current_tile != null
+		surface_y = _last_surface_y
 
 	if has_surface:
 		var below_floor: bool = cb.global_position.y < surface_y - max_safe_depth_below_floor
@@ -93,6 +117,19 @@ func _sanitize_character_body(cb: CharacterBody3D) -> void:
 			_reset_character_to_surface(cb, surface_y, reason)
 	elif cb.global_position.y > 18.0 or cb.global_position.y < -12.0:
 		_reset_character_to_safe_position(cb, "No tile and unsafe height")
+
+func _check_and_emit_tile_changed(new_tile: HexTileData) -> void:
+	var tile_key: String = ""
+	if new_tile:
+		tile_key = str(new_tile.axial_coords.x) + "," + str(new_tile.axial_coords.y)
+	
+	# Check if we actually moved to a different tile by comparing to stored key
+	if _last_tile_key != tile_key:
+		var prev_tile: HexTileData = _current_tile
+		tile_changed.emit(new_tile, prev_tile)
+	
+	_current_tile = new_tile
+	_last_tile_key = tile_key
 
 func _reset_character_to_surface(cb: CharacterBody3D, surface_y: float, reason: String) -> void:
 	printerr("MovementComponent: ", reason, " detected on ", cb.name, ". Resetting vertical position.")
@@ -111,16 +148,24 @@ func _reset_character_to_safe_position(cb: CharacterBody3D, reason: String) -> v
 	elif cb.global_position.y > 18.0 or cb.global_position.y < -12.0:
 		cb.global_position.y = 0.05
 
-func _get_surface_y(pos: Vector3) -> Dictionary:
-	var result: Dictionary = {"found": false, "y": 0.0}
+func _get_surface_data(pos: Vector3) -> Dictionary:
+	var result: Dictionary = {"found": false, "y": 0.0, "tile": null}
 	if not target:
 		return result
 
-	var arena_value: Variant = target.get("_arena_grid")
-	var arena: Object = arena_value as Object
+	var arena: Object = target.get("_arena_grid") as Object
+	if not arena:
+		# Fallback: try to find arena in the tree if actor doesn't have it set
+		var parent = target.get_parent()
+		while parent:
+			if parent is ArenaGrid:
+				arena = parent
+				break
+			parent = parent.get_parent()
 
 	if not arena:
 		return result
+		
 	if not arena.has_method("get_tile_at_world_position") or not arena.has_method("_get_tile_surface_y"):
 		return result
 
@@ -128,6 +173,7 @@ func _get_surface_y(pos: Vector3) -> Dictionary:
 	if not tile:
 		return result
 
+	result["tile"] = tile
 	var surface_value: Variant = arena.call("_get_tile_surface_y", tile)
 	if typeof(surface_value) == TYPE_FLOAT or typeof(surface_value) == TYPE_INT:
 		result["found"] = true
@@ -233,6 +279,18 @@ func get_move_speed() -> float:
 
 func get_jump_force() -> float:
 	return jump_force
+
+func get_current_tile() -> HexTileData:
+	return _current_tile
+
+func get_surface_y() -> float:
+	if _current_tile and target:
+		var arena: Object = target.get("_arena_grid") as Object
+		if arena and arena.has_method("_get_tile_surface_y"):
+			var surface_value: Variant = arena.call("_get_tile_surface_y", _current_tile)
+			if typeof(surface_value) == TYPE_FLOAT or typeof(surface_value) == TYPE_INT:
+				return float(surface_value)
+	return 0.0
 
 func stop(delta: float = 0.0) -> void:
 	_is_interpolating = false

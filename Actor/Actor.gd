@@ -159,7 +159,9 @@ func _setup_components() -> void:
 	health_component.armor_class = armor_class
 
 	# 3. Movement & AI
-	movement_component = _add_comp(MovementComponent.new())
+	movement_component = MovementComponent.new()
+	movement_component.name = "MovementComponent"
+	_add_comp(movement_component)
 	movement_component.target = self
 	movement_component.is_controlled = is_controlled
 	movement_component.move_speed = move_speed

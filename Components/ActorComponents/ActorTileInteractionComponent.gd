@@ -3,31 +3,54 @@ extends Node
 
 var _ground_tile: HexTileData
 var _actor: Node3D
+var _movement_component: MovementComponent
+var _pending_tile: HexTileData  # Cached tile from signal
 
 func setup(actor: Node3D) -> void:
 	_actor = actor
+	_connect_to_movement_component()
+
+func _connect_to_movement_component() -> void:
+	if not _actor:
+		return
+	
+	# Look for MovementComponent as a direct child of the actor
+	var movement_node: MovementComponent = _actor.get_node_or_null("MovementComponent")
+	if not movement_node:
+		# Search all children if name is not exact
+		for child in _actor.get_children():
+			if child is MovementComponent:
+				movement_node = child
+				break
+	
+	if movement_node:
+		_movement_component = movement_node
+		if not _movement_component.tile_changed.is_connected(_on_tile_changed):
+			_movement_component.tile_changed.connect(_on_tile_changed)
+		
+		# Get initial tile
+		_pending_tile = _movement_component.get_current_tile()
+		_ground_tile = _pending_tile
+		if _ground_tile:
+			# If we already have a tile, apply effects and notify others immediately
+			apply_ground_effects(_ground_tile)
+			tile_changed.emit(_ground_tile)
 
 signal tile_changed(new_tile: HexTileData)
 
-func _physics_process(_delta: float) -> void:
-	if _actor and _actor.has_method("is_on_floor") and _actor.is_on_floor():
-		var old_tile: HexTileData = _ground_tile
-		update_tile_below()
-		if _ground_tile != old_tile:
-			tile_changed.emit(_ground_tile)
-			apply_ground_effects()
+func _on_tile_changed(new_tile: HexTileData, previous_tile: HexTileData) -> void:
+	if new_tile != _ground_tile:
+		tile_changed.emit(new_tile)
+	apply_ground_effects(new_tile)
 
-func update_tile_below() -> void:
-	if _actor and _actor.get("_arena_grid"):
-		_ground_tile = _actor.get("_arena_grid").get_tile_data_at_world_position(_actor.global_transform.origin)
-	else:
-		_ground_tile = null
-
-func apply_ground_effects() -> void:
-	if _ground_tile:
-		if _check_tile_damage(_ground_tile):
-			return
-		_handle_tile_interaction(_ground_tile)
+func apply_ground_effects(tile: HexTileData) -> void:
+	_ground_tile = tile
+	if not tile:
+		return
+		
+	if _check_tile_damage(tile):
+		return
+	_handle_tile_interaction(tile)
 
 func _handle_tile_interaction(tile: HexTileData) -> void:
 	var arena_grid = _actor.get("_arena_grid")
@@ -68,3 +91,7 @@ func _check_tile_damage(tile: HexTileData) -> bool:
 
 func get_ground_tile() -> HexTileData:
 	return _ground_tile
+
+## Manual update no longer needed - tile updates via MovementComponent.tile_changed signal
+func update_tile_below() -> void:
+	pass  # Tile is now updated via signal from MovementComponent

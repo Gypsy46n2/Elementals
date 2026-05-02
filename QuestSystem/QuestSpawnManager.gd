@@ -140,6 +140,11 @@ func _get_tile_near_edge(edge_index: int) -> Variant:
 	return _get_spawn_tile(10, 40)
 
 func _on_camp_trigger_activated(actor: Node3D, metadata: Dictionary) -> void:
+	# Only trigger camp activation when the player enters the camp area.
+	# This prevents spawned enemies from accidentally triggering their own camp.
+	if not _is_player_actor(actor):
+		return
+	
 	var quest_id: String = metadata.get("quest_id", "")
 	var camp_index: int = metadata.get("camp_index", -1)
 	var camp_id: String = metadata.get("camp_id", "")
@@ -870,6 +875,19 @@ func _is_player_death(actor: Node) -> bool:
 			return true
 	if actor_object.faction_component and actor_object.faction_component.faction == FactionComponent.Faction.PLAYER:
 		return true
+	return false
+
+func _is_player_actor(actor: Node3D) -> bool:
+	if actor == null or not is_instance_valid(actor):
+		return false
+	if actor is Actor:
+		var actor_object: Actor = actor as Actor
+		if actor_object.is_playable:
+			return true
+	if arena != null:
+		var current_value: Variant = arena.get("current_controlled_actor")
+		if current_value == actor:
+			return true
 	return false
 
 func _on_quest_failed(quest_id: String) -> void:

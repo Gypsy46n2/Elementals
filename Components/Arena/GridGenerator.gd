@@ -228,6 +228,8 @@ func axial_distance(a: Vector2i, b: Vector2i) -> int:
 
 ## Calculates the vertical position of a tile's surface.
 func get_tile_surface_y(tile: HexTileData) -> float:
+	if not tile:
+		return 0.0
 	if tile.current_state == TileConstants.State.STONE:
 		if tile.has_meta("stone_height"):
 			return tile.get_meta("stone_height")
@@ -238,6 +240,9 @@ func get_tile_surface_y(tile: HexTileData) -> float:
 ## This is a hotspot during generation and game logic, so we cache results
 ## to avoid redoing the 6 directional lookups every time.
 func get_neighbors(tile: HexTileData) -> Array[HexTileData]:
+	if not tile:
+		return []
+	
 	# Cache hit: we already computed this tile's neighbors on a previous call.
 	# We skip the expensive grid math and return immediately.
 	if _neighbor_cache.has(tile):
