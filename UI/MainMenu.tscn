@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://dhb07467qj840"]
+[gd_scene format=3 uid="uid://dhb07467qj840"]
 
 [ext_resource type="Script" uid="uid://bw816jkoqith7" path="res://UI/MainMenu.gd" id="1_xxx"]
 [ext_resource type="PackedScene" path="res://UI/ControlsPanel.tscn" id="2_xxx"]
 
-[node name="MainMenu" type="Control"]
+[node name="MainMenu" type="Control" unique_id=731885243]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,7 +12,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_xxx")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1144629938]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -21,7 +21,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.12, 0.12, 0.14, 1)
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1418443359]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,152 +29,152 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=230116974]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
+[node name="Title" type="Label" parent="CenterContainer/VBoxContainer" unique_id=1955922770]
 layout_mode = 2
 theme_override_font_sizes/font_size = 48
 text = "Actor Arena"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="CenterContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/VBoxContainer" unique_id=1606713792]
 layout_mode = 2
 
-[node name="CharacterTabButton" type="Button" parent="CenterContainer/VBoxContainer"]
+[node name="CharacterTabButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=463363775]
 layout_mode = 2
 text = "Character Selection"
 
-[node name="CharacterTabContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="CharacterTabContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer" unique_id=985444927]
 visible = false
 layout_mode = 2
 
-[node name="ActorSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/CharacterTabContainer"]
+[node name="ActorSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/CharacterTabContainer" unique_id=261182499]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection" unique_id=1149193660]
 layout_mode = 2
 text = "Select Starting Actor:"
 horizontal_alignment = 1
 
-[node name="ActorButtons" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection"]
+[node name="ActorButtons" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection" unique_id=451690592]
 unique_name_in_owner = true
 layout_mode = 2
 alignment = 1
 
-[node name="WeaponTabButton" type="Button" parent="CenterContainer/VBoxContainer"]
+[node name="WeaponTabButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1201077958]
 layout_mode = 2
 text = "Weapon Selection"
 
-[node name="WeaponTabContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="WeaponTabContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer" unique_id=897321052]
 visible = false
 layout_mode = 2
 
-[node name="NPCSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer"]
+[node name="NPCSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer" unique_id=66535670]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection" unique_id=627183205]
 layout_mode = 2
 text = "NPC Counts:"
 horizontal_alignment = 1
 
-[node name="FireNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection"]
+[node name="FireNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection" unique_id=893335018]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/FireNPCs"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/FireNPCs" unique_id=749483873]
 layout_mode = 2
 text = "Fire:"
 
-[node name="FireCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/FireNPCs"]
+[node name="FireCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/FireNPCs" unique_id=1372536505]
 layout_mode = 2
 max_value = 20.0
 value = 1.0
 
-[node name="WaterNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection"]
+[node name="WaterNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection" unique_id=1057475315]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/WaterNPCs"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/WaterNPCs" unique_id=39447299]
 layout_mode = 2
 text = "Water:"
 
-[node name="WaterCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/WaterNPCs"]
+[node name="WaterCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/WaterNPCs" unique_id=882650652]
 layout_mode = 2
 max_value = 20.0
 value = 1.0
 
-[node name="GoatNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection"]
+[node name="GoatNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection" unique_id=1370215451]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/GoatNPCs"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/GoatNPCs" unique_id=1616383731]
 layout_mode = 2
 text = "Goat:"
 
-[node name="GoatCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/GoatNPCs"]
+[node name="GoatCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/GoatNPCs" unique_id=632001432]
 layout_mode = 2
 max_value = 20.0
 value = 1.0
 
-[node name="MapSettingsButton" type="Button" parent="CenterContainer/VBoxContainer"]
+[node name="MapSettingsButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=505717547]
 layout_mode = 2
 text = "Map Settings"
 
-[node name="MapSettingsContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="MapSettingsContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer" unique_id=1425858968]
 visible = false
 layout_mode = 2
 
-[node name="ArenaSize" type="VBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer"]
+[node name="ArenaSize" type="VBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer" unique_id=689090468]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/ArenaSize"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/ArenaSize" unique_id=1285619423]
 layout_mode = 2
 text = "Arena Size:"
 horizontal_alignment = 1
 
-[node name="SizeInput" type="SpinBox" parent="CenterContainer/VBoxContainer/MapSettingsContainer/ArenaSize"]
+[node name="SizeInput" type="SpinBox" parent="CenterContainer/VBoxContainer/MapSettingsContainer/ArenaSize" unique_id=2140198766]
 layout_mode = 2
 min_value = 10.0
 step = 10.0
 value = 20.0
 alignment = 1
 
-[node name="WorldGen" type="VBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer"]
+[node name="WorldGen" type="VBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer" unique_id=1338920945]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen" unique_id=1722050073]
 layout_mode = 2
 text = "World Generation:"
 horizontal_alignment = 1
 
-[node name="NoiseSeed" type="HBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen"]
+[node name="NoiseSeed" type="HBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen" unique_id=933099822]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseSeed"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseSeed" unique_id=1715358555]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Seed:"
 
-[node name="SeedInput" type="SpinBox" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseSeed"]
+[node name="SeedInput" type="SpinBox" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseSeed" unique_id=1184304085]
 layout_mode = 2
 max_value = 10000.0
 
-[node name="RandomSeedCheck" type="CheckBox" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseSeed"]
+[node name="RandomSeedCheck" type="CheckBox" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseSeed" unique_id=887863009]
 layout_mode = 2
 button_pressed = true
 text = "Random"
 
-[node name="NoiseScale" type="HBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen"]
+[node name="NoiseScale" type="HBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen" unique_id=383836794]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseScale"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseScale" unique_id=1465628851]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Noise Scale:"
 
-[node name="ScaleSlider" type="HSlider" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseScale"]
+[node name="ScaleSlider" type="HSlider" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseScale" unique_id=1800326302]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 min_value = 0.01
@@ -182,42 +182,42 @@ max_value = 0.2
 step = 0.01
 value = 0.05
 
-[node name="ValueLabel" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseScale"]
+[node name="ValueLabel" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseScale" unique_id=620652631]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "0.05"
 horizontal_alignment = 2
 
-[node name="HeightStep" type="HBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen"]
+[node name="HeightStep" type="HBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen" unique_id=1926092933]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/HeightStep"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/HeightStep" unique_id=475403426]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Height Step:"
 
-[node name="HeightSlider" type="HSlider" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/HeightStep"]
+[node name="HeightSlider" type="HSlider" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/HeightStep" unique_id=523728756]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 max_value = 5.0
 step = 0.5
 value = 1.0
 
-[node name="ValueLabel" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/HeightStep"]
+[node name="ValueLabel" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/HeightStep" unique_id=404182889]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "1.0"
 horizontal_alignment = 2
 
-[node name="DirtThreshold" type="HBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen"]
+[node name="DirtThreshold" type="HBoxContainer" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen" unique_id=1100949295]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/DirtThreshold"]
+[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/DirtThreshold" unique_id=1938238873]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Dirt Threshold:"
 
-[node name="DirtSlider" type="HSlider" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/DirtThreshold"]
+[node name="DirtSlider" type="HSlider" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/DirtThreshold" unique_id=1054245409]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 min_value = -0.3
@@ -225,23 +225,23 @@ max_value = 0.3
 step = 0.05
 value = 0.2
 
-[node name="ValueLabel" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/DirtThreshold"]
+[node name="ValueLabel" type="Label" parent="CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/DirtThreshold" unique_id=981620400]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "0.20"
 horizontal_alignment = 2
 
-[node name="PlayButton" type="Button" parent="CenterContainer/VBoxContainer"]
+[node name="PlayButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=955300825]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "PLAY"
 
-[node name="RanchButton" type="Button" parent="CenterContainer/VBoxContainer"]
+[node name="RanchButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=2091591579]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "RANCH"
 
-[node name="ControlsPanel" type="MarginContainer" parent="."]
+[node name="ControlsPanel" type="MarginContainer" parent="." unique_id=1179954196]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -255,7 +255,7 @@ grow_vertical = 0
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="ControlsPanel" parent="ControlsPanel" instance=ExtResource("2_xxx")]
+[node name="ControlsPanel" parent="ControlsPanel" unique_id=107747815 instance=ExtResource("2_xxx")]
 layout_mode = 2
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/CharacterTabButton" to="." method="_on_character_tab_button_pressed"]

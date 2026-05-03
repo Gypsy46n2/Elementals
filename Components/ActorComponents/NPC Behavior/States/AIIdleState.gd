@@ -5,10 +5,22 @@ var _idle_timer: float = 0.0
 var _min_idle_time: float = 1.0
 var _max_idle_time: float = 3.0
 
+## Track if we've already scheduled the transition to dormant.
+## Prevents duplicate transitions if multiple tile_stepped events fire before we exit.
+var _pending_dormant_transition: bool = false
+
 func enter() -> void:
 	_idle_timer = controller._rng.randf_range(_min_idle_time, _max_idle_time)
+	_pending_dormant_transition = false
 	if controller.movement_component:
 		controller.movement_component.stop(0.0)
+
+	# Listen for tile_stepped to check dormancy on movement instead of every frame.
+	_connect_tile_stepped_signal()
+
+func exit() -> void:
+	_disconnect_tile_stepped_signal()
+	_pending_dormant_transition = false
 
 func physics_update(delta: float) -> void:
 	if not actor or not controller:
@@ -18,13 +30,13 @@ func physics_update(delta: float) -> void:
 		controller.movement_component.apply_gravity(delta)
 		controller.movement_component.stop(delta)
 
-	# Transition checks
-	# Check if player is far enough to enter dormant state
-	var player_node: Node3D = _get_player_node()
-	if player_node != null and _is_player_far(player_node):
+	# If we already scheduled a dormancy transition from tile_stepped, process it now.
+	if _pending_dormant_transition:
+		_pending_dormant_transition = false
 		state_machine.change_state("dormant")
 		return
 
+	# Transition checks
 	var enemy: Node3D = controller._find_nearest_enemy()
 	if enemy:
 		state_machine.change_state("chase")
@@ -33,6 +45,21 @@ func physics_update(delta: float) -> void:
 	_idle_timer -= delta
 	if _idle_timer <= 0.0:
 		state_machine.change_state("roam")
+
+func _connect_tile_stepped_signal() -> void:
+	if actor.tile_interaction_component and not actor.tile_interaction_component.tile_stepped.is_connected(_on_tile_stepped_for_dormancy):
+		actor.tile_interaction_component.tile_stepped.connect(_on_tile_stepped_for_dormancy)
+
+func _disconnect_tile_stepped_signal() -> void:
+	if actor.tile_interaction_component and actor.tile_interaction_component.tile_stepped.is_connected(_on_tile_stepped_for_dormancy):
+		actor.tile_interaction_component.tile_stepped.disconnect(_on_tile_stepped_for_dormancy)
+
+## Called only when the actor steps onto a new tile.
+## If the player is far enough away, schedule transition to dormant.
+func _on_tile_stepped_for_dormancy(_new_tile: HexTileData) -> void:
+	var player_node: Node3D = _get_player_node()
+	if player_node != null and _is_player_far(player_node):
+		_pending_dormant_transition = true
 
 func get_debug_name() -> String:
 	return "Idle"
