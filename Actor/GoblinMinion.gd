@@ -31,19 +31,27 @@ func _ready() -> void:
 	ability_scores_component.wisdom = -1
 	ability_scores_component.charisma = -1
 
-	# Armor Setup: random among none, leather, or chain shirt
+	# Armor Setup: based on GameSettings selection for player, randomized for NPC goblins
 	if armor_class_component:
-		var armor_roll: int = _rng.randi_range(1, 3)
-		match armor_roll:
-			1:
+		var armor_selection: int
+		
+		if is_playable:
+			# Player goblin uses the selected equipment
+			armor_selection = GameSettings.selected_armor_index
+		else:
+			# NPC goblins get randomized equipment
+			armor_selection = _rng.randi_range(0, 2)
+		
+		match armor_selection:
+			0:
 				# No armor: AC 10 + dex
 				armor_class_component.armor_type = ArmorClassComponent.ArmorType.NONE
 				armor_class_component.armor_value = 10
 				armor_class_component.equipped_armor = null
-			2:
+			1:
 				# Leather armor: AC 11 + dex
 				armor_class_component.equipped_armor = ArmorData.create_standard_armor("leather")
-			3:
+			2:
 				# Chain shirt: AC 13 + dex (max 2)
 				armor_class_component.equipped_armor = ArmorData.create_standard_armor("chain shirt")
 		armor_class_component.refresh()
@@ -51,20 +59,30 @@ func _ready() -> void:
 		# Update body color to match armor
 		if _body is GoblinModel:
 			var model: GoblinModel = _body as GoblinModel
-			match armor_roll:
-				1:
+			match armor_selection:
+				0:
 					model.set_armor_skin(GoblinModel.ArmorSkin.NONE)
-				2:
+				1:
 					model.set_armor_skin(GoblinModel.ArmorSkin.LEATHER)
-				3:
+				2:
 					model.set_armor_skin(GoblinModel.ArmorSkin.CHAIN)
 
 	# Roll HP: 2d6
 	max_hp = health_component.roll_max_health(2, 6, _rng)
 	
-	# Random weapon: Dagger, Scimitar, or Shortbow with 2d10 arrows
+	# Weapon: based on GameSettings selection for player, randomized for NPC goblins
 	var weapon_names: Array[String] = ["Dagger", "Scimitar", "Shortbow"]
-	var chosen_weapon_name: String = weapon_names[_rng.randi_range(0, weapon_names.size() - 1)]
+	var weapon_selection: int
+	
+	if is_playable:
+		# Player goblin uses the selected weapon
+		weapon_selection = GameSettings.selected_weapon_index
+	else:
+		# NPC goblins get randomized weapon
+		weapon_selection = _rng.randi_range(0, weapon_names.size() - 1)
+	
+	weapon_selection = clampi(weapon_selection, 0, weapon_names.size() - 1)
+	var chosen_weapon_name: String = weapon_names[weapon_selection]
 	
 	var wl = get_node_or_null("/root/ItemsAutoload")
 	var weapon_to_equip: WeaponData = null
@@ -91,35 +109,33 @@ func _ready() -> void:
 		weapon_to_equip.current_ammo = arrow_count
 	
 	_on_weapon_selected(weapon_to_equip)
-
-	if _body is AnimatedSprite3D:
-		var sprite = _body as AnimatedSprite3D
-		sprite.pixel_size = 0.02
-		sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		sprite.play(&"idle")
-		sprite.offset.y = 24
-
-func _process(delta: float) -> void:
-	_update_sprite_animation()
-
-func _update_sprite_animation() -> void:
-	if not _body is AnimatedSprite3D: return
-	var sprite = _body as AnimatedSprite3D
 	
-	if weapon and weapon_component.is_on_cooldown():
-		if sprite.animation != &"attack":
-			sprite.play(&"attack")
-		return
+	# Ability: based on GameSettings selection (0=Nimble Escape, 1=Redirect Attack)
+	_setup_ability_from_settings()
 
-	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
-	if horizontal_velocity.length() > 0.2:
-		_last_dir = get_cardinal_direction(horizontal_velocity.normalized())
-		var anim_name = "walk_" + _last_dir
-		if sprite.animation != anim_name:
-			sprite.play(anim_name)
-		sprite.flip_h = false
+func _setup_ability_from_settings() -> void:
+	if not ability_component:
+		return
+	
+	# Clear any existing actions (they were randomly added in AbilityComponent.setup)
+	ability_component.actions.clear()
+	
+	# Get ability selection for player, randomized for NPC goblins (0=Nimble Escape, 1=Redirect Attack)
+	var ability_selection: int
+	
+	if is_playable:
+		# Player goblin uses the selected ability
+		ability_selection = GameSettings.selected_ability_index
 	else:
-		var anim_name = StringName("idle_" + _last_dir) if sprite.sprite_frames.has_animation("idle_" + _last_dir) else &"idle"
-		if sprite.animation != anim_name:
-			sprite.play(anim_name)
-		sprite.flip_h = false
+		# NPC goblins get randomized ability
+		ability_selection = _rng.randi_range(0, 1)
+	
+	ability_selection = clampi(ability_selection, 0, 1)
+	
+	match ability_selection:
+		0:
+			# Nimble Escape: Hide and Disengage
+			ability_component.add_action(preload("res://Components/ActorComponents/AbilityComponents/NimbleEscape.gd").new(self, ability_component))
+		1:
+			# Redirect Attack: Swap places with nearby ally
+			ability_component.add_action(preload("res://Components/ActorComponents/AbilityComponents/RedirectAttack.gd").new(self, ability_component))

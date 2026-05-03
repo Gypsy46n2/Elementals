@@ -24,17 +24,14 @@ func _ready() -> void:
 	debug_list_toggle.toggled.connect(_on_debug_toggled)
 	list_panel.visible = debug_list_toggle.button_pressed
 	
-	if ItemsAutoload.selected_weapon:
-		_on_weapon_selected(ItemsAutoload.selected_weapon)
-	else:
-		if ItemsAutoload.weapons.size() > 0:
-			ItemsAutoload.set_selected_weapon(ItemsAutoload.weapons[0])
-			
 	if ItemsAutoload.selected_ability:
 		_on_ability_selected(ItemsAutoload.selected_ability)
 		
 	if ItemsAutoload.selected_actor:
 		_on_actor_selected(ItemsAutoload.selected_actor)
+	
+	# Set the weapon card to show the character's selected weapon from GameSettings, not ItemsAutoload default
+	_update_weapon_card_from_character()
 
 func _on_debug_toggled(p_pressed: bool) -> void:
 	list_panel.visible = p_pressed
@@ -117,6 +114,36 @@ func _on_actor_selected(actor: Actor) -> void:
 			actor_card.visible = true
 		else:
 			actor_card.visible = false
+
+# Sets the weapon card based on the character's selected weapon in GameSettings
+func _update_weapon_card_from_character() -> void:
+	var gs = get_node_or_null("/root/GameSettings")
+	if not gs:
+		return
+	
+	var actor_type = gs.selected_actor_type
+	var weapon_index = gs.selected_weapon_index
+	
+	# Get the weapon names for this actor from CHARACTER_EQUIPMENT
+	var char_equipment = gs.CHARACTER_EQUIPMENT
+	if not char_equipment.has(actor_type):
+		return
+	
+	var weapon_names: Array = char_equipment[actor_type].weapons
+	if weapon_index < 0 or weapon_index >= weapon_names.size():
+		return
+	
+	var target_name: String = weapon_names[weapon_index]
+	
+	# Find the weapon in ItemsAutoload by name
+	var target_weapon: WeaponData = null
+	for w in ItemsAutoload.weapons:
+		if w.name == target_name:
+			target_weapon = w
+			break
+	
+	if target_weapon:
+		_on_weapon_selected(target_weapon)
 
 func _scroll_to_label(label: Label) -> void:
 	if not is_instance_valid(label): return

@@ -67,8 +67,6 @@ func setup(actor: Actor) -> void:
 	var wl = get_node_or_null("/root/ItemsAutoload")
 	if wl:
 		wl.weapon_selected.connect(_on_global_weapon_selected)
-		if _owner_actor.is_controlled and wl.selected_weapon:
-			_on_weapon_selected(wl.selected_weapon)
 	
 	# Try to find audio players on the owner if not on self
 	if not _whack_player: _whack_player = _owner_actor.get_node_or_null("WhackPlayer")
@@ -84,10 +82,7 @@ func _on_weapon_selected(p_weapon: WeaponData) -> void:
 	weapon_data = p_weapon
 
 func on_control_changed(controlled: bool) -> void:
-	if controlled:
-		var wl = get_node_or_null("/root/ItemsAutoload")
-		if wl and wl.selected_weapon:
-			_on_weapon_selected(wl.selected_weapon)
+	pass  # Don't override weapon selection on control change
 
 ## Adds ammo to the current weapon or equips it if the actor is unarmed.
 func add_weapon_ammo(p_weapon_data: WeaponData, amount: int) -> void:

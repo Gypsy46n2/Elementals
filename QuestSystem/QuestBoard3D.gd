@@ -157,8 +157,7 @@ func _place_near_spawn() -> void:
 			_on_player_tile_changed(player_tile)
 	
 	if base_position != Vector3.ZERO:
-		look_at(Vector3(base_position.x, global_position.y, base_position.z), Vector3.UP)
-		rotate_y(PI)
+		rotation.y = 0  # Face south
 
 func _get_player_node() -> Node3D:
 	if arena == null or not is_instance_valid(arena):

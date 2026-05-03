@@ -3,6 +3,9 @@ extends Node
 const SAVE_PATH = "user://settings.cfg"
 
 var selected_actor_type: String = "fire" # "fire", "water", or "goat"
+var selected_weapon_index: int = 0
+var selected_ability_index: int = 0
+var selected_armor_index: int = 0
 var grid_width: int = 20
 var grid_height: int = 20
 var fire_count: int = 1
@@ -15,6 +18,39 @@ var height_step: float = 1.0
 var dirt_threshold: float = 0.2
 var master_volume: float = 1.0
 
+const CHARACTER_EQUIPMENT: Dictionary = {
+	"goblin": {
+		"weapons": ["Dagger", "Scimitar", "Shortbow"],
+		"abilities": ["Nimble Escape", "Redirect Attack"],
+		"armor": ["None", "Leather", "Chain Shirt"]
+	},
+	"farmer": {
+		"weapons": ["Pitchfork", "Shovel", "None"],
+		"abilities": ["Repair", "Calm Animal"],
+		"armor": ["Clothes", "Leather Apron"]
+	},
+	"goat": {
+		"weapons": ["Headbutt"],
+		"abilities": ["Charge", "Intimidating Presence"],
+		"armor": ["Fur"]
+	},
+	"scarecrow": {
+		"weapons": ["Scythe", "Pitchfork"],
+		"abilities": ["Intimidate", "Scare"],
+		"armor": ["Straw"]
+	},
+	"fire": {
+		"weapons": ["Flame Burst"],
+		"abilities": ["Fireball", "Flame Wall"],
+		"armor": ["Magma Shell"]
+	},
+	"water": {
+		"weapons": ["Water Jet"],
+		"abilities": ["Tidal Wave", "Healing Waters"],
+		"armor": ["Water Shield"]
+	}
+}
+
 func _ready() -> void:
 	load_settings()
 	_apply_volume(master_volume)
@@ -26,6 +62,9 @@ func save_settings() -> void:
 	var config = ConfigFile.new()
 	
 	config.set_value("General", "selected_actor_type", selected_actor_type)
+	config.set_value("General", "selected_weapon_index", selected_weapon_index)
+	config.set_value("General", "selected_ability_index", selected_ability_index)
+	config.set_value("General", "selected_armor_index", selected_armor_index)
 	config.set_value("General", "grid_width", grid_width)
 	config.set_value("General", "grid_height", grid_height)
 	
@@ -50,6 +89,9 @@ func load_settings() -> void:
 		return # No settings file exists yet, using defaults
 	
 	selected_actor_type = config.get_value("General", "selected_actor_type", selected_actor_type)
+	selected_weapon_index = config.get_value("General", "selected_weapon_index", selected_weapon_index)
+	selected_ability_index = config.get_value("General", "selected_ability_index", selected_ability_index)
+	selected_armor_index = config.get_value("General", "selected_armor_index", selected_armor_index)
 	grid_width = config.get_value("General", "grid_width", grid_width)
 	grid_height = config.get_value("General", "grid_height", grid_height)
 	

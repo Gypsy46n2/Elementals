@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dhb07467qj840"]
 
-[ext_resource type="Script" uid="uid://bw816jkoqith7" path="res://UI/MainMenu.gd" id="1_xxx"]
+[ext_resource type="Script" uid="uid://byhg7qswondpy" path="res://UI/MainMenu.gd" id="1_xxx"]
 [ext_resource type="PackedScene" path="res://UI/ControlsPanel.tscn" id="2_xxx"]
 
 [node name="MainMenu" type="Control" unique_id=731885243]
@@ -55,12 +55,14 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection" unique_id=1149193660]
 layout_mode = 2
-text = "Select Starting Actor:"
+text = "Select Your Fighter:"
 horizontal_alignment = 1
 
-[node name="ActorButtons" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection" unique_id=451690592]
+[node name="CharacterCards" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection" unique_id=451690592]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 320)
 layout_mode = 2
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="WeaponTabButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1201077958]

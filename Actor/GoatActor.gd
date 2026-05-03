@@ -84,16 +84,15 @@ func _on_goat_data_changed() -> void:
 		visual_component.update_goat_visuals(goat_data)
 
 func die() -> void:
-	# Inform the arena for game-over checking via the event bus
-	GameEvents.actor_died.emit(self)
+	if is_dead:
+		return
 	
-	# Permanent removal from the persistent herd
+	# Call base Actor.die() for proper death: fall over, disable components, emit signals
+	super.die()
+	
+	# Goat-specific: Permanent removal from the persistent herd
 	if has_node("/root/GoatManager"):
 		get_node("/root/GoatManager").remove_goat(goat_data)
-	
-	# Visual feedback: poof or just vanish
-	print("Goat PERMANENTLY died: ", goat_data.goat_name)
-	queue_free()
 
 
 

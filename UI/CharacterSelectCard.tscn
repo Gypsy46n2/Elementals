@@ -1,0 +1,140 @@
+[gd_scene load_steps=2 format=3 uid="uid://cx8j2k3m4p5qr"]
+
+[ext_resource type="Script" uid="uid://cx8j2k3m4p5qs" path="res://UI/CharacterSelectCard.gd" id="1_card"]
+
+[node name="CharacterSelectCard" type="Control"]
+custom_minimum_size = Vector2(180, 320)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 200.0
+offset_bottom = 340.0
+mouse_filter = 1
+script = ExtResource("1_card")
+
+[node name="SelectionIndicator" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.89, 0.67, 0.22, 0.35)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="NameLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Goblin"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ModelContainer" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="WeaponButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "<< Dagger >>"
+
+[node name="AbilityButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "<< Disengage >>"
+
+[node name="ArmorButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "<< Leather >>"
+
+[node name="InfoButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "[INFO]"
+
+[node name="StatsContainer" type="VBoxContainer" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HPLabel" type="Label" parent="VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "HP: 7/7"
+horizontal_alignment = 1
+
+[node name="ACLabel" type="Label" parent="VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "AC: 12"
+horizontal_alignment = 1
+
+[node name="StealthLabel" type="Label" parent="VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Stealth: +6"
+horizontal_alignment = 1
+
+[node name="PerceptionLabel" type="Label" parent="VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Perception: 9"
+horizontal_alignment = 1
+
+[node name="StatsGrid" type="GridContainer" parent="VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 4
+columns = 3
+
+[node name="StrLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "STR: -1"
+horizontal_alignment = 1
+
+[node name="DexLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "DEX: +2"
+horizontal_alignment = 1
+
+[node name="ConLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "CON: 0"
+horizontal_alignment = 1
+
+[node name="IntLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.6, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "INT: 0"
+horizontal_alignment = 1
+
+[node name="WisLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.6, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "WIS: -1"
+horizontal_alignment = 1
+
+[node name="ChaLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "CHA: -1"
+horizontal_alignment = 1
