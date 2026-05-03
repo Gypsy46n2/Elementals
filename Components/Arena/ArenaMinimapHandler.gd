@@ -2,6 +2,9 @@
 class_name ArenaMinimapHandler
 extends Node
 
+const QuestMarkerClass = preload("res://Components/Arena/MinimapQuestMarker.gd")
+const ActorMarkerClass = preload("res://Components/Arena/MinimapActorMarker.gd")
+
 var arena: Node # ArenaGrid
 var minimap_viewport: SubViewport
 var minimap_camera: Camera3D
@@ -9,6 +12,9 @@ var minimap_container: SubViewportContainer
 var _marker_container: Control
 var _active_markers: Array = []
 var _actor_markers: Dictionary = {} # Node -> Control
+var _spawn_manager: Node
+var _actors_array: Array
+var _frame_counter: int = 0
 
 func setup(p_arena: Node) -> void:
 	arena = p_arena
@@ -20,6 +26,9 @@ func setup(p_arena: Node) -> void:
 	_setup_marker_overlay()
 	_setup_actor_markers()
 	_connect_quest_signals()
+	# Cache node references that don't change during arena lifetime
+	_spawn_manager = arena.get_node_or_null("QuestSpawnManager")
+	_actors_array = arena.get("actors") as Array
 	call_deferred("_refresh_markers")
 
 func _setup_minimap() -> void:
@@ -72,10 +81,9 @@ func _on_quest_failed(_quest_id: String) -> void:
 
 func _refresh_markers() -> void:
 	_clear_markers()
-	var spawn_manager: Node = arena.get_node_or_null("QuestSpawnManager")
-	if spawn_manager == null:
+	if _spawn_manager == null:
 		return
-	var camp_records: Dictionary = _get_camp_records(spawn_manager)
+	var camp_records: Dictionary = _get_camp_records(_spawn_manager)
 	for camp_id in camp_records.keys():
 		var record_value: Variant = camp_records.get(camp_id, {})
 		if typeof(record_value) != TYPE_DICTIONARY:

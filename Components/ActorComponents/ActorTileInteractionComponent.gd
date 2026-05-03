@@ -38,10 +38,23 @@ func _connect_to_movement_component() -> void:
 
 signal tile_changed(new_tile: HexTileData)
 
+## Fires only when the actor steps onto a tile with different axial coordinates.
+## Use this for event-driven checks (dormancy, triggers) instead of per-frame polling.
+signal tile_stepped(new_tile: HexTileData)
+
+var _last_stepped_tile_coords: Vector2i = Vector2i.ZERO  # Track for tile_stepped
+
 func _on_tile_changed(new_tile: HexTileData, previous_tile: HexTileData) -> void:
 	if new_tile != _ground_tile:
 		tile_changed.emit(new_tile)
 	apply_ground_effects(new_tile)
+
+	# Emit tile_stepped only when the actor changes tile position (different axial coords).
+	if new_tile != null:
+		var new_coords: Vector2i = new_tile.axial_coords
+		if new_coords != _last_stepped_tile_coords:
+			_last_stepped_tile_coords = new_coords
+			tile_stepped.emit(new_tile)
 
 func apply_ground_effects(tile: HexTileData) -> void:
 	_ground_tile = tile
