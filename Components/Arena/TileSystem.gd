@@ -23,21 +23,31 @@ func _on_process_timer_timeout() -> void:
 	_process_due_tiles(current_time)
 	_schedule_next_process()
 
-# Process only tiles that are due (within a small epsilon for floating point safety)
+# Process only tiles that are due (within a small epsilon for floating point safety).
+# IMPORTANT: do NOT rebuild and reassign _scheduled_tiles at the end — _process_tile
+# can call _schedule_tile which appends a new entry (e.g. fire's extinguish-in-1s
+# follow-up). A wholesale reassign would silently delete those new entries and
+# the follow-up event would never fire.
 func _process_due_tiles(current_time: float) -> void:
 	var epsilon = 0.05
-	var remaining = []
-	
+
+	# 1. Snapshot which entries are due NOW.
+	var to_process: Array[Dictionary] = []
 	for entry in _scheduled_tiles:
-		var tile: HexTileData = entry["tile"]
-		var check_time: float = entry["check_time"]
-		
-		if check_time <= current_time + epsilon:
-			_process_tile(tile, check_time)
-		else:
-			remaining.append(entry)
-	
-	_scheduled_tiles = remaining
+		if entry["check_time"] <= current_time + epsilon:
+			to_process.append(entry)
+
+	# 2. Remove those due entries IN PLACE so processing can append new
+	# schedule entries safely.
+	var i: int = _scheduled_tiles.size() - 1
+	while i >= 0:
+		if _scheduled_tiles[i]["check_time"] <= current_time + epsilon:
+			_scheduled_tiles.remove_at(i)
+		i -= 1
+
+	# 3. Now actually run the callbacks. They may mutate _scheduled_tiles.
+	for entry in to_process:
+		_process_tile(entry["tile"], entry["check_time"])
 
 # Calculate next check time based on tile type and current duration
 func _get_next_check_time(tile: HexTileData, current_time: float) -> float:
@@ -76,11 +86,20 @@ func _process_tile(tile: HexTileData, check_time: float) -> void:
 			_process_puddle(tile, check_time)
 
 func _process_fire(tile: HexTileData, check_time: float) -> void:
-	# Fire has two events: spread at 4s, extinguish at 5s
+	# Fire has two events: spread at 4s, extinguish at 5s.
+	# fire_duration was never incremented anywhere, so the original
+	# conditions never fired. Advance it based on which scheduled event
+	# this callback represents (the schedule was set up to land exactly
+	# at duration 4.0 then 5.0 via _get_next_check_time).
+	if not tile.fire_spread_triggered:
+		tile.fire_duration = 4.0
+	else:
+		tile.fire_duration = 5.0
+
 	if not tile.fire_spread_triggered and tile.fire_duration >= 4.0:
 		tile.fire_spread_triggered = true
 		arena.tile_interaction.spread_fire(tile)
-	
+
 	if tile.fire_duration >= 5.0:
 		tile.fire_duration = 0.0
 		tile.fire_spread_triggered = false
@@ -125,7 +144,16 @@ func _schedule_tile(tile: HexTileData) -> void:
 	_schedule_next_process()
 
 func _unschedule_tile(tile: HexTileData) -> void:
-	_scheduled_tiles = _scheduled_tiles.filter(func(entry): return entry["tile"] != tile)
+	# In-place removal. Avoids both:
+	#   - Array.filter() returning an untyped Array, which then crashes on
+	#     assignment to typed _scheduled_tiles: Array[Dictionary].
+	#   - Replacing the array reference and accidentally clobbering entries
+	#     appended by other callers in the same frame.
+	var i: int = _scheduled_tiles.size() - 1
+	while i >= 0:
+		if _scheduled_tiles[i]["tile"] == tile:
+			_scheduled_tiles.remove_at(i)
+		i -= 1
 
 # Compatibility wrapper - tiles are now processed via scheduled timers, not per-frame
 func process_tiles(_delta: float) -> void:

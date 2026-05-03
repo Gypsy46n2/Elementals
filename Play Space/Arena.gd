@@ -1,4 +1,4 @@
-## ArenaGrid manages the hexagonal game world, including tile data, actor spawning, 
+## ArenaGrid manages the hexagonal game world, including tile data, actor spawning,
 ## farmstead generation, and player control orchestration.
 ## It acts as a central hub for various sub-systems like rendering, physics, and tile logic.
 class_name ArenaGrid
@@ -59,12 +59,12 @@ var current_controlled_actor: Actor:
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
-	
+
 	var gs = get_node_or_null("/root/GameSettings")
 	if gs:
 		grid_width = gs.grid_width
 		grid_height = gs.grid_height
-	
+
 	_setup_components()
 	grid_generator.initialize_grid()
 	_setup_physics()
@@ -72,15 +72,37 @@ func _ready() -> void:
 	if actor_spawner:
 		actor_spawner.spawn_initial_actors()
 	add_to_group("arena")
-	
+
 	if player_input:
 		player_input.select_initial_actor()
-	
+
 	GameEvents.actor_died.connect(_on_actor_died)
 	_setup_quest_system()
-	
+
 	# Register static world obstacles with the tile signal system
 	call_deferred("_register_static_obstacles")
+
+	# Visual-only blended terrain layer (Terrain3D demo textures + smoothed mesh).
+	# Loaded by path so it can never collide with another global script class.
+	# Safe to no-op if the script or shader is missing.
+	_setup_terrain_blend_visual()
+
+
+func _setup_terrain_blend_visual() -> void:
+	if has_node("TerrainBlendVisual"):
+		return
+	var script_path: String = "res://Components/Arena/TerrainBlendVisual.gd"
+	if not ResourceLoader.exists(script_path):
+		return
+	var script_res: Resource = load(script_path)
+	if not (script_res is Script):
+		return
+	var node: Node3D = Node3D.new()
+	node.name = "TerrainBlendVisual"
+	node.set_script(script_res)
+	add_child(node)
+	if node.has_method("setup"):
+		node.call("setup", self)
 
 # Instantiates and attaches core logic components.
 # Should not be moved (Orchestrates arena-specific components).
@@ -91,47 +113,47 @@ func _setup_components() -> void:
 	renderer.hex_size = hex_size
 	renderer.height_step = height_step
 	add_child(renderer)
-	
+
 	tile_system = TileSystem.new()
 	tile_system.name = "TileSystem"
 	tile_system.arena = self
 	add_child(tile_system)
-	
+
 	physics = ArenaPhysics.new()
 	physics.name = "ArenaPhysics"
 	add_child(physics)
-	
+
 	tile_interaction = ArenaTileInteractionComponent.new()
 	tile_interaction.name = "ArenaTileInteractionComponent"
 	tile_interaction.setup(self)
 	add_child(tile_interaction)
-	
+
 	tile_signals = TileSignalComponent.new()
 	tile_signals.name = "TileSignalComponent"
 	add_child(tile_signals)
 	tile_signals.setup(self)
-	
+
 	actor_spawner = ArenaSpawnerComponent.new()
 	actor_spawner.name = "ArenaSpawner"
 	add_child(actor_spawner)
-	
+
 	player_input = PlayerInputComponent.new()
 	player_input.name = "PlayerInputComponent"
 	add_child(player_input)
-	
+
 	ui_component = ArenaUIHandler.new()
 	ui_component.name = "ArenaUIHandler"
 	add_child(ui_component)
-	
+
 	minimap_component = ArenaMinimapHandler.new()
 	minimap_component.name = "ArenaMinimapHandler"
 	add_child(minimap_component)
-	
+
 	grid_generator = GridGenerator.new()
 	grid_generator.name = "GridGenerator"
 	add_child(grid_generator)
 	grid_generator.setup(self)
-	
+
 	actor_spawner.setup(self)
 	player_input.setup(self)
 	ui_component.setup(self)
@@ -150,11 +172,11 @@ func _on_actor_died(e: Node3D) -> void:
 	if was_controlled_actor or was_playable_actor:
 		if has_node("/root/QuestState"):
 			QuestState.fail_active_quest("You died. Quest failed and reset for the next play.")
-	
+
 	if was_controlled_actor:
 		if player_input:
 			player_input.next_actor()
-	
+
 	# Only check for extinction if a player-allied unit just died
 	if e is Actor and e.is_friendly:
 		var friendlies_left = false
@@ -162,7 +184,7 @@ func _on_actor_died(e: Node3D) -> void:
 			if is_instance_valid(a) and a is Actor and a.is_friendly:
 				friendlies_left = true
 				break
-		
+
 		if not friendlies_left:
 			if ui_component:
 				ui_component.handle_game_over()
@@ -194,30 +216,30 @@ func _grid_height_clamped() -> int:
 func set_tile_state(tile: HexTileData, new_state: int) -> void:
 	if tile.current_state == new_state:
 		return
-		
+
 	var old_state = tile.current_state
 	renderer.remove_tile(tile)
-	
+
 	if old_state == TileConstants.State.FIRE:
 		renderer.update_fire_effect(tile, false)
-	
+
 	tile.current_state = new_state
 	tile._sync_type()
-	
+
 	renderer.add_tile(tile)
-	
+
 	if new_state == TileConstants.State.FIRE:
 		renderer.update_fire_effect(tile, true)
-	
+
 	tile_counts[old_state] -= 1
 	tile_counts[new_state] += 1
 	tile_counts_changed.emit(tile_counts)
-	
+
 	if old_state == TileConstants.State.GRASS or new_state == TileConstants.State.GRASS:
 		var grass_layer = get_node_or_null("GrassPatchLayer")
 		if grass_layer:
 			grass_layer.regenerate()
-	
+
 	tile_system.check_activeness(tile)
 	for n in _get_neighbors(tile):
 		tile_system.check_activeness(n)
@@ -227,7 +249,7 @@ func set_tile_state(tile: HexTileData, new_state: int) -> void:
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
-		
+
 	# Periodic cleanup of freed actor references (safety measure)
 	if Engine.get_frames_drawn() % 30 == 0:
 		var i = actors.size() - 1
@@ -251,30 +273,30 @@ func get_tile_data_at_world_position(world_position: Vector3) -> HexTileData:
 	var local_pos = to_local(world_position)
 	var x = local_pos.x
 	var z = local_pos.z
-	
+
 	var q_float = x / (1.5 * hex_size)
 	var r_float = (z / (SQRT3 * hex_size)) - (q_float * 0.5)
-	
+
 	var q = q_float
 	var r = r_float
 	var s = -q - r
-	
+
 	var rq = round(q)
 	var rr = round(r)
 	var rs = round(s)
-	
+
 	var dq = abs(rq - q)
 	var dr = abs(rr - r)
 	var ds = abs(rs - s)
-	
+
 	if dq > dr and dq > ds:
 		rq = -rr - rs
 	elif dr > ds:
 		rr = -rq - rs
-	
+
 	var col = int(rq)
 	var row = int(rr) + (col - (col & 1)) / 2
-	
+
 	return get_tile_at_grid_coords(col, row)
 
 # Alias for get_tile_data_at_world_position.
@@ -300,12 +322,12 @@ func get_tiles_within_distance(world_position: Vector3, radius: float) -> Array[
 	var center = get_tile_at_world_position(world_position)
 	if not center:
 		return []
-		
+
 	# Convert world radius to approximate hex radius
 	# Distance between centers is SQRT3 * hex_size
 	var hex_radius = ceil(radius / (SQRT3 * hex_size)) + 1
 	var candidates = get_tiles_in_radius(center, int(hex_radius))
-	
+
 	var results: Array[HexTileData] = []
 	var radius_sq = radius * radius
 	for tile in candidates:
@@ -334,11 +356,11 @@ func _setup_quest_system() -> void:
 func _register_static_obstacles() -> void:
 	if not tile_signals:
 		return
-		
+
 	for tile in tile_data_grid:
 		var is_blocker = false
 		var weight = 1.0
-		
+
 		# Trees and Fences
 		if tile.feature:
 			if tile.feature is TreeFeature:
@@ -348,12 +370,12 @@ func _register_static_obstacles() -> void:
 			elif tile.feature is FenceFeature:
 				is_blocker = true
 				weight = 1.8
-		
+
 		# Stone Walls
 		if not is_blocker and tile.current_state == TileConstants.State.STONE:
 			is_blocker = true
 			weight = 2.0
-		
+
 		if is_blocker:
 			# Radius 2 for static obstacles
 			tile_signals.register_trigger(tile, 2, Callable(), {"weight": weight, "is_static_obstacle": true})
