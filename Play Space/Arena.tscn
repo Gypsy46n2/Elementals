@@ -1,23 +1,14 @@
-[gd_scene load_steps=11 format=3 uid="uid://dy747yc6bbcs3"]
+[gd_scene load_steps=13 format=3 uid="uid://dy747yc6bbcs3"]
 
 [ext_resource type="Script" uid="uid://dnnypgaoo7j51" path="res://Play Space/Arena.gd" id="1"]
 [ext_resource type="Script" uid="uid://c0bx554q5f7gv" path="res://Player/CameraFollower.gd" id="2"]
 [ext_resource type="Script" uid="uid://dhnqvq2reqag0" path="res://Play Space/ArenaDebug.gd" id="3"]
 [ext_resource type="Script" uid="uid://ctt3usv2vbaud" path="res://Play Space/OptionsMenu.gd" id="4_xxx"]
+[ext_resource type="Script" uid="uid://ugsediyp1jss" path="res://UI/PlayerConsole.gd" id="7_pconsole"]
 [ext_resource type="PackedScene" path="res://UI/ControlsPanel.tscn" id="5_xxx"]
-[ext_resource type="PackedScene" uid="uid://dfugpdrbvku5s" path="res://UI/PlayerConsole.tscn" id="6_xxx"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_arena_opt"]
-bg_color = Color(0.055, 0.06, 0.075, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.90, 0.68, 0.25, 0.94)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
+[ext_resource type="PackedScene" uid="uid://c4bn2q222h0rt" path="res://UI/DisplayCard/WeaponCard.tscn" id="8_wcard"]
+[ext_resource type="PackedScene" path="res://UI/DisplayCard/AbilityCard.tscn" id="9_acard"]
+[ext_resource type="PackedScene" uid="uid://becy15jcmkmob" path="res://UI/DisplayCard/ActorCard.tscn" id="10_actorcard"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_norm"]
 bg_color = Color(0.08, 0.085, 0.11, 0.94)
@@ -31,64 +22,124 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hov"]
-bg_color = Color(0.10, 0.105, 0.13, 0.96)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.90, 0.68, 0.25, 0.94)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_press"]
 bg_color = Color(0.055, 0.06, 0.075, 0.98)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.90, 0.68, 0.25, 0.94)
+border_color = Color(0.9, 0.68, 0.25, 0.94)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[node name="Arena" type="Node3D"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hov"]
+bg_color = Color(0.1, 0.105, 0.13, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.68, 0.25, 0.94)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_arena_opt"]
+bg_color = Color(0.055, 0.06, 0.075, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.68, 0.25, 0.94)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_list"]
+bg_color = Color(0.08, 0.085, 0.11, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.46, 0.36, 0.18, 0.88)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcard"]
+bg_color = Color(0.08, 0.085, 0.11, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.46, 0.36, 0.18, 0.88)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_abil"]
+bg_color = Color(0.08, 0.085, 0.11, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.46, 0.36, 0.18, 0.88)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_acard"]
+bg_color = Color(0.08, 0.085, 0.11, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.46, 0.36, 0.18, 0.88)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="Arena" type="Node3D" unique_id=831567567]
 script = ExtResource("1")
 grid_width = 40
 grid_height = 40
 
-[node name="Camera3D" type="Camera3D" parent="."]
+[node name="Camera3D" type="Camera3D" parent="." unique_id=826330913]
 transform = Transform3D(1, 0, 0, 0, 0.819152, 0.573576, 0, -0.573576, 0.819152, 28, 30, 70)
 current = true
 fov = 45.0
 script = ExtResource("2")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1567132660]
 transform = Transform3D(0.37881806, 0.42209572, -0.82360935, -0.42866814, 0.8687402, 0.24805994, 0.8202077, 0.2590854, 0.51003337, 0, 29.8078, 0)
 
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="UI" type="CanvasLayer" parent="." unique_id=1900480586]
 
-[node name="HBoxContainer" type="HBoxContainer" parent="UI"]
+[node name="HBoxContainer" type="HBoxContainer" parent="UI" unique_id=1355005749]
 offset_right = 300.0
 offset_bottom = 40.0
 theme_override_constants/separation = 10
 
-[node name="PrevButton" type="Button" parent="UI/HBoxContainer"]
+[node name="PrevButton" type="Button" parent="UI/HBoxContainer" unique_id=126023183]
 layout_mode = 2
 text = " < "
 
-[node name="TargetLabel" type="Label" parent="UI/HBoxContainer"]
+[node name="TargetLabel" type="Label" parent="UI/HBoxContainer" unique_id=1420277685]
 layout_mode = 2
 text = "Following: None"
 
-[node name="NextButton" type="Button" parent="UI/HBoxContainer"]
+[node name="NextButton" type="Button" parent="UI/HBoxContainer" unique_id=1284557182]
 layout_mode = 2
 text = " > "
 
-[node name="MinimapFrame" type="ColorRect" parent="UI"]
+[node name="MinimapFrame" type="ColorRect" parent="UI" unique_id=1427806603]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -99,15 +150,7 @@ offset_bottom = 210.0
 grow_horizontal = 0
 color = Color(0.12549, 0.12549, 0.12549, 1)
 
-[node name="Label" type="Label" parent="UI/MinimapFrame"]
-layout_mode = 0
-offset_left = 5.0
-offset_top = 5.0
-offset_right = 100.0
-offset_bottom = 28.0
-text = "Minimap"
-
-[node name="MinimapContainer" type="SubViewportContainer" parent="UI/MinimapFrame"]
+[node name="MinimapContainer" type="SubViewportContainer" parent="UI/MinimapFrame" unique_id=138159164]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -120,18 +163,26 @@ grow_horizontal = 2
 grow_vertical = 2
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="UI/MinimapFrame/MinimapContainer"]
+[node name="SubViewport" type="SubViewport" parent="UI/MinimapFrame/MinimapContainer" unique_id=778743302]
 handle_input_locally = false
 size = Vector2i(196, 196)
 render_target_update_mode = 4
 
-[node name="MinimapCamera" type="Camera3D" parent="UI/MinimapFrame/MinimapContainer/SubViewport"]
+[node name="MinimapCamera" type="Camera3D" parent="UI/MinimapFrame/MinimapContainer/SubViewport" unique_id=1787515761]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 53.91008, 100, 46.125)
 projection = 1
 current = true
 size = 121.46006
 
-[node name="OptionsButton" type="Button" parent="UI"]
+[node name="DebugToggle" type="CheckBox" parent="UI/MinimapFrame" unique_id=1541287876]
+layout_mode = 1
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 104.0
+offset_bottom = 35.0
+text = "Debug"
+
+[node name="OptionsButton" type="Button" parent="UI" unique_id=860195796]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -141,15 +192,15 @@ offset_right = -220.0
 offset_bottom = 41.0
 grow_horizontal = 0
 focus_mode = 0
-text = "OPTIONS"
+theme_override_colors/font_color = Color(0.82, 0.8, 0.72, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.86, 0.32, 1)
+theme_override_colors/font_hover_color = Color(1, 0.86, 0.32, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hov")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
-theme_override_colors/font_color = Color(0.82, 0.80, 0.72, 1)
-theme_override_colors/font_hover_color = Color(1.0, 0.86, 0.32, 1)
-theme_override_colors/font_pressed_color = Color(1.0, 0.86, 0.32, 1)
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hov")
+text = "OPTIONS"
 
-[node name="OptionsMenu" type="Control" parent="UI"]
+[node name="OptionsMenu" type="Control" parent="UI" unique_id=1210367732]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -159,7 +210,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("4_xxx")
 
-[node name="ColorRect" type="ColorRect" parent="UI/OptionsMenu"]
+[node name="ColorRect" type="ColorRect" parent="UI/OptionsMenu" unique_id=1024013870]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -168,7 +219,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.5)
 
-[node name="PanelContainer" type="PanelContainer" parent="UI/OptionsMenu"]
+[node name="PanelContainer" type="PanelContainer" parent="UI/OptionsMenu" unique_id=1393915786]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -183,111 +234,215 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_arena_opt")
 
-[node name="MarginContainer" type="MarginContainer" parent="UI/OptionsMenu/PanelContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="UI/OptionsMenu/PanelContainer" unique_id=1805503299]
 layout_mode = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer" unique_id=943452126]
 layout_mode = 2
 theme_override_constants/separation = 15
 
-[node name="Title" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer"]
+[node name="Title" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer" unique_id=1287162578]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "OPTIONS"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer" unique_id=686956905]
 layout_mode = 2
 
-[node name="VolumeContainer" type="VBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer"]
+[node name="VolumeContainer" type="VBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer" unique_id=1177786432]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/VolumeContainer"]
+[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/VolumeContainer" unique_id=2041909487]
 layout_mode = 2
 text = "Master Volume"
 horizontal_alignment = 1
 
-[node name="VolumeSlider" type="HSlider" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/VolumeContainer"]
+[node name="VolumeSlider" type="HSlider" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/VolumeContainer" unique_id=1663830204]
 layout_mode = 2
 max_value = 1.0
 step = 0.01
 value = 1.0
 
-[node name="DebugContainer" type="VBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer"]
+[node name="DebugContainer" type="VBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer" unique_id=1950969912]
 layout_mode = 2
 script = ExtResource("3")
 
-[node name="DebugCheckBox" type="CheckBox" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/DebugContainer"]
+[node name="DebugCheckBox" type="CheckBox" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/DebugContainer" unique_id=1910910036]
 layout_mode = 2
 focus_mode = 0
 text = "Show Debug"
 
-[node name="TileCountLabel" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/DebugContainer"]
+[node name="TileCountLabel" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/DebugContainer" unique_id=1005857095]
 layout_mode = 2
 
-[node name="ControlsPanel" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer" instance=ExtResource("5_xxx")]
+[node name="ControlsPanel" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer" unique_id=1222382222 instance=ExtResource("5_xxx")]
 layout_mode = 2
 
-[node name="ReturnButton" type="Button" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer"]
+[node name="ReturnButton" type="Button" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer" unique_id=4019563]
 layout_mode = 2
 text = "RETURN TO MENU"
 
-[node name="CloseButton" type="Button" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer"]
+[node name="CloseButton" type="Button" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer" unique_id=164762612]
 layout_mode = 2
 text = "CLOSE"
 
-[node name="GoatColorContainer" type="VBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer"]
+[node name="GoatColorContainer" type="VBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer" unique_id=1965455162]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer"]
+[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer" unique_id=1731074425]
 layout_mode = 2
 text = "Goat Color (RGB)"
 horizontal_alignment = 1
 
-[node name="R" type="HBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer"]
+[node name="R" type="HBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer" unique_id=57123436]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/R"]
+[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/R" unique_id=931530257]
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 text = "R"
 
-[node name="RedSlider" type="HSlider" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/R"]
+[node name="RedSlider" type="HSlider" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/R" unique_id=1816796314]
 layout_mode = 2
 size_flags_horizontal = 3
 max_value = 1.0
 step = 0.01
 
-[node name="G" type="HBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer"]
+[node name="G" type="HBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer" unique_id=1214229543]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/G"]
+[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/G" unique_id=622357022]
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 text = "G"
 
-[node name="GreenSlider" type="HSlider" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/G"]
+[node name="GreenSlider" type="HSlider" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/G" unique_id=618982569]
 layout_mode = 2
 size_flags_horizontal = 3
 max_value = 1.0
 step = 0.01
 
-[node name="B" type="HBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer"]
+[node name="B" type="HBoxContainer" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer" unique_id=1015990947]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/B"]
+[node name="Label" type="Label" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/B" unique_id=1979282337]
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 text = "B"
 
-[node name="BlueSlider" type="HSlider" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/B"]
+[node name="BlueSlider" type="HSlider" parent="UI/OptionsMenu/PanelContainer/MarginContainer/VBoxContainer/GoatColorContainer/B" unique_id=1905924349]
 layout_mode = 2
 size_flags_horizontal = 3
 max_value = 1.0
 step = 0.01
 
-[node name="PlayerConsole" parent="." instance=ExtResource("6_xxx")]
+[node name="PlayerConsole" type="CanvasLayer" parent="." unique_name_in_owner=true]
+script = ExtResource("7_pconsole")
+
+[node name="Control" type="Control" parent="PlayerConsole" unique_id=651431327]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -344.0
+offset_right = 440.0
+offset_bottom = -20.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PlayerConsole/Control" unique_id=289090941]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PlayerConsole/Control/VBoxContainer" unique_id=1046011799]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="ListPanel" type="PanelContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer" unique_name_in_owner=true]
+visible = false
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_list")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/ListPanel" unique_name_in_owner=true]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="WeaponList" type="VBoxContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/ListPanel/ScrollContainer" unique_name_in_owner=true]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CardContainer" type="VBoxContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer" unique_id=2034826206]
+layout_mode = 2
+size_flags_vertical = 8
+alignment = 2
+
+[node name="CycleNote" type="Label" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/CardContainer" unique_id=1835871709]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.588235)
+theme_override_font_sizes/font_size = 12
+text = "use Q & E to cycle weapons"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="CardsHBox" type="HBoxContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/CardContainer" unique_id=764645966]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WeaponCard" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox" unique_name_in_owner=true instance=ExtResource("8_wcard")]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 260)
+theme_override_styles/panel = SubResource("StyleBoxFlat_wcard")
+
+[node name="AbilityCard" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox" unique_name_in_owner=true instance=ExtResource("9_acard")]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(160, 260)
+theme_override_styles/panel = SubResource("StyleBoxFlat_abil")
+
+[node name="DebugListToggle" type="CheckBox" parent="PlayerConsole/Control/VBoxContainer" unique_name_in_owner=true]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Debug: Show Weapon List"
+
+[node name="ActorCardContainer" type="Control" parent="PlayerConsole" unique_id=275931617]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -340.0
+offset_top = -320.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="ActorCard" parent="PlayerConsole/ActorCardContainer" unique_name_in_owner=true instance=ExtResource("10_actorcard")]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -150.0
+offset_right = 160.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TreeSpecies" load_steps=13 format=3 uid="uid://dsrm8cy5ponwk"]
+[gd_resource type="Resource" script_class="TreeSpecies" format=3 uid="uid://dsrm8cy5ponwk"]
 
 [ext_resource type="Texture2D" uid="uid://powghy8h0ghx" path="res://assets/generated/burnt_stump_simple_1774734102.png" id="2_7x3dn"]
 [ext_resource type="Script" uid="uid://dcflkh02k7vhl" path="res://Play Space/TreeStates/TreeStateData.gd" id="2_statedata"]

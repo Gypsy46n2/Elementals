@@ -1,12 +1,12 @@
 extends CanvasLayer
 
-@onready var weapon_list: VBoxContainer = %WeaponList
-@onready var scroll_container: ScrollContainer = %ScrollContainer
-@onready var weapon_card: WeaponCard = %WeaponCard
-@onready var ability_card: AbilityCard = get_node_or_null("%AbilityCard")
-@onready var actor_card: ActorCard = get_node_or_null("%ActorCard")
-@onready var list_panel: PanelContainer = %ListPanel
-@onready var debug_list_toggle: CheckBox = %DebugListToggle
+@onready var weapon_list: VBoxContainer = $Control/VBoxContainer/HBoxContainer/ListPanel/ScrollContainer/WeaponList
+@onready var scroll_container: ScrollContainer = $Control/VBoxContainer/HBoxContainer/ListPanel/ScrollContainer
+@onready var weapon_card: WeaponCard = $Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox/WeaponCard
+@onready var ability_card: AbilityCard = get_node_or_null("Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox/AbilityCard")
+@onready var actor_card: ActorCard = get_node_or_null("ActorCardContainer/ActorCard")
+@onready var list_panel: PanelContainer = $Control/VBoxContainer/HBoxContainer/ListPanel
+@onready var debug_list_toggle: CheckBox = $Control/VBoxContainer/DebugListToggle
 
 var current_index: int = -1
 var labels: Array[Label] = []

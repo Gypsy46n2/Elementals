@@ -1,4 +1,4 @@
-[gd_resource type="SpriteFrames" load_steps=57 format=3 uid="uid://dj1umojbal427"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://dj1umojbal427"]
 
 [ext_resource type="Texture2D" uid="uid://c0nvhswyy0e8g" path="res://assets/Characters/farmer_sprites/walk_down_0.png" id="3_842y7"]
 [ext_resource type="Texture2D" uid="uid://cwpvklwod1850" path="res://assets/Characters/farmer_sprites/walk_down_1.png" id="4_5xr2v"]

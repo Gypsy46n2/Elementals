@@ -15,6 +15,8 @@ var _actor_markers: Dictionary = {} # Node -> Control
 var _spawn_manager: Node
 var _actors_array: Array
 var _frame_counter: int = 0
+var _debug_mode: bool = false
+var _debug_toggle: CheckBox
 
 func setup(p_arena: Node) -> void:
 	arena = p_arena
@@ -22,6 +24,7 @@ func setup(p_arena: Node) -> void:
 	minimap_container = arena.get_node_or_null("UI/MinimapFrame/MinimapContainer")
 	if minimap_viewport:
 		minimap_camera = minimap_viewport.get_node_or_null("MinimapCamera")
+	_setup_debug_toggle()
 	_setup_minimap()
 	_setup_marker_overlay()
 	_setup_actor_markers()
@@ -30,6 +33,11 @@ func setup(p_arena: Node) -> void:
 	_spawn_manager = arena.get_node_or_null("QuestSpawnManager")
 	_actors_array = arena.get("actors") as Array
 	call_deferred("_refresh_markers")
+
+func _setup_debug_toggle() -> void:
+	_debug_toggle = arena.get_node_or_null("UI/MinimapFrame/DebugToggle")
+	if _debug_toggle != null:
+		_debug_toggle.toggled.connect(_on_debug_toggled)
 
 func _setup_minimap() -> void:
 	if not minimap_viewport: return
@@ -64,12 +72,21 @@ func _connect_quest_signals() -> void:
 		QuestEvents.quest_completed.connect(_on_quest_completed)
 	if not QuestEvents.quest_failed.is_connected(_on_quest_failed):
 		QuestEvents.quest_failed.connect(_on_quest_failed)
-	if not QuestEvents.camps_designated.is_connected(_refresh_markers):
-		QuestEvents.camps_designated.connect(_refresh_markers)
+	if not QuestEvents.camps_designated.is_connected(_on_camps_designated):
+		QuestEvents.camps_designated.connect(_on_camps_designated)
 
 func _on_quest_accepted(_quest_id: String) -> void:
 	# Give the spawn manager one frame to create camps before refreshing markers
+	_spawn_manager = arena.get_node_or_null("QuestSpawnManager")
 	call_deferred("_refresh_markers")
+
+func _on_camps_designated() -> void:
+	_spawn_manager = arena.get_node_or_null("QuestSpawnManager")
+	_refresh_markers()
+
+func _on_debug_toggled(pressed: bool) -> void:
+	_debug_mode = pressed
+	_refresh_markers()
 
 func _on_quest_completed(_quest_id: String, _reward_gold: int) -> void:
 	# Persistent markers should remain for other camps; refresh only
@@ -97,7 +114,7 @@ func _refresh_markers() -> void:
 		var center_value: Variant = record.get("center", null)
 		if center_value == null or not (center_value is Vector3):
 			continue
-		var marker = load("res://Components/Arena/MinimapQuestMarker.gd").new()
+		var marker: Control = QuestMarkerClass.new()
 		marker.name = "Marker_%s" % String(camp_id)
 		marker.set_meta("camp_id", String(camp_id))
 		_marker_container.add_child(marker)
@@ -155,6 +172,12 @@ func _process(_delta: float) -> void:
 				markers_to_remove.append(marker)
 				continue
 			
+			# In normal mode, only show camps for the active quest
+			var camp_quest_id: String = String(record.get("quest_id", ""))
+			if not _debug_mode and not QuestState.active_quests.has(camp_quest_id):
+				marker.visible = false
+				continue
+			
 			var center_value: Variant = record.get("center", null)
 			if center_value == null or not (center_value is Vector3):
 				marker.visible = false
@@ -199,7 +222,7 @@ func _update_actor_markers(scale_x: float, scale_y: float, container_size: Vecto
 		current_actors.append(actor)
 		var marker = _actor_markers.get(actor, null)
 		if marker == null:
-			marker = load("res://Components/Arena/MinimapActorMarker.gd").new()
+			marker = ActorMarkerClass.new()
 			marker.name = "ActorMarker_%s" % actor.name
 			_marker_container.add_child(marker)
 			_actor_markers[actor] = marker
