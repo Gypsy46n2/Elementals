@@ -1,9 +1,9 @@
 class_name TileSignalComponent
 extends Node
 
-## Manages tile-based triggers and signals. 
+## Manages tile-based triggers and signals.
+## Centralizes hex proximity checks, tracks actor tiles, and dispatches enter/exit events so gameplay systems can respond without duplicate distance math. 
 ## Listens for player movement and activates triggers when the player enters their range.
-## © 2026 Micheal Chapin
 
 signal trigger_activated(trigger_data: Dictionary, actor: Node3D)
 signal trigger_deactivated(trigger_data: Dictionary, actor: Node3D)
@@ -85,7 +85,12 @@ func register_trigger(center_tile: Object, radius: int, callback: Callable, meta
 	return trigger
 
 func remove_trigger(trigger: Dictionary) -> void:
-	_triggers.erase(trigger)
+	# Find and remove by reference identity, not value equality.
+	# Array.erase() uses value equality which fails for dictionaries with nested content.
+	for i in range(_triggers.size() - 1, -1, -1):
+		if _triggers[i] == trigger:
+			_triggers.remove_at(i)
+			return
 
 func _on_actor_tile_changed(new_tile: Object, actor: Node3D) -> void:
 	if not is_instance_valid(actor) or new_tile == null:

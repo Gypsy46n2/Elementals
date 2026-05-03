@@ -11,10 +11,6 @@ extends Control
 			goat_data.stats_changed.connect(update_visuals)
 		update_visuals()
 
-@onready var body_rect: TextureRect = $Body
-@onready var pattern_rect: TextureRect = $Pattern
-@onready var horn_rect: TextureRect = $Horns
-
 const ASSETS = {
 	"body": preload("res://assets/experimental/goat_body_quadruped_frame_0_1775009982.png"),
 	"patterns": {
@@ -36,24 +32,6 @@ func _ready() -> void:
 func update_visuals() -> void:
 	if not is_node_ready() or not goat_data:
 		return
-	
-	# Body
-	body_rect.texture = ASSETS["body"]
-	body_rect.self_modulate = goat_data.base_color
-	
-	# Pattern
-	var p_tex = ASSETS["patterns"].get(goat_data.pattern_type)
-	pattern_rect.texture = p_tex
-	pattern_rect.visible = p_tex != null
-	pattern_rect.self_modulate = goat_data.pattern_color
-	
-	# Horns
-	var h_tex = ASSETS["horns"].get(goat_data.horn_type)
-	horn_rect.texture = h_tex
-	horn_rect.visible = h_tex != null
-	# Horns usually aren't tinted by body color, or maybe they are? 
-	# Let's keep them as-is or slightly off-white
-	horn_rect.self_modulate = Color(0.9, 0.9, 0.8) 
 	
 	# Body Type Scaling
 	var scale_factor = 1.0
