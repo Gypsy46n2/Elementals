@@ -4,6 +4,7 @@ extends Control
 @onready var weapon_tab_container: VBoxContainer = $CenterContainer/VBoxContainer/WeaponTabContainer
 @onready var character_cards_container: HBoxContainer = $CenterContainer/VBoxContainer/CharacterTabContainer/ActorSelection/CharacterCards
 @onready var map_settings_container: VBoxContainer = $CenterContainer/VBoxContainer/MapSettingsContainer
+@onready var controls_panel: MarginContainer = $ControlsPanel
 @onready var size_input: SpinBox = $CenterContainer/VBoxContainer/MapSettingsContainer/ArenaSize/SizeInput
 @onready var seed_input: SpinBox = $CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseSeed/SeedInput
 @onready var random_seed_check: CheckBox = $CenterContainer/VBoxContainer/MapSettingsContainer/WorldGen/NoiseSeed/RandomSeedCheck
@@ -253,24 +254,38 @@ func _on_character_tab_button_pressed() -> void:
 	if character_tab_container.visible:
 		weapon_tab_container.visible = false
 		map_settings_container.visible = false
+		controls_panel.visible = false
+	else:
+		_update_controls_panel_visibility()
 
 func _on_weapon_tab_button_pressed() -> void:
 	weapon_tab_container.visible = !weapon_tab_container.visible
 	if weapon_tab_container.visible:
 		character_tab_container.visible = false
 		map_settings_container.visible = false
+		controls_panel.visible = false
+	else:
+		_update_controls_panel_visibility()
 
 func _on_map_settings_button_pressed() -> void:
 	map_settings_container.visible = !map_settings_container.visible
 	if map_settings_container.visible:
 		character_tab_container.visible = false
 		weapon_tab_container.visible = false
+		controls_panel.visible = false
+	else:
+		_update_controls_panel_visibility()
 
 func _on_ranch_button_pressed() -> void:
 	get_tree().change_scene_to_file("res://Components/BreedingComponents/Ranch/Ranch.tscn")
 
 func _on_random_seed_toggled(button_pressed: bool) -> void:
 	seed_input.editable = !button_pressed
+
+func _update_controls_panel_visibility() -> void:
+	# Only show the controls panel when no other panels are visible
+	var no_panels_open = !character_tab_container.visible and !weapon_tab_container.visible and !map_settings_container.visible
+	controls_panel.visible = no_panels_open
 
 func _on_play_button_pressed() -> void:
 	var gs = get_node_or_null("/root/GameSettings")

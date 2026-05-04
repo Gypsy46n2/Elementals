@@ -1,11 +1,11 @@
-[gd_scene load_steps=13 format=3 uid="uid://dy747yc6bbcs3"]
+[gd_scene format=3 uid="uid://dy747yc6bbcs3"]
 
 [ext_resource type="Script" uid="uid://dnnypgaoo7j51" path="res://Play Space/Arena.gd" id="1"]
 [ext_resource type="Script" uid="uid://c0bx554q5f7gv" path="res://Player/CameraFollower.gd" id="2"]
 [ext_resource type="Script" uid="uid://dhnqvq2reqag0" path="res://Play Space/ArenaDebug.gd" id="3"]
 [ext_resource type="Script" uid="uid://ctt3usv2vbaud" path="res://Play Space/OptionsMenu.gd" id="4_xxx"]
-[ext_resource type="Script" uid="uid://ugsediyp1jss" path="res://UI/PlayerConsole.gd" id="7_pconsole"]
 [ext_resource type="PackedScene" path="res://UI/ControlsPanel.tscn" id="5_xxx"]
+[ext_resource type="Script" uid="uid://ugsediyp1jss" path="res://UI/PlayerConsole.gd" id="7_pconsole"]
 [ext_resource type="PackedScene" uid="uid://c4bn2q222h0rt" path="res://UI/DisplayCard/WeaponCard.tscn" id="8_wcard"]
 [ext_resource type="PackedScene" path="res://UI/DisplayCard/AbilityCard.tscn" id="9_acard"]
 [ext_resource type="PackedScene" uid="uid://becy15jcmkmob" path="res://UI/DisplayCard/ActorCard.tscn" id="10_actorcard"]
@@ -83,18 +83,6 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_abil"]
-bg_color = Color(0.08, 0.085, 0.11, 0.94)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.46, 0.36, 0.18, 0.88)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_acard"]
 bg_color = Color(0.08, 0.085, 0.11, 0.94)
 border_width_left = 1
 border_width_top = 1
@@ -341,7 +329,7 @@ size_flags_horizontal = 3
 max_value = 1.0
 step = 0.01
 
-[node name="PlayerConsole" type="CanvasLayer" parent="." unique_name_in_owner=true]
+[node name="PlayerConsole" type="CanvasLayer" parent="." unique_id=344876484]
 script = ExtResource("7_pconsole")
 
 [node name="Control" type="Control" parent="PlayerConsole" unique_id=651431327]
@@ -370,17 +358,17 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 20
 
-[node name="ListPanel" type="PanelContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer" unique_name_in_owner=true]
+[node name="ListPanel" type="PanelContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer" unique_id=174157339]
 visible = false
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_list")
 
-[node name="ScrollContainer" type="ScrollContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/ListPanel" unique_name_in_owner=true]
+[node name="ScrollContainer" type="ScrollContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/ListPanel" unique_id=820868792]
 layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="WeaponList" type="VBoxContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/ListPanel/ScrollContainer" unique_name_in_owner=true]
+[node name="WeaponList" type="VBoxContainer" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/ListPanel/ScrollContainer" unique_id=41306311]
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -401,18 +389,15 @@ vertical_alignment = 2
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="WeaponCard" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox" unique_name_in_owner=true instance=ExtResource("8_wcard")]
+[node name="WeaponCard" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox" unique_id=1899683930 instance=ExtResource("8_wcard")]
 layout_mode = 2
-custom_minimum_size = Vector2(160, 260)
 theme_override_styles/panel = SubResource("StyleBoxFlat_wcard")
 
-[node name="AbilityCard" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox" unique_name_in_owner=true instance=ExtResource("9_acard")]
-visible = false
+[node name="AbilityCard" parent="PlayerConsole/Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox" unique_id=767777420 instance=ExtResource("9_acard")]
 layout_mode = 2
-custom_minimum_size = Vector2(160, 260)
 theme_override_styles/panel = SubResource("StyleBoxFlat_abil")
 
-[node name="DebugListToggle" type="CheckBox" parent="PlayerConsole/Control/VBoxContainer" unique_name_in_owner=true]
+[node name="DebugListToggle" type="CheckBox" parent="PlayerConsole/Control/VBoxContainer" unique_id=801336180]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Debug: Show Weapon List"
@@ -432,17 +417,16 @@ grow_horizontal = 0
 grow_vertical = 0
 mouse_filter = 2
 
-[node name="ActorCard" parent="PlayerConsole/ActorCardContainer" unique_name_in_owner=true instance=ExtResource("10_actorcard")]
-visible = false
+[node name="ActorCard" parent="PlayerConsole/ActorCardContainer" unique_id=177686223 instance=ExtResource("10_actorcard")]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -150.0
-offset_right = 160.0
-offset_bottom = 150.0
+offset_left = -2.0
+offset_top = -136.0
+offset_right = 155.0
+offset_bottom = 119.0
 grow_horizontal = 2
 grow_vertical = 2
