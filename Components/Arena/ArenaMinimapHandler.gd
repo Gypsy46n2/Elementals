@@ -219,6 +219,15 @@ func _update_actor_markers(scale_x: float, scale_y: float, container_size: Vecto
 			continue
 		if "is_dead" in actor and actor.is_dead:
 			continue
+		
+		# Check if actor is spotted by the player (Fog of War)
+		var visual = actor.get("visual_component")
+		if visual and "is_spotted" in visual and not visual.is_spotted:
+			var existing_marker = _actor_markers.get(actor, null)
+			if existing_marker:
+				existing_marker.visible = false
+			continue
+		
 		current_actors.append(actor)
 		var marker = _actor_markers.get(actor, null)
 		if marker == null:

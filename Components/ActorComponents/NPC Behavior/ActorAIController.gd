@@ -3,16 +3,13 @@
 class_name ActorAIController
 extends ActorController
 
-## Reference to the actor node this component controls.
-@export var actor: Node3D
 ## Maximum distance from the starting position the actor will roam.
 @export var roam_radius: float = 22.0
 ## Distance at which the actor can detect enemies.
-## Computed from Wisdom: base 10 + (Wisdom modifier × 2).
 var detection_range: float:
 	get:
-		if actor and actor.ability_scores_component:
-			return 10.0 + (actor.ability_scores_component.wisdom * 2.0)
+		if actor and actor.detection_component:
+			return actor.detection_component.detection_range
 		return 10.0
 ## Distance at which the actor will begin attacking.
 @export var attack_range: float = 10.0
@@ -26,20 +23,12 @@ var _movement_target: Vector3
 ## Local RNG for randomized movement decisions.
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
-## Tracks enemies this actor has successfully perceived.
-var _perceived_enemies: Dictionary = {}
-## Cooldown timer to prevent perception roll spam.
-var _perception_cooldown_timer: float = 0.0
-const PERCEPTION_EXPIRY: float = 3.0
-const PERCEPTION_COOLDOWN: float = 1.0
-
 ## The state machine driving this controller's behavior.
 var state_machine: ActorStateMachine
 
 var _active_obstacles: Array[Dictionary] = []
 var _nearby_cliffs: Array[HexTileData] = []
 var _perception_trigger: Dictionary = {}
-var _actors_in_detection_range: Dictionary = {} # actors within detection_range, maintained by TileSignalComponent
 
 func _ready() -> void:
 	_rng.randomize()
@@ -87,37 +76,13 @@ func _on_global_trigger_entered(trigger: Dictionary, p_actor: Node3D) -> void:
 			_active_obstacles.append(trigger)
 
 func _on_global_trigger_exited(trigger: Dictionary, p_actor: Node3D) -> void:
-	if trigger == _perception_trigger:
-		_actors_in_detection_range.erase(p_actor)
-		_perceived_enemies.erase(p_actor)
-		return
 	if p_actor != actor:
 		return
 	_active_obstacles.erase(trigger)
 
-func _on_perception_trigger_entered(other_actor: Node3D, _metadata: Dictionary) -> void:
-	if other_actor == actor:
-		return
-	_actors_in_detection_range[other_actor] = true
-
 func _on_actor_tile_changed_npc(new_tile: HexTileData) -> void:
 	if not actor or not actor._arena_grid:
 		return
-	
-	# Update mobile perception trigger
-	var signals = actor._arena_grid.tile_signals
-	if signals:
-		if _perception_trigger.is_empty():
-			var hex_size: float = actor._arena_grid.hex_size if actor._arena_grid.get("hex_size") else 1.5
-			var hex_radius: int = int(ceil(detection_range / (sqrt(3.0) * hex_size))) + 1
-			_perception_trigger = signals.register_trigger(
-				new_tile,
-				max(hex_radius, 1),
-				_on_perception_trigger_entered,
-				{"type": "perception", "owner": actor}
-			)
-		else:
-			signals.update_trigger_center(_perception_trigger, new_tile)
 	
 	# Update nearby tiles for cliff detection (Radius 2)
 	var neighbors = actor._arena_grid._get_neighbors(new_tile)
@@ -133,30 +98,6 @@ func _on_actor_tile_changed_npc(new_tile: HexTileData) -> void:
 func _process(delta: float) -> void:
 	if state_machine:
 		state_machine.update(delta)
-	
-	# Update perception cooldown
-	if _perception_cooldown_timer > 0:
-		_perception_cooldown_timer -= delta
-	
-	# Decrement perceived enemy timers and remove expired
-	var expired: Array = []
-	for enemy in _perceived_enemies.keys():
-		if not is_instance_valid(enemy):
-			expired.append(enemy)
-			continue
-		_perceived_enemies[enemy] -= delta
-		if _perceived_enemies[enemy] <= 0:
-			expired.append(enemy)
-	for enemy in expired:
-		_perceived_enemies.erase(enemy)
-	
-	# Clean up stale actors in detection range
-	var stale_actors: Array = []
-	for other in _actors_in_detection_range.keys():
-		if not is_instance_valid(other):
-			stale_actors.append(other)
-	for other in stale_actors:
-		_actors_in_detection_range.erase(other)
 
 func _physics_process(delta: float) -> void:
 	# Stun is now handled as an affected state inside the state machine.
@@ -357,51 +298,11 @@ func _on_actor_resurrected() -> void:
 		state_machine.change_state("roam")
 
 ## Finds the nearest enemy actor that has been successfully perceived.
-## Perception check: d20 + Wisdom modifier vs DC = distance + target's Dexterity modifier.
 func _find_nearest_enemy() -> Node3D:
-	if not actor or not actor._arena_grid:
+	if not actor or not actor.detection_component:
 		return null
 	
-	var nearest: Node3D = null
-	var nearest_dist: float = INF
-	
-	for other in _actors_in_detection_range.keys():
-		if not is_instance_valid(other) or other == actor:
-			continue
-		if not actor.is_enemy(other):
-			continue
-		
-		var dist: float = actor.global_position.distance_to(other.global_position)
-		
-		# Already perceived and not expired
-		if _perceived_enemies.has(other) and _perceived_enemies[other] > 0:
-			if dist < nearest_dist:
-				nearest = other
-				nearest_dist = dist
-			continue
-		
-		# Attempt a new perception check if cooldown allows
-		if _perception_cooldown_timer <= 0 and actor.skill_check_component:
-			var target_dex: float = 0.0
-			if other.get("ability_scores_component"):
-				target_dex = other.ability_scores_component.dexterity
-			
-			var dc: float = dist + target_dex
-			var result: Dictionary = actor.skill_check_component.perform_check(
-				actor.ability_scores_component.wisdom,
-				dc,
-				"Perception",
-				other
-			)
-			_perception_cooldown_timer = PERCEPTION_COOLDOWN
-			
-			if result["success"]:
-				_perceived_enemies[other] = PERCEPTION_EXPIRY
-				if dist < nearest_dist:
-					nearest = other
-					nearest_dist = dist
-	
-	return nearest
+	return actor.detection_component.detect_nearest_enemy()
 
 ## Returns true if the actor's health is below the flee threshold.
 func _should_flee() -> bool:

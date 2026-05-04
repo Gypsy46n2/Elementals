@@ -86,6 +86,7 @@ var faction_component: FactionComponent
 var ability_scores_component: AbilityScoresComponent
 var armor_class_component: ArmorClassComponent
 var skill_check_component: SkillCheckComponent
+var detection_component: DetectionComponent
 
 var is_controlled: bool = false:
 	set(value):
@@ -201,6 +202,12 @@ func _setup_components() -> void:
 	skill_check_component = _add_comp(SkillCheckComponent.new())
 	skill_check_component.setup(self)
 
+	detection_component = _add_comp(DetectionComponent.new())
+	detection_component.setup(self)
+	
+	# Connect detection events to visibility - enemies become visible when spotted
+	detection_component.enemy_perceived.connect(_on_enemy_spotted)
+	
 	# 7. Polish (Bob, Debug)
 	bob_component = _add_comp(BobComponent.new())
 	bob_component.should_bob = should_bob
@@ -228,6 +235,36 @@ func _setup_components() -> void:
 	faction_component = _add_comp(FactionComponent.new())
 	# Default setup - will be overridden by subclasses
 	faction_component.setup(FactionComponent.Faction.PLAYER if is_playable else FactionComponent.Faction.NEUTRAL)
+
+	# Handle initial stealth/hidden state: anything not friendly starts hidden from the player.
+	# Deferred to allow post-spawn faction setup to take effect.
+	call_deferred("_apply_initial_visibility")
+
+func _apply_initial_visibility() -> void:
+	if not is_friendly and not is_playable:
+		if visual_component:
+			visual_component.is_spotted = false
+			visual_component.set_alpha(0.0)
+		if weapon_component:
+			weapon_component.set_spotted(false)
+
+func reveal() -> void:
+	if visual_component and not visual_component.is_spotted:
+		print("[Perception] REVEAL: '", name, "' is now visible.")
+	
+	if visual_component:
+		visual_component.is_spotted = true
+		visual_component.set_alpha(1.0)
+	if weapon_component:
+		weapon_component.set_spotted(true)
+
+## Called when this actor successfully perceives an enemy via the DetectionComponent.
+## The detected enemy's reveal() method is called to make them visible to the player.
+func _on_enemy_spotted(detected_actor: Node3D) -> void:
+	if detected_actor and is_instance_valid(detected_actor):
+		if is_controlled:
+			print("[Perception] SIGNAL: Player actor perceived '", detected_actor.name, "'. Triggering reveal.")
+		detected_actor.reveal()
 
 func is_ally(other: Node) -> bool:
 	return faction_component.is_ally(other)
@@ -327,6 +364,8 @@ func _disable_living_components() -> void:
 		weapon_component.process_mode = Node.PROCESS_MODE_DISABLED
 	if controller:
 		controller.process_mode = Node.PROCESS_MODE_DISABLED
+	if detection_component:
+		detection_component.process_mode = Node.PROCESS_MODE_DISABLED
 	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if collision:
 		collision.set_deferred("disabled", true)
@@ -356,6 +395,8 @@ func _enable_living_components() -> void:
 		weapon_component.process_mode = Node.PROCESS_MODE_INHERIT
 	if controller:
 		controller.process_mode = Node.PROCESS_MODE_INHERIT
+	if detection_component:
+		detection_component.process_mode = Node.PROCESS_MODE_INHERIT
 	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if collision:
 		collision.set_deferred("disabled", false)

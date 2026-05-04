@@ -172,6 +172,17 @@ func set_weapon_modulation(alpha: float) -> void:
 	if _visual_component and _visual_component.has_method("set_modulation"):
 		_visual_component.set_modulation(alpha)
 
+func set_spotted(spotted: bool) -> void:
+	if _visual_component and "_visual_component" in _visual_component:
+		# Double check the internal structure
+		pass
+	
+	if _visual_component:
+		_visual_component.set("is_spotted", spotted)
+		# Refresh modulation
+		if _visual_component.has_method("set_modulation"):
+			_visual_component.set_modulation(_visual_component.get("_current_alpha"))
+
 func update_attack_direction(target_position: Vector3) -> void:
 	if _owner_actor and _owner_actor.visual_component:
 		_owner_actor.visual_component.update_attack_direction(target_position)

@@ -8,6 +8,10 @@ var _weapon_model: Node3D
 var _owner_actor: Node3D
 var _current_alpha: float = 1.0
 
+## If false, the weapon is invisible to the player (alpha 0.0).
+## Syncs with the owner actor's spotted state.
+var is_spotted: bool = true
+
 func setup(p_weapon: Node3D) -> void:
 	_weapon = p_weapon
 	_owner_actor = p_weapon.get("_owner_actor")
@@ -150,6 +154,12 @@ func get_weapon_model() -> Node3D:
 
 func set_modulation(alpha: float) -> void:
 	_current_alpha = alpha
+	
+	if not is_spotted:
+		alpha = 0.0
+	else:
+		alpha = clampf(alpha, 0.0, 1.0)
+		
 	if not _weapon_model: return
 	
 	# Apply to all MeshInstance3D or Sprite3D children

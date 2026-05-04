@@ -103,9 +103,14 @@ func _on_actor_tile_changed(new_tile: Object, actor: Node3D) -> void:
 		var is_inside = distance <= trigger["radius"]
 		var was_inside = actor in trigger["active_actors"]
 		
-		if is_inside and not was_inside:
-			_activate_trigger_for_actor(trigger, actor)
-		elif not is_inside and was_inside:
+		if is_inside:
+			if not was_inside:
+				_activate_trigger_for_actor(trigger, actor)
+			elif trigger["metadata"].get("continuous", false):
+				# Continuous triggers fire every time an actor moves within the radius
+				if trigger["callback"].is_valid():
+					trigger["callback"].call(actor, trigger["metadata"])
+		elif was_inside:
 			_deactivate_trigger_for_actor(trigger, actor)
 
 func _activate_trigger_for_actor(trigger: Dictionary, actor: Node3D) -> void:
@@ -138,7 +143,12 @@ func update_trigger_center(trigger: Dictionary, new_tile: Object) -> void:
 		var is_inside: bool = distance <= trigger["radius"]
 		var was_inside: bool = tracked_actor in trigger["active_actors"]
 		
-		if is_inside and not was_inside:
-			_activate_trigger_for_actor(trigger, tracked_actor)
-		elif not is_inside and was_inside:
+		if is_inside:
+			if not was_inside:
+				_activate_trigger_for_actor(trigger, tracked_actor)
+			elif trigger["metadata"].get("continuous", false):
+				# Continuous triggers fire every time the trigger moves and actors are within radius
+				if trigger["callback"].is_valid():
+					trigger["callback"].call(tracked_actor, trigger["metadata"])
+		elif was_inside:
 			_deactivate_trigger_for_actor(trigger, tracked_actor)

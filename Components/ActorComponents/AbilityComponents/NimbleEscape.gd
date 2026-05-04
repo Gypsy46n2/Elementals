@@ -2,6 +2,11 @@ class_name NimbleEscape
 extends AbilityAction
 
 ## Nimble Escape allows Goblins (and others) to Hide and Disengage efficiently.
+## 
+## Player behavior: When the player holds Shift, the actor becomes semi-transparent (50% alpha)
+## as an indicator that a hide attempt is in progress, regardless of whether the hide succeeds.
+## This gives immediate visual feedback that the player is attempting to hide.
+## The actor returns to full opacity when Shift is released.
 
 var is_hidden: bool = false
 var is_disengaged: bool = false
@@ -19,17 +24,28 @@ func _init(p_actor: Actor, p_component: Node) -> void:
 	_cooldown_timer = randf_range(0.0, NIMBLE_ESCAPE_COOLDOWN)
 
 func can_execute(type: String) -> bool:
-	return _cooldown_timer <= 0.0
+	# Hide releasing (active=false) should always be allowed.
+	# Starting to hide or disengaging is subject to cooldown.
+	# We handle the specific logic in execute().
+	return true
 
 func execute(type: String, value = null) -> void:
-	if _cooldown_timer > 0.0:
-		return
 	match type:
 		"hide":
 			var active: bool = value if value is bool else !_is_hiding_intent
+			# Only starting to hide is blocked by cooldown.
+			# Releasing hide (active=false) is always allowed.
+			if active and _cooldown_timer > 0.0:
+				return
+				
 			_set_hide_active(active)
-			_cooldown_timer = NIMBLE_ESCAPE_COOLDOWN
+			
+			# Only set cooldown when starting to hide
+			if active:
+				_cooldown_timer = NIMBLE_ESCAPE_COOLDOWN
 		"disengage":
+			if _cooldown_timer > 0.0:
+				return
 			var direction: Vector3 = value if value is Vector3 else Vector3.ZERO
 			_disengage(direction)
 			_cooldown_timer = NIMBLE_ESCAPE_COOLDOWN
@@ -55,7 +71,6 @@ func on_attack_performed() -> void:
 		_set_hide_active(false)
 
 func _set_hide_active(active: bool) -> void:
-	if _is_hiding_intent == active: return
 	_is_hiding_intent = active
 	is_hidden = active # Initially hidden
 	_hide_check_timer = 0.0
@@ -142,8 +157,10 @@ func _update_visuals(margin: float = 0.0) -> void:
 	if not _is_hiding_intent:
 		alpha = 1.0
 	elif actor.is_controlled:
-		# Player is always modulated while attempting to hide
-		alpha = 0.2 if is_hidden else 0.5
+		# Player is always 50% alpha while holding Shift to indicate a hide attempt is in progress.
+		# The 50% transparency gives immediate visual feedback that the player is trying to hide,
+		# regardless of whether the stealth check will succeed or fail.
+		alpha = 0.5
 	else:
 		# NPCs are only modulated if hidden
 		if is_hidden:
@@ -151,11 +168,15 @@ func _update_visuals(margin: float = 0.0) -> void:
 		else:
 			alpha = 1.0
 
-	# Apply modulation to actor body recursively
-	if actor._body:
-		_apply_modulation_recursive(actor._body, alpha)
-		
-	# Apply to weapon
+	# Apply alpha to actor's visual component (handles body and weapon)
+	if actor.visual_component:
+		actor.visual_component.set_alpha(alpha)
+	else:
+		# Fallback: apply directly to body
+		if actor._body:
+			_apply_modulation_recursive(actor._body, alpha)
+	
+	# Apply to weapon via weapon component
 	if actor.weapon_component:
 		actor.weapon_component.set_weapon_modulation(alpha)
 

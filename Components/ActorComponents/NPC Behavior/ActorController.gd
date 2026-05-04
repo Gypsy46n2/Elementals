@@ -7,6 +7,9 @@ extends Node
 ## The movement component that this controller will control.
 @export var movement_component: MovementComponent
 
+## Reference to the owning actor.
+@export var actor: Node3D
+
 ## If true, this component ignores AI logic and listens for player input instead.
 @export var is_controlled: bool = false
 
@@ -17,6 +20,8 @@ func _physics_process(delta: float) -> void:
 	
 	if is_controlled:
 		_handle_controlled_input(delta)
+		if actor and actor.detection_component:
+			actor.detection_component.process_update(delta)
 	else:
 		_handle_ai_logic(delta)
 

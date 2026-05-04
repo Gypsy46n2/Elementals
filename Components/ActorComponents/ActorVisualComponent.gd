@@ -17,6 +17,10 @@ var _name_label: Label3D
 var _flash_tween: Tween
 var _goat_base_color: Color = Color.WHITE
 
+## If false, the actor is effectively invisible to the player (alpha 0.0).
+## Set to true when the player's actor successfully performs a perception check.
+var is_spotted: bool = true
+
 # Caching for optimization
 var _camera: Camera3D
 var _last_mouse_pos: Vector2 = Vector2.ZERO
@@ -277,3 +281,59 @@ func fall_over() -> void:
 func stand_up() -> void:
 	if body:
 		body.rotation.x = 0.0
+
+## Sets the transparency (alpha) of the actor's body.
+## [param alpha] should be between 0.0 (invisible) and 1.0 (opaque).
+## [param recursive] controls whether to apply to children as well.
+func set_alpha(alpha: float, recursive: bool = true) -> void:
+	if not body:
+		return
+	
+	if not is_spotted:
+		alpha = 0.15
+	else:
+		alpha = clampf(alpha, 0.0, 1.0)
+	
+	if recursive:
+		_apply_alpha_recursive(body, alpha)
+	else:
+		_apply_alpha_single(body, alpha)
+
+func _apply_alpha_single(node: Node, alpha: float) -> void:
+	if node is SpriteBase3D:
+		node.modulate.a = alpha
+	elif node is GeometryInstance3D:
+		_apply_geometry_alpha(node, alpha)
+
+func _apply_alpha_recursive(node: Node, alpha: float) -> void:
+	_apply_alpha_single(node, alpha)
+	for child in node.get_children():
+		_apply_alpha_recursive(child, alpha)
+
+func _apply_geometry_alpha(node: GeometryInstance3D, alpha: float) -> void:
+	# For gl_compatibility renderer: set instance alpha
+	node.set_instance_shader_parameter("instance_alpha", alpha)
+	
+	if alpha >= 1.0:
+		# Reset to fully opaque
+		if node is MeshInstance3D:
+			var mat = node.get_active_material(0)
+			if mat and mat is StandardMaterial3D and node.material_override and node.material_override.has_meta("is_transparency_override"):
+				node.material_override = null
+		return
+	
+	# Set transparency for opaque-ish actors
+	node.transparency = 1.0 - alpha
+	
+	# Fallback for StandardMaterial3D in Compatibility mode
+	if node is MeshInstance3D:
+		var mat = node.get_active_material(0)
+		if mat is StandardMaterial3D:
+			if not node.material_override or not node.material_override.has_meta("is_transparency_override"):
+				var override = mat.duplicate()
+				override.set_meta("is_transparency_override", true)
+				node.material_override = override
+			
+			if node.material_override is StandardMaterial3D:
+				node.material_override.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				node.material_override.albedo_color.a = alpha
