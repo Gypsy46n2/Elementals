@@ -81,6 +81,20 @@ func _ready() -> void:
 	
 	# Register static world obstacles with the tile signal system
 	call_deferred("_register_static_obstacles")
+	_setup_quest_hud_toggle()
+
+# Instantiates and attaches core logic components.
+# Should not be moved (Orchestrates arena-specific components).
+func _setup_quest_hud_toggle() -> void:
+	var toggle: CheckBox = get_node_or_null("UI/QuestTrackerToggle")
+	if toggle:
+		toggle.toggled.connect(_on_quest_tracker_toggle)
+		_on_quest_tracker_toggle(toggle.button_pressed)
+
+func _on_quest_tracker_toggle(pressed: bool) -> void:
+	var hud: Node = get_node_or_null("UI/QuestTrackerHUD")
+	if hud:
+		hud.visible = pressed
 
 # Instantiates and attaches core logic components.
 # Should not be moved (Orchestrates arena-specific components).

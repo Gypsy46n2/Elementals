@@ -5,8 +5,11 @@ extends CanvasLayer
 @onready var weapon_card: WeaponCard = $Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox/WeaponCard
 @onready var ability_card: AbilityCard = get_node_or_null("Control/VBoxContainer/HBoxContainer/CardContainer/CardsHBox/AbilityCard")
 @onready var actor_card: ActorCard = get_node_or_null("ActorCardContainer/ActorCard")
-@onready var list_panel: PanelContainer = $Control/VBoxContainer/HBoxContainer/ListPanel
-@onready var debug_list_toggle: CheckBox = $Control/VBoxContainer/DebugListToggle
+@onready var list_panel: PanelContainer = get_node_or_null("Control/VBoxContainer/HBoxContainer/ListPanel")
+@onready var debug_list_toggle: CheckBox = get_node_or_null("Control/VBoxContainer/TogglesHBox/DebugListToggle")
+@onready var cards_toggle: CheckBox = get_node_or_null("Control/VBoxContainer/TogglesHBox/CardsToggle")
+@onready var card_container: VBoxContainer = get_node_or_null("Control/VBoxContainer/HBoxContainer/CardContainer")
+@onready var actor_card_container: Control = get_node_or_null("ActorCardContainer")
 
 var current_index: int = -1
 var labels: Array[Label] = []
@@ -21,8 +24,12 @@ func _ready() -> void:
 	ItemsAutoload.ability_selected.connect(_on_ability_selected)
 	ItemsAutoload.actor_selected.connect(_on_actor_selected)
 	
-	debug_list_toggle.toggled.connect(_on_debug_toggled)
-	list_panel.visible = debug_list_toggle.button_pressed
+	if debug_list_toggle:
+		debug_list_toggle.toggled.connect(_on_debug_toggled)
+	if cards_toggle:
+		cards_toggle.toggled.connect(_on_cards_toggled)
+	list_panel.visible = debug_list_toggle.button_pressed if debug_list_toggle else false
+	card_container.visible = cards_toggle.button_pressed if cards_toggle else true
 	
 	if ItemsAutoload.selected_ability:
 		_on_ability_selected(ItemsAutoload.selected_ability)
@@ -35,6 +42,11 @@ func _ready() -> void:
 
 func _on_debug_toggled(p_pressed: bool) -> void:
 	list_panel.visible = p_pressed
+
+func _on_cards_toggled(p_pressed: bool) -> void:
+	card_container.visible = p_pressed
+	if actor_card_container:
+		actor_card_container.visible = p_pressed
 
 func _populate_list() -> void:
 	for child in weapon_list.get_children():

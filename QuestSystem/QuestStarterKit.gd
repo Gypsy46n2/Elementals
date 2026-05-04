@@ -19,7 +19,6 @@ func _install() -> void:
 	
 	_ensure_spawn_manager()
 	_ensure_tile_signal_component()
-	_ensure_tracker_hud()
 	_ensure_board_ui()
 	call_deferred("_ensure_world_board")
 
@@ -42,14 +41,6 @@ func _ensure_spawn_manager() -> void:
 	arena.add_child(node)
 	if node.has_method("setup"):
 		node.call("setup", arena)
-
-func _ensure_tracker_hud() -> void:
-	if arena.has_node("QuestTrackerHUD"):
-		return
-	var hud: CanvasLayer = CanvasLayer.new()
-	hud.name = "QuestTrackerHUD"
-	hud.set_script(load("res://QuestSystem/QuestTrackerHUD.gd"))
-	arena.add_child(hud)
 
 func _ensure_board_ui() -> void:
 	if arena.has_node("QuestBoardUI"):

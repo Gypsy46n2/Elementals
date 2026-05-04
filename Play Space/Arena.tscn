@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://c4bn2q222h0rt" path="res://UI/DisplayCard/WeaponCard.tscn" id="8_wcard"]
 [ext_resource type="PackedScene" path="res://UI/DisplayCard/AbilityCard.tscn" id="9_acard"]
 [ext_resource type="PackedScene" uid="uid://becy15jcmkmob" path="res://UI/DisplayCard/ActorCard.tscn" id="10_actorcard"]
+[ext_resource type="PackedScene" uid="uid://c7q2y6p4r5w2e" path="res://QuestSystem/QuestTrackerHUD.tscn" id="11_questhud"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_norm"]
 bg_color = Color(0.08, 0.085, 0.11, 0.94)
@@ -110,9 +111,25 @@ transform = Transform3D(0.37881806, 0.42209572, -0.82360935, -0.42866814, 0.8687
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1900480586]
 
+[node name="QuestTrackerHUD" parent="UI" unique_id=132504361 instance=ExtResource("11_questhud")]
+offset_left = 9.0
+offset_top = 44.0
+offset_right = 369.0
+offset_bottom = 174.0
+
+[node name="QuestTrackerToggle" type="CheckBox" parent="UI" unique_id=999999999]
+offset_left = 9.0
+offset_top = 8.0
+offset_right = 169.0
+offset_bottom = 39.0
+button_pressed = true
+text = "Show Quest HUD"
+
 [node name="HBoxContainer" type="HBoxContainer" parent="UI" unique_id=1355005749]
-offset_right = 300.0
-offset_bottom = 40.0
+offset_left = 468.0
+offset_top = 11.0
+offset_right = 768.0
+offset_bottom = 51.0
 theme_override_constants/separation = 10
 
 [node name="PrevButton" type="Button" parent="UI/HBoxContainer" unique_id=126023183]
@@ -349,6 +366,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -9.0
+offset_top = 7.0
+offset_right = 121.0
+offset_bottom = 7.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 2
@@ -397,10 +418,20 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_wcard")
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_abil")
 
-[node name="DebugListToggle" type="CheckBox" parent="PlayerConsole/Control/VBoxContainer" unique_id=801336180]
+[node name="TogglesHBox" type="HBoxContainer" parent="PlayerConsole/Control/VBoxContainer" unique_id=1046011800]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DebugListToggle" type="CheckBox" parent="PlayerConsole/Control/VBoxContainer/TogglesHBox" unique_id=801336180]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Debug: Show Weapon List"
+
+[node name="CardsToggle" type="CheckBox" parent="PlayerConsole/Control/VBoxContainer/TogglesHBox" unique_id=364430990]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+button_pressed = true
+text = "Show Cards"
 
 [node name="ActorCardContainer" type="Control" parent="PlayerConsole" unique_id=275931617]
 layout_mode = 3
@@ -425,8 +456,8 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -2.0
-offset_top = -136.0
-offset_right = 155.0
-offset_bottom = 119.0
+offset_top = -129.0
+offset_right = 158.0
+offset_bottom = 131.0
 grow_horizontal = 2
 grow_vertical = 2
