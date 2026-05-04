@@ -1,8 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://cx8j2k3m4p5qr"]
+[gd_scene format=3 uid="uid://cx8j2k3m4p5qr"]
 
-[ext_resource type="Script" uid="uid://cx8j2k3m4p5qs" path="res://UI/CharacterSelectCard.gd" id="1_card"]
+[ext_resource type="Script" uid="uid://lesusbktv3cx" path="res://UI/CharacterSelectCard.gd" id="1_card"]
+[ext_resource type="Texture2D" uid="uid://dcwmg6g1qyccw" path="res://assets/BigImages/NastyGobbo.png" id="2_sd85x"]
 
-[node name="CharacterSelectCard" type="Control"]
+[node name="CharacterSelectCard" type="Control" unique_id=644442579]
 custom_minimum_size = Vector2(180, 320)
 layout_mode = 3
 anchors_preset = 0
@@ -11,7 +12,7 @@ offset_bottom = 340.0
 mouse_filter = 1
 script = ExtResource("1_card")
 
-[node name="SelectionIndicator" type="ColorRect" parent="."]
+[node name="SelectionIndicator" type="ColorRect" parent="." unique_id=183103289]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,7 +21,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.89, 0.67, 0.22, 0.35)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1063098605]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,110 +30,116 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 
-[node name="NameLabel" type="Label" parent="VBoxContainer"]
+[node name="ModelContainer" type="Control" parent="VBoxContainer" unique_id=288061053]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="VBoxContainer/ModelContainer" unique_id=695551357]
+position = Vector2(-22, 7.000014)
+scale = Vector2(0.14257811, 0.14257811)
+texture = ExtResource("2_sd85x")
+centered = false
+
+[node name="NameLabel" type="Label" parent="VBoxContainer" unique_id=763927867]
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Goblin"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ModelContainer" type="Control" parent="VBoxContainer"]
-custom_minimum_size = Vector2(100, 100)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-
-[node name="WeaponButton" type="Button" parent="VBoxContainer"]
+[node name="WeaponButton" type="Button" parent="VBoxContainer" unique_id=1295756807]
 layout_mode = 2
 size_flags_vertical = 4
 text = "<< Dagger >>"
 
-[node name="AbilityButton" type="Button" parent="VBoxContainer"]
+[node name="AbilityButton" type="Button" parent="VBoxContainer" unique_id=1883751372]
 layout_mode = 2
 size_flags_vertical = 4
 text = "<< Disengage >>"
 
-[node name="ArmorButton" type="Button" parent="VBoxContainer"]
+[node name="ArmorButton" type="Button" parent="VBoxContainer" unique_id=2096763376]
 layout_mode = 2
 size_flags_vertical = 4
 text = "<< Leather >>"
 
-[node name="InfoButton" type="Button" parent="VBoxContainer"]
+[node name="InfoButton" type="Button" parent="VBoxContainer" unique_id=1202413390]
 layout_mode = 2
 size_flags_vertical = 4
 text = "[INFO]"
 
-[node name="StatsContainer" type="VBoxContainer" parent="VBoxContainer"]
+[node name="StatsContainer" type="VBoxContainer" parent="VBoxContainer" unique_id=457452600]
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="HPLabel" type="Label" parent="VBoxContainer/StatsContainer"]
+[node name="HPLabel" type="Label" parent="VBoxContainer/StatsContainer" unique_id=1562888902]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "HP: 7/7"
 horizontal_alignment = 1
 
-[node name="ACLabel" type="Label" parent="VBoxContainer/StatsContainer"]
+[node name="ACLabel" type="Label" parent="VBoxContainer/StatsContainer" unique_id=511903171]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "AC: 12"
 horizontal_alignment = 1
 
-[node name="StealthLabel" type="Label" parent="VBoxContainer/StatsContainer"]
+[node name="StealthLabel" type="Label" parent="VBoxContainer/StatsContainer" unique_id=112979538]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Stealth: +6"
 horizontal_alignment = 1
 
-[node name="PerceptionLabel" type="Label" parent="VBoxContainer/StatsContainer"]
+[node name="PerceptionLabel" type="Label" parent="VBoxContainer/StatsContainer" unique_id=1375632929]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Perception: 9"
 horizontal_alignment = 1
 
-[node name="StatsGrid" type="GridContainer" parent="VBoxContainer/StatsContainer"]
+[node name="StatsGrid" type="GridContainer" parent="VBoxContainer/StatsContainer" unique_id=1906003624]
 layout_mode = 2
 theme_override_constants/h_separation = 14
 theme_override_constants/v_separation = 4
 columns = 3
 
-[node name="StrLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+[node name="StrLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid" unique_id=1799308972]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 text = "STR: -1"
 horizontal_alignment = 1
 
-[node name="DexLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+[node name="DexLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid" unique_id=59482329]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 text = "DEX: +2"
 horizontal_alignment = 1
 
-[node name="ConLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+[node name="ConLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid" unique_id=1944901802]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.8, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 text = "CON: 0"
 horizontal_alignment = 1
 
-[node name="IntLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+[node name="IntLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid" unique_id=1776949095]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.6, 1, 1)
 theme_override_font_sizes/font_size = 12
 text = "INT: 0"
 horizontal_alignment = 1
 
-[node name="WisLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+[node name="WisLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid" unique_id=530840931]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.6, 1, 1)
 theme_override_font_sizes/font_size = 12
 text = "WIS: -1"
 horizontal_alignment = 1
 
-[node name="ChaLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid"]
+[node name="ChaLabel" type="Label" parent="VBoxContainer/StatsContainer/StatsGrid" unique_id=331481925]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.6, 1, 1)
 theme_override_font_sizes/font_size = 12

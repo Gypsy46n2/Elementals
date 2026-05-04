@@ -73,53 +73,6 @@ text = "Weapon Selection"
 visible = false
 layout_mode = 2
 
-[node name="NPCSelection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer" unique_id=66535670]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection" unique_id=627183205]
-layout_mode = 2
-text = "NPC Counts:"
-horizontal_alignment = 1
-
-[node name="FireNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection" unique_id=893335018]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/FireNPCs" unique_id=749483873]
-layout_mode = 2
-text = "Fire:"
-
-[node name="FireCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/FireNPCs" unique_id=1372536505]
-layout_mode = 2
-max_value = 20.0
-value = 1.0
-
-[node name="WaterNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection" unique_id=1057475315]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/WaterNPCs" unique_id=39447299]
-layout_mode = 2
-text = "Water:"
-
-[node name="WaterCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/WaterNPCs" unique_id=882650652]
-layout_mode = 2
-max_value = 20.0
-value = 1.0
-
-[node name="GoatNPCs" type="HBoxContainer" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection" unique_id=1370215451]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/GoatNPCs" unique_id=1616383731]
-layout_mode = 2
-text = "Goat:"
-
-[node name="GoatCount" type="SpinBox" parent="CenterContainer/VBoxContainer/WeaponTabContainer/NPCSelection/GoatNPCs" unique_id=632001432]
-layout_mode = 2
-max_value = 20.0
-value = 1.0
-
 [node name="MapSettingsButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=505717547]
 layout_mode = 2
 text = "Map Settings"

@@ -67,12 +67,52 @@ func setup(p_actor_name: String, p_weapons, p_abilities, p_armor, p_selected: bo
 	
 	name_label.text = actor_name.capitalize()
 	
+	_set_character_sprite()
+	
 	# Use saved indices if valid, otherwise default to 0
 	current_weapon_index = clampi(p_weapon_index, 0, max(0, available_weapons.size() - 1))
 	current_ability_index = clampi(p_ability_index, 0, max(0, available_abilities.size() - 1))
 	current_armor_index = clampi(p_armor_index, 0, max(0, available_armor.size() - 1))
 	
 	_update_display()
+
+func _set_character_sprite() -> void:
+	var sprite = model_container.get_node_or_null("Sprite2D") as Sprite2D
+	if not sprite:
+		return
+	
+	# Map actor names to their image resources
+	var clean_name = actor_name.strip_edges().to_lower()
+	match clean_name:
+		"farmer":
+			sprite.texture = preload("res://assets/BigImages/Farmer.png")
+		"goat":
+			sprite.texture = preload("res://assets/BigImages/Screaming Goat.png")
+		"goblin":
+			sprite.texture = preload("res://assets/BigImages/NastyGobbo.png")
+		"fire":
+			sprite.texture = preload("res://assets/generated/Fire Elemental_frame_0.png")
+		"water":
+			sprite.texture = preload("res://assets/generated/Water Elemental_frame_0.png")
+		"scarecrow":
+			sprite.texture = preload("res://assets/generated/Scarecrow Character_frame_0.png")
+		_:
+			print("CharacterSelectCard: No specific image mapping for: '", clean_name, "'")
+			# Try to load a generic one or keep default
+			pass 
+	
+	if sprite.texture:
+		print("CharacterSelectCard: Texture assigned: ", sprite.texture.resource_path)
+		# Center the sprite in the ModelContainer (100x100)
+		sprite.centered = true
+		sprite.position = Vector2(50, 50)
+		
+		# Scale to fit (target ~90px)
+		var tex_size = sprite.texture.get_size()
+		var max_dim = max(tex_size.x, tex_size.y)
+		if max_dim > 0:
+			var target_size = 90.0
+			sprite.scale = Vector2(target_size / max_dim, target_size / max_dim)
 
 func _update_display() -> void:
 	_update_weapon_button()
