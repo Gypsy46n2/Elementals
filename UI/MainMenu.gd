@@ -181,7 +181,9 @@ func _populate_character_cards() -> void:
 		if actor_name == "goblin":
 			stats_dict = GOBLIN_STATS
 		
-		card.character_selected.connect(_on_character_selected.bind(actor_name))
+		# Capture actor_name for the lambda, ignore signal's argument since we use captured value
+		var captured_actor_name = actor_name
+		card.character_selected.connect(func(_sig_arg): _on_character_selected(captured_actor_name))
 		card.equipment_changed.connect(_on_equipment_changed)
 		
 		character_cards_container.add_child(card)

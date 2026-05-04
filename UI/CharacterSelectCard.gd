@@ -56,6 +56,9 @@ func _ready() -> void:
 	# Connect click to select (handles left/right click for cycling)
 	gui_input.connect(_on_card_input)
 	
+	# Make ModelContainer also handle selection clicks
+	model_container.gui_input.connect(_on_model_container_input)
+	
 	_update_display()
 	_update_selection_style()
 
@@ -237,6 +240,12 @@ func _on_card_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			# Select this card
+			character_selected.emit(actor_name)
+
+func _on_model_container_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			# Clicking on the model/sprite area selects this character
 			character_selected.emit(actor_name)
 
 func cycle_weapon() -> void:
