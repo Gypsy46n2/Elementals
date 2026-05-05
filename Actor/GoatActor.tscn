@@ -1,8 +1,8 @@
-[gd_scene load_steps=13 format=3 uid="uid://btcnblfrcs0da"]
+[gd_scene format=3 uid="uid://btcnblfrcs0da"]
 
 [ext_resource type="Script" uid="uid://s3u0jtkv01l2" path="res://Actor/GoatActor.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://difcukmej5l7i" path="res://Actor/GoatModels/GoatModel.tscn" id="2_model"]
-[ext_resource type="Texture2D" uid="uid://putuanp46xin" path="res://assets/generated/shadow_circle_frame_0_1774760543.png" id="3_shadow"]
+[ext_resource type="Texture2D" uid="uid://boxrtg6ooaveb" path="res://assets/generated/shadow_circle_frame_0_1774760543.png" id="3_shadow"]
 [ext_resource type="AudioStream" uid="uid://dgfo0pp6y1iq8" path="res://assets/SoundFiles/ElevenLabs_Alarmed_goat_scream,_sensing_a_predator_nearby.mp3" id="4_k8c4n"]
 [ext_resource type="AudioStream" uid="uid://cssq5sgv227at" path="res://assets/SoundFiles/ElevenLabs_Person_jumping_into_a_pond,_big_water_splash.mp3" id="5_splash"]
 [ext_resource type="AudioStream" uid="uid://p1w0ucmu7w5n" path="res://assets/SoundFiles/Swoosh noise.mp3" id="6_swoosh"]
@@ -17,41 +17,56 @@ script = ExtResource("10_data")
 [sub_resource type="SphereShape3D" id="1"]
 radius = 0.4
 
-[node name="GoatActor" type="CharacterBody3D"]
+[node name="GoatActor" type="CharacterBody3D" unique_id=1143038359]
 collision_layer = 2
 script = ExtResource("1")
+charge_speed = null
+charge_distance = null
+charge_cooldown = null
+scream_cooldown = null
+is_playable = null
+element_type = null
+actor_size = null
+move_speed = null
+max_hp = null
+max_mana = null
+armor_class = null
+projectile_speed = null
+projectile_lifetime = null
+projectile_max_range = null
+should_bob = null
 
-[node name="Body" parent="." instance=ExtResource("2_model")]
+[node name="Body" parent="." unique_id=1702842847 instance=ExtResource("2_model")]
 
-[node name="GeneticComponent" type="Node" parent="." node_paths=PackedStringArray("sprite")]
+[node name="GeneticComponent" type="Node" parent="." unique_id=1469760661 node_paths=PackedStringArray("sprite")]
 script = ExtResource("8_genetic")
 goat_data = SubResource("Resource_Goat")
 sprite = NodePath("../Body")
 
-[node name="AbilityScoresComponent" type="Node" parent="."]
+[node name="AbilityScoresComponent" type="Node" parent="." unique_id=446269906]
 script = ExtResource("9_ability")
 
-[node name="Shadow" type="Sprite3D" parent="."]
+[node name="Shadow" type="Sprite3D" parent="." unique_id=597713818]
 transform = Transform3D(1.5, 0, 0, 0, -6.556708e-08, 0.75, 0, -0.75, -6.556708e-08, 0, 0.01, 0)
 modulate = Color(0, 0, 0, 0.431372)
 texture = ExtResource("3_shadow")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=874586378]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
 shape = SubResource("1")
 
-[node name="TileDetector" type="RayCast3D" parent="."]
+[node name="TileDetector" type="RayCast3D" parent="." unique_id=1981274756]
 
-[node name="ScreamPlayer" type="AudioStreamPlayer3D" parent="."]
+[node name="ScreamPlayer" type="AudioStreamPlayer3D" parent="." unique_id=1587587649]
 stream = ExtResource("4_k8c4n")
 
-[node name="SplashPlayer" type="AudioStreamPlayer3D" parent="."]
+[node name="SplashPlayer" type="AudioStreamPlayer3D" parent="." unique_id=929210487]
 stream = ExtResource("5_splash")
 volume_db = -5.0
 
-[node name="SwooshPlayer" type="AudioStreamPlayer3D" parent="."]
+[node name="SwooshPlayer" type="AudioStreamPlayer3D" parent="." unique_id=1560267580]
 stream = ExtResource("6_swoosh")
 volume_db = -2.0
 
-[node name="WhackPlayer" type="AudioStreamPlayer3D" parent="."]
+[node name="WhackPlayer" type="AudioStreamPlayer3D" parent="." unique_id=708993952]
 stream = ExtResource("7_whack")

@@ -37,10 +37,13 @@ func _init_state_machine() -> void:
 # is fragile and bypasses compile-time checks. Consider caching the result
 # and updating it via signals when control changes rather than polling.
 func _get_player_goat() -> Node3D:
-	if not actor or not actor.get("_arena_grid"):
+	var a := actor as Actor
+	if not a or not a._arena_grid:
 		return null
-	var target = actor.get("_arena_grid").get("current_controlled_actor")
-	if is_instance_valid(target) and target.get("element_type") == "goat" and target != actor:
+	
+	var target := a._arena_grid.current_controlled_actor
+	# Player goat is another goat that is controlled by the player
+	if is_instance_valid(target) and target.element_type == "goat" and target != actor and target.is_controlled:
 		return target
 	return null
 
@@ -52,7 +55,8 @@ func _get_player_goat() -> Node3D:
 # 4. Avoid calling super._handle_ai_logic() from child states (WANDERING/COOLDOWN)
 #    as it creates tight coupling; prefer composition or explicit behavior nodes.
 func _handle_ai_logic(delta: float) -> void:
-	if not actor or not actor.get("_arena_grid") or not movement_component:
+	var a := actor as Actor
+	if not a or not a._arena_grid or not movement_component:
 		return
 		
 	if is_controlled:
@@ -60,13 +64,13 @@ func _handle_ai_logic(delta: float) -> void:
 		
 	# Social rowdiness: speed up if others are nearby
 	var rowdy_bonus = 1.0
-	var arena_grid = actor.get("_arena_grid")
-	for other in arena_grid.get("actors"):
+	var arena_grid := a._arena_grid
+	for other in arena_grid.actors:
 		if is_instance_valid(other) and other.get("element_type") == "goat" and other != actor:
 			if other.global_position.distance_to(actor.global_position) < 8.0:
 				rowdy_bonus += 0.25
 	
-	# Combine rowdy bonus with state-specific multipliers
+	# Combine rowdy bonus with state-specific and terrain multipliers
 	var state_mult = 1.0
 	match current_state:
 		State.WANDERING:
@@ -82,25 +86,38 @@ func _handle_ai_logic(delta: float) -> void:
 			state_mult = 0.5
 			_update_cooldown(delta)
 			
-	movement_component.speed_multiplier = rowdy_bonus * state_mult
+	var terrain_mult: float = a.terrain_speed_modifier_component.get_speed_multiplier()
+	movement_component.speed_multiplier = rowdy_bonus * state_mult * terrain_mult
 
 # REFACTOR: Calling super._handle_ai_logic() inside a state update is a code smell;
 # it re-enters base class logic unpredictably. Inline the needed wandering behavior
-# or delegate to a dedicated WanderingBehavior node. Cache _find_nearby_actor()
-# result to avoid duplicate raycasts/detection work.
+# or delegate to a dedicated WanderingBehavior node.
 func _update_wandering(delta: float) -> void:
 	var player_goat := _get_player_goat()
-	if player_goat and state_machine and state_machine.get_base_state_name() != "flock":
+	var is_flocking := state_machine and state_machine.get_base_state_name() == "flock"
+	
+	# Debug: log flocking state transitions
+	if OS.is_debug_build():
+		if player_goat and not is_flocking:
+			print_debug("[GoatController] ", actor.name, " switching to FLOCK (player: ", player_goat.name, ")")
+		elif not player_goat and is_flocking:
+			print_debug("[GoatController] ", actor.name, " exiting FLOCK (no player goat)")
+	
+	if player_goat and not is_flocking:
 		state_machine.change_state("flock")
-	elif not player_goat and state_machine and state_machine.get_base_state_name() == "flock":
+	elif not player_goat and is_flocking:
 		state_machine.change_state("roam")
 	
-	super._handle_ai_logic(delta)
+	# Only run roam AI when NOT flocking (flock state handles movement)
+	if not is_flocking:
+		super._handle_ai_logic(delta)
 	
-	var target := _find_nearby_actor(player_goat)
-	if target:
-		_target_actor = target
-		_transition_to(State.ALERT)
+	var a := actor as Actor
+	if a and a.detection_component:
+		var target := a.detection_component.detect_nearest_enemy()
+		if target:
+			_target_actor = target
+			_transition_to(State.ALERT)
 
 # REFACTOR: Add null-check for _target_actor before accessing its global_position.
 # Consider using a Tween or Timer node instead of manual _state_timer bookkeeping.
@@ -174,46 +191,3 @@ func get_debug_state() -> String:
 	if is_controlled:
 		return "CONTROLLED"
 	return State.keys()[current_state]
-
-# REFACTOR: Replace magic number 1e9 with INF or a named constant MAX_DISTANCE.
-# The scoring heuristic (dist_to_self + dist_from_player * 0.5) is opaque;
-# extract into a _score_target(target) method with documented weights.
-# Filter by detection_range before sorting to reduce iteration cost.
-# Cache player_goat distance if used in a loop.
-func _find_nearby_actor(p_player_goat: Node3D = null) -> Node3D:
-	if not actor or not actor.get("_arena_grid"):
-		return null
-		
-	var player_goat: Node3D = p_player_goat if p_player_goat else _get_player_goat()
-	var possible_targets: Array[Node3D] = []
-	
-	var arena_grid = actor.get("_arena_grid")
-	for other in arena_grid.get("actors"):
-		if not is_instance_valid(other) or other == actor:
-			continue
-		
-		if actor.is_enemy(other):
-			possible_targets.append(other)
-			
-	if possible_targets.is_empty():
-		return null
-		
-	var best_target: Node3D = null
-	var min_score = INF
-	
-	for target in possible_targets:
-		var dist_to_self = actor.global_position.distance_to(target.global_position)
-		var dist_from_player = player_goat.global_position.distance_to(target.global_position) if player_goat else INF
-		
-		# Candidate if near me OR near the player (herd awareness)
-		if dist_to_self > detection_range and dist_from_player > detection_range:
-			continue
-			
-		# Seek target near player first
-		var score = dist_to_self + (dist_from_player * 0.5)
-			
-		if score < min_score:
-			min_score = score
-			best_target = target
-			
-	return best_target

@@ -57,9 +57,7 @@ func _start_charge(target_pos: Vector3) -> void:
 		_is_charging = true
 		_charge_direction = dir
 
-		var multiplier := 1.0
-		if actor.has_method("_get_speed_multiplier"):
-			multiplier = actor._get_speed_multiplier()
+		var multiplier: float = actor.terrain_speed_modifier_component.get_speed_multiplier()
 
 		_charge_remaining_dist = actor.charge_distance * multiplier
 		_charge_cooldown_timer = actor.charge_cooldown
@@ -74,9 +72,7 @@ func _start_charge(target_pos: Vector3) -> void:
 			arena_grid.apply_element_to_tile(ground_tile, "headbutt")
 
 func _handle_charge_logic(delta: float) -> void:
-	var multiplier := 1.0
-	if actor.has_method("_get_speed_multiplier"):
-		multiplier = actor._get_speed_multiplier()
+	var multiplier: float = actor.terrain_speed_modifier_component.get_speed_multiplier()
 
 	var current_charge_speed: float = actor.charge_speed * multiplier
 

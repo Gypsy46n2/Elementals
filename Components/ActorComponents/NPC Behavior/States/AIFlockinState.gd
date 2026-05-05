@@ -13,6 +13,14 @@ func physics_update(delta: float) -> void:
 	if not actor or not controller or not controller.movement_component:
 		return
 
+	# Check if player goat still exists - if not, fall back to roam
+	var goat_controller: GoatController = controller as GoatController
+	if goat_controller:
+		var player_goat: Node3D = goat_controller._get_player_goat()
+		if not player_goat and state_machine:
+			state_machine.change_state("roam")
+			return
+
 	var current_pos_2d := Vector2(actor.global_transform.origin.x, actor.global_transform.origin.z)
 	var target_pos_2d := Vector2(controller._movement_target.x, controller._movement_target.z)
 
@@ -44,7 +52,10 @@ func _choose_new_target() -> void:
 		return
 
 	var player_goat: Node3D = goat_controller._get_player_goat()
+	
+	# Fall back to random wandering if no player goat exists
 	if not player_goat:
+		_fallback_wander()
 		return
 
 	actor.tile_interaction_component.update_tile_below()
@@ -80,6 +91,30 @@ func _choose_new_target() -> void:
 		else:
 			next_tile = neighbors.pick_random()
 
+	if next_tile:
+		controller._previous_tile = ground_tile
+		controller._movement_target = next_tile.position
+		controller._movement_target.y = actor.global_position.y
+
+func _fallback_wander() -> void:
+	"""Fallback behavior when no player goat is available - wander randomly."""
+	actor.tile_interaction_component.update_tile_below()
+	var ground_tile: HexTileData = actor.tile_interaction_component.get_ground_tile()
+	if not ground_tile:
+		return
+	
+	var neighbors = actor.tile_navigation_component.get_traversable_neighbors(ground_tile)
+	if neighbors.is_empty():
+		return
+	
+	# Try to avoid going back to the previous tile
+	var candidates = neighbors.filter(func(t): return t != controller._previous_tile)
+	var next_tile: HexTileData
+	if candidates.size() > 0:
+		next_tile = candidates[controller._rng.randi_range(0, candidates.size() - 1)]
+	else:
+		next_tile = neighbors[controller._rng.randi_range(0, neighbors.size() - 1)]
+	
 	if next_tile:
 		controller._previous_tile = ground_tile
 		controller._movement_target = next_tile.position

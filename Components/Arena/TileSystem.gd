@@ -26,7 +26,7 @@ func _on_process_timer_timeout() -> void:
 # Process only tiles that are due (within a small epsilon for floating point safety)
 func _process_due_tiles(current_time: float) -> void:
 	var epsilon = 0.05
-	var remaining = []
+	var remaining: Array[Dictionary] = []
 	
 	for entry in _scheduled_tiles:
 		var tile: HexTileData = entry["tile"]
@@ -125,7 +125,8 @@ func _schedule_tile(tile: HexTileData) -> void:
 	_schedule_next_process()
 
 func _unschedule_tile(tile: HexTileData) -> void:
-	_scheduled_tiles = _scheduled_tiles.filter(func(entry): return entry["tile"] != tile)
+	var filtered = _scheduled_tiles.filter(func(entry): return entry["tile"] != tile)
+	_scheduled_tiles.assign(filtered)
 
 # Compatibility wrapper - tiles are now processed via scheduled timers, not per-frame
 func process_tiles(_delta: float) -> void:

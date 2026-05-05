@@ -82,6 +82,7 @@ var visual_component: ActorVisualComponent
 var particle_component: ActorParticleComponent
 var ability_component: AbilityComponent
 var faction_component: FactionComponent
+var terrain_speed_modifier_component: TerrainSpeedModifierComponent
 
 var ability_scores_component: AbilityScoresComponent
 var armor_class_component: ArmorClassComponent
@@ -235,6 +236,10 @@ func _setup_components() -> void:
 	faction_component = _add_comp(FactionComponent.new())
 	# Default setup - will be overridden by subclasses
 	faction_component.setup(FactionComponent.Faction.PLAYER if is_playable else FactionComponent.Faction.NEUTRAL)
+
+	# 9. Terrain Speed Modifier
+	terrain_speed_modifier_component = _add_comp(TerrainSpeedModifierComponent.new())
+	terrain_speed_modifier_component.setup(self)
 
 	# Handle initial stealth/hidden state: anything not friendly starts hidden from the player.
 	# Deferred to allow post-spawn faction setup to take effect.

@@ -59,6 +59,14 @@ func _ready() -> void:
 	add_child(scream_component)
 	scream_component.setup(self, scream_cooldown)
 
+	terrain_speed_modifier_component.configure_multipliers({
+		TileConstants.Type.MUD: 0.5,
+		TileConstants.Type.PUDDLE: 0.7,
+		TileConstants.Type.GRASS: 1.2,
+		TileConstants.Type.STONE: 1.0,
+		TileConstants.Type.FIRE: 1.3
+	})
+
 
 func _on_goat_data_changed() -> void:
 	if not goat_data:
@@ -175,26 +183,6 @@ func _flash_red() -> void:
 func get_actor_color() -> Color:
 	## Returns the thematic color for the goat actor.
 	return Color(0.7, 0.6, 0.4) # A light brown/grey
-
-func _get_speed_multiplier() -> float:
-	## Returns a movement speed multiplier based on the current terrain tile.
-	var ground_tile = tile_interaction_component.get_ground_tile() if tile_interaction_component else null
-	if not ground_tile:
-		return 1.0
-		
-	match ground_tile.tile_type:
-		TileConstants.Type.MUD:
-			return 0.5
-		TileConstants.Type.PUDDLE:
-			return 0.7
-		TileConstants.Type.GRASS:
-			return 1.2
-		TileConstants.Type.STONE:
-			return 1.0
-		TileConstants.Type.FIRE:
-			return 1.3 # Goats run faster when their feet are on fire!
-		_:
-			return 1.0
 
 func _launch_projectile() -> void:
 	## Overrides base projectile logic as goats do not use projectiles.
