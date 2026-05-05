@@ -22,14 +22,8 @@ var scream_component: GoatScreamComponent
 @onready var _swoosh_player: AudioStreamPlayer3D = get_node_or_null("SwooshPlayer")
 
 var goat_data: GoatData:
-	set(v):
-		if goat_data:
-			if goat_data.stats_changed.is_connected(_on_goat_data_changed):
-				goat_data.stats_changed.disconnect(_on_goat_data_changed)
-		goat_data = v
-		if goat_data:
-			goat_data.stats_changed.connect(_on_goat_data_changed)
-			_on_goat_data_changed()
+	get: return _data as GoatData
+	set(v): _data = v
 
 func _init() -> void:
 	element_type = "goat"
@@ -39,9 +33,6 @@ func _ready() -> void:
 	super._ready()
 	if faction_component.faction == FactionComponent.Faction.NEUTRAL:
 		faction_component.setup(FactionComponent.Faction.WILDLIFE)
-	
-	if goat_data:
-		_on_goat_data_changed()
 	
 	get_tree().node_added.connect(_on_node_added)
 	# Connect to existing goats
@@ -68,20 +59,13 @@ func _ready() -> void:
 	})
 
 
-func _on_goat_data_changed() -> void:
+func _on_data_changed_impl() -> void:
 	if not goat_data:
 		return
 	
-	# Performance Stats Scaling
-	ability_scores_component.strength = goat_data.strength
-	ability_scores_component.dexterity = goat_data.dexterity
-	ability_scores_component.constitution = goat_data.constitution
-	ability_scores_component.intelligence = goat_data.intelligence
-	ability_scores_component.wisdom = goat_data.wisdom
-	ability_scores_component.charisma = goat_data.charisma
-
-	move_speed = 3.0 * ability_scores_component.dexterity
-	max_hp = health_component.roll_max_health(1, 8, _rng)
+	# Goat-specific scaling (Base ability scores and move_speed are synced in Actor)
+	if health_component:
+		max_hp = health_component.roll_max_health(1, 8, _rng)
 	
 	charge_speed = 25.0 + (5.0 * ability_scores_component.strength)
 	charge_distance = 5.0 + (1.0 * ability_scores_component.strength)

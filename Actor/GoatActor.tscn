@@ -27,6 +27,7 @@ scream_cooldown = null
 is_playable = null
 element_type = null
 actor_size = null
+data = null
 move_speed = null
 max_hp = null
 max_mana = null

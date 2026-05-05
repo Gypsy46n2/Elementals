@@ -1,7 +1,5 @@
 class_name GoatData
-extends Resource
-
-signal stats_changed
+extends ActorData
 
 enum HornType { NONE, SMALL, LARGE, SPIRAL }
 enum BodyType { SMALL, MEDIUM, LARGE }
@@ -52,37 +50,13 @@ enum Gender { BUCK, DOE }
 		pattern_color = v
 		stats_changed.emit()
 
-@export_group("Ability Scores")
-@export var strength: float = 1.0: # Physical power, influences charge/knockback
-	set(v): 
-		if strength == v: return
-		strength = v
-		stats_changed.emit()
-@export var dexterity: float = 1.0: # Agility, influences move speed
-	set(v): 
-		if dexterity == v: return
-		dexterity = v
-		stats_changed.emit()
-@export var constitution: float = 0: # Endurance, influences HP
-	set(v): 
-		if constitution == v: return
-		constitution = v
-		stats_changed.emit()
-@export var intelligence: float = -4.0: # Reasoning and memory
-	set(v): 
-		if intelligence == v: return
-		intelligence = v
-		stats_changed.emit()
-@export var wisdom: float = 0: # Perception and insight
-	set(v): 
-		if wisdom == v: return
-		wisdom = v
-		stats_changed.emit()
-@export var charisma: float = -3.0: # Force of personality
-	set(v): 
-		if charisma == v: return
-		charisma = v
-		stats_changed.emit()
+func _init() -> void:
+	strength = 1.0
+	dexterity = 1.0
+	constitution = 0.0
+	intelligence = -4.0
+	wisdom = 0.0
+	charisma = -3.0
 
 @export_group("Performance Stats")
 @export var stamina_max: float = 100.0:

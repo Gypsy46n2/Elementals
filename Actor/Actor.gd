@@ -20,6 +20,15 @@ enum Size { SMALL, MEDIUM, LARGE }
 @export var actor_size: Size = Size.MEDIUM
 
 @export_group("Stats")
+@export var _data: ActorData:
+	set(v):
+		if _data:
+			if _data.stats_changed.is_connected(_on_data_changed):
+				_data.stats_changed.disconnect(_on_data_changed)
+		_data = v
+		if _data:
+			_data.stats_changed.connect(_on_data_changed)
+			_on_data_changed()
 @export var move_speed: float = 3.0:
 	set(v):
 		move_speed = v
@@ -129,6 +138,28 @@ func _ready() -> void:
 	_origin = global_transform.origin
 	
 	_setup_components()
+	if _data:
+		_on_data_changed()
+
+func _on_data_changed() -> void:
+	if not _data:
+		return
+	
+	if ability_scores_component:
+		ability_scores_component.strength = _data.strength
+		ability_scores_component.dexterity = _data.dexterity
+		ability_scores_component.constitution = _data.constitution
+		ability_scores_component.intelligence = _data.intelligence
+		ability_scores_component.wisdom = _data.wisdom
+		ability_scores_component.charisma = _data.charisma
+		
+		# Auto-sync move speed based on dexterity
+		move_speed = 3.0 * _data.dexterity
+	
+	_on_data_changed_impl()
+
+func _on_data_changed_impl() -> void:
+	pass
 
 func _on_weapon_selected(p_weapon: WeaponData) -> void:
 	if weapon_component:
