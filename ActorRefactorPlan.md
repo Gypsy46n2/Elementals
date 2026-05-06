@@ -6,21 +6,17 @@ This document outlines the steps to restructure the Godot project to follow best
 
 ---
 
-## Phase 1: Pre-Planning (Safety First)
+## Phase 1: Pre-Planning
 
-### 1.1 Backup Project
-- [ ] Copy entire project folder to a backup location
-- [ ] Verify backup integrity before proceeding
-
-### 1.2 Audit Current State
+### 1.1 Audit Current State
 - [ ] Document all actor-related scripts (.gd) and their current paths
 - [ ] Document all actor-related scenes (.tscn) and their current paths
 - [ ] Identify all preload/load references that will need updating
 - [ ] List all autoloads in project.godot that reference actor paths
 
-### 1.3 Create Project Map
+### 1.2 Create Project Map
 Create a comprehensive inventory spreadsheet:
-| File | Current Path | Type | Dependencies | Priority |
+| File | Current Path | Type | Dependencies | Priority | Status |
 
 ---
 
@@ -71,9 +67,17 @@ res://assets/external/
 
 ## Phase 3: Move Actor Files (Core)
 
+**APPROACH:** Move files one at a time. Get operator verification after each file move to ensure the project doesn't break.
+
 ### 3.1 Base Actor Class
 **Source:** `res://Actor/Actor.gd`
 **Target:** `res://src/actors/base/Actor.gd`
+
+**Steps:**
+1. [ ] Move file from source to target
+2. [ ] Update any preload/load references to this file
+3. [ ] Run project and verify no errors
+4. [ ] **OPERATOR VERIFICATION:** Confirm project loads, main scene runs, and actor spawning works
 
 **Notes:**
 - This is the foundational class for all game entities
@@ -90,6 +94,12 @@ res://assets/external/
 **Source:** `res://Components/ActorComponents/NPC Behavior/ActorAIController.gd`
 **Target:** `res://src/actors/ai/ActorAIController.gd`
 
+**Steps:**
+1. [ ] Move file from source to target
+2. [ ] Update internal imports for state references
+3. [ ] Check for any autoload references to this file
+4. [ ] **OPERATOR VERIFICATION:** Confirm AI controller functions correctly, no path errors
+
 **Notes:**
 - Update internal imports for state references
 - Check for any autoload references to this file
@@ -97,6 +107,18 @@ res://assets/external/
 ### 3.3 Move AI States
 **Source:** `res://Components/ActorComponents/NPC Behavior/States/`
 **Target:** `res://src/actors/ai/states/`
+
+**Steps:**
+1. [ ] Move AIState.gd (base state class)
+2. [ ] **OPERATOR VERIFICATION:** Confirm no errors
+3. [ ] Move AIIdleState.gd
+4. [ ] **OPERATOR VERIFICATION:** Confirm no errors
+5. [ ] Move AIFleeState.gd
+6. [ ] **OPERATOR VERIFICATION:** Confirm no errors
+7. [ ] Move AIChaseState.gd
+8. [ ] **OPERATOR VERIFICATION:** Confirm no errors
+9. [ ] Move AIAttackState.gd
+10. [ ] **OPERATOR VERIFICATION:** Confirm no errors
 
 **Files to move:**
 - AIState.gd
@@ -113,15 +135,31 @@ res://assets/external/
 
 ## Phase 4: Move Actor Type Files
 
+**APPROACH:** Move files one at a time. Get operator verification after each file move to ensure the project doesn't break.
+
 ### 4.1 Move Derived Actor Classes
 **Source:** `res://Actor/`
 **Target:** `res://src/actors/types/`
 
-**Files to move:**
+**Steps (for each file):**
+1. [ ] Move file from source to target
+2. [ ] Update its `extends` statement if needed (e.g., `extends Actor`)
+3. [ ] Update any preload/load references in the file
+4. [ ] **OPERATOR VERIFICATION:** Confirm no errors, actor type functions correctly
+
+**Files to move (in order):**
 - GoatActor.gd
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
 - FireActor.gd
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
 - FarmerActor.gd
-- Any other *_Actor.gd files
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
+- (Any other *_Actor.gd files)
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
 
 **Notes:**
 - Each file needs to update its `extends` statement
@@ -132,11 +170,24 @@ res://assets/external/
 **Source:** `res://Actor/models/*.tscn`
 **Target:** `res://scenes/actors/models/`
 
-**Files to move:**
+**Steps (for each file):**
+1. [ ] Move scene file from source to target
+2. [ ] Update any references to this model in actor scenes
+3. [ ] **OPERATOR VERIFICATION:** Confirm scene loads correctly, model displays properly
+
+**Files to move (in order):**
 - GoatModel.tscn
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
 - GoblinModel.tscn
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
 - BearModel.tscn
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
 - OrcModel.tscn
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
 
 **Notes:**
 - Verify model scenes don't have script dependencies on old path
@@ -146,13 +197,24 @@ res://assets/external/
 
 ## Phase 5: Move Projectiles and Weapons
 
+**APPROACH:** Move files one at a time. Get operator verification after each file move to ensure the project doesn't break.
+
 ### 5.1 Projectile Scenes
 **Source:** `res://Actor/projectiles/*.tscn`
 **Target:** `res://scenes/projectiles/`
 
-**Files to move:**
+**Steps (for each file):**
+1. [ ] Move scene file from source to target
+2. [ ] Update any preload/load references to this file
+3. [ ] **OPERATOR VERIFICATION:** Confirm projectile works correctly, no path errors
+
+**Files to move (in order):**
 - FireProjectile.tscn
-- Other projectile scenes
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
+- (Other projectile scenes)
+  - [ ] Move file
+  - [ ] **OPERATOR VERIFICATION**
 
 **Notes:**
 - Check projectile scripts for path dependencies
@@ -162,6 +224,11 @@ res://assets/external/
 **Source:** `res://Actor/weapons/*.tscn`
 **Target:** `res://scenes/weapons/`
 
+**Steps (for each file):**
+1. [ ] Move scene file from source to target
+2. [ ] Update any references to this weapon
+3. [ ] **OPERATOR VERIFICATION:** Confirm weapon loads correctly
+
 **Notes:**
 - Verify weapon script references
 - Update any weapon spawning code
@@ -170,9 +237,16 @@ res://assets/external/
 
 ## Phase 6: Move Components
 
+**APPROACH:** Move files one at a time. Get operator verification after each file move to ensure the project doesn't break.
+
 ### 6.1 Move Actor Components
 **Source:** `res://Components/ActorComponents/`
 **Target:** `res://src/actors/components/`
+
+**Steps (for each file):**
+1. [ ] Move component file from source to target
+2. [ ] Update any preload/load references to this file
+3. [ ] **OPERATOR VERIFICATION:** Confirm component functions correctly, no path errors
 
 **Files to identify:**
 - List all component .gd files in this folder
@@ -186,9 +260,15 @@ res://assets/external/
 **Source:** `res://Components/ActorComponents/NPC Behavior/`
 **Target:** `res://src/actors/npc_behavior/` (rename: no spaces!)
 
+**Steps:**
+1. [ ] Move individual state files (with verification after each)
+2. [ ] Update any references to old "NPC Behavior" path
+3. [ ] **OPERATOR VERIFICATION:** Confirm AI behavior works correctly
+
 **Notes:**
 - Rename from "NPC Behavior" to "npc_behavior"
 - This prevents path issues on different platforms
+- Update all references in dependent files
 
 ---
 
@@ -335,13 +415,19 @@ Runtime Error: Invalid call. Nonexistent function ...
 
 ## Rollback Plan
 
-If anything goes wrong:
+**Backups are maintained on GitHub.** If anything goes wrong:
 
-1. **Restore from backup** - Copy backup folder over project
+1. **Restore from GitHub** - Revert to previous commit
 2. **Undo moves** - Use version control or manually reverse
 3. **Revert project.godot** - Restore original autoload paths
 
 **IMPORTANT:** Do not proceed to later phases until earlier phases are verified!
+
+**Verification Before Each Step:**
+1. Run project and check for errors
+2. Confirm main scene loads correctly
+3. Test specific functionality being moved
+4. Report any issues immediately
 
 ---
 
@@ -432,6 +518,8 @@ res://src/actors/npc_behavior/
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 1.1*
 *Last Updated: 2025*
 *Status: Ready for Implementation*
+*Approach: Incremental file moves with operator verification after each step*
+*Backup: GitHub*

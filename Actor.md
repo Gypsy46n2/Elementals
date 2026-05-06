@@ -42,9 +42,9 @@ Actor (CharacterBody2D)
 ├── ActorAIController
 │   └── Manages AI state machine
 └── AI States (children of AIState)
-    ├── AIIdleState
-    ├── AIChaseState
-    └── AIAttackState
+	├── AIIdleState
+	├── AIChaseState
+	└── AIAttackState
 ```
 
 ---
@@ -157,13 +157,13 @@ Handles radio chatter and voice line playback.
 ```gdscript
 # Dictionary structure
 {
-    "idle": AudioStreamMP3,
-    "chase": AudioStreamMP3,
-    "attack": AudioStreamMP3,
-    "death": AudioStreamMP3,
-    "alert": AudioStreamMP3,
-    "found_item": AudioStreamMP3,
-    "injured": AudioStreamMP3
+	"idle": AudioStreamMP3,
+	"chase": AudioStreamMP3,
+	"attack": AudioStreamMP3,
+	"death": AudioStreamMP3,
+	"alert": AudioStreamMP3,
+	"found_item": AudioStreamMP3,
+	"injured": AudioStreamMP3
 }
 ```
 
