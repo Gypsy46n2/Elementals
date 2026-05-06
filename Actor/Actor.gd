@@ -117,6 +117,54 @@ var _last_dir: StringName:
 	get: return visual_component.last_dir if visual_component else &"down"
 	set(v): if visual_component: visual_component.last_dir = v
 
+var _tick_callbacks: Array[Dictionary] = []
+var _tick_accumulator: float = 0.0
+
+var _game_clock: GameClockComponent
+
+## Get the centralized game clock (lazy lookup)
+func _get_game_clock() -> GameClockComponent:
+	if not _game_clock:
+		var arena: Node = get_tree().get_first_node_in_group("arena")
+		if arena and arena.has_method("get_game_clock"):
+			_game_clock = arena.get_game_clock()
+		if not _game_clock:
+			# Fallback: get from root
+			var root: Node = get_tree().root
+			_game_clock = root.find_child("GameClock", true, false) as GameClockComponent
+	return _game_clock
+
+## Register a callback to be called every tick via the centralized GameClock.
+## Returns callback ID for removal. Falls back to local ticking if no GameClock found.
+func register_tick(callback: Callable, interval: float = 0.1) -> int:
+	var clock: GameClockComponent = _get_game_clock()
+	if clock:
+		return clock.register_tick(callback, interval)
+	
+	# Fallback to local tick system
+	var id: int = _tick_callbacks.size()
+	_tick_callbacks.append({
+		"callback": callback,
+		"interval": interval,
+		"accumulator": 0.0,
+		"active": true,
+		"id": id
+	})
+	return id
+
+## Unregister a tick callback by ID
+func unregister_tick(id: int) -> void:
+	var clock: GameClockComponent = _get_game_clock()
+	if clock:
+		clock.unregister_tick(id)
+		return
+	
+	# Fallback to local tick system
+	for cb in _tick_callbacks:
+		if cb.get("id") == id:
+			cb["active"] = false
+			break
+
 var weapon: WeaponData:
 	get: return equipped_weapon
 
@@ -241,7 +289,7 @@ func _setup_components() -> void:
 	detection_component.setup(self)
 	
 	# Connect detection events to visibility - enemies become visible when spotted
-	detection_component.enemy_perceived.connect(_on_enemy_spotted)
+	detection_component.actor_perceived.connect(_on_actor_perceived)
 	
 	# 7. Polish (Bob, Debug)
 	bob_component = _add_comp(BobComponent.new())
@@ -306,13 +354,13 @@ func reveal() -> void:
 	if weapon_component:
 		weapon_component.set_spotted(true)
 
-## Called when this actor successfully perceives an enemy via the DetectionComponent.
-## The detected enemy's reveal() method is called to make them visible to the player.
-func _on_enemy_spotted(detected_actor: Node3D) -> void:
-	if detected_actor and is_instance_valid(detected_actor):
+## Called when this actor perceives any other actor via the DetectionComponent.
+## The perceived actor's reveal() method is called to make them visible to the player.
+func _on_actor_perceived(perceived_actor: Node3D) -> void:
+	if perceived_actor and is_instance_valid(perceived_actor):
 		if is_controlled:
-			print("[Perception] SIGNAL: Player actor perceived '", detected_actor.name, "'. Triggering reveal.")
-		detected_actor.reveal()
+			print("[Perception] SIGNAL: Player actor perceived '", perceived_actor.name, "'. Triggering reveal.")
+		perceived_actor.reveal()
 
 func is_ally(other: Node) -> bool:
 	return faction_component.is_ally(other)
@@ -328,10 +376,21 @@ func _add_comp(comp: Node) -> Node:
 func _create_controller() -> ActorAIController:
 	return ActorAIController.new()
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint(): return
 	if is_dead:
 		return
+	
+	# Process central tick callbacks
+	_tick_accumulator += delta
+	if _tick_accumulator >= 0.1:  # 10Hz base tick
+		_tick_accumulator = 0.0
+		for cb in _tick_callbacks:
+			if cb.get("active", true):
+				var callback: Callable = cb.get("callback")
+				if callback.is_valid():
+					callback.call()
+	
 	move_and_slide()
 
 func take_damage(amount: float, type: String = "normal", direction: Vector3 = Vector3.ZERO) -> void:

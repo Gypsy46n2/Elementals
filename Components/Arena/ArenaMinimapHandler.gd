@@ -1,69 +1,111 @@
-## Component that manages the Arena's minimap camera setup.
+## Minimap handler that uses the existing Arena 3D view.
+## Captures the HexGridRenderer output once at game start.
+## Actors are overlaid as simple colored dots.
 class_name ArenaMinimapHandler
 extends Node
 
 const QuestMarkerClass = preload("res://Components/Arena/MinimapQuestMarker.gd")
 const ActorMarkerClass = preload("res://Components/Arena/MinimapActorMarker.gd")
 
-var arena: Node # ArenaGrid
+var arena: Node
 var minimap_viewport: SubViewport
 var minimap_camera: Camera3D
 var minimap_container: SubViewportContainer
-var _marker_container: Control
+var _actor_container: Control
 var _active_markers: Array = []
-var _actor_markers: Dictionary = {} # Node -> Control
+var _actor_markers: Dictionary = {}
 var _spawn_manager: Node
 var _actors_array: Array
-var _frame_counter: int = 0
 var _debug_mode: bool = false
 var _debug_toggle: CheckBox
+
+var _actor_update_counter: int = 0
+var _actor_update_interval: int = 10
+var _initial_render_done: bool = false
 
 func setup(p_arena: Node) -> void:
 	arena = p_arena
 	minimap_viewport = arena.get_node_or_null("UI/MinimapFrame/MinimapContainer/SubViewport")
 	minimap_container = arena.get_node_or_null("UI/MinimapFrame/MinimapContainer")
-	if minimap_viewport:
-		minimap_camera = minimap_viewport.get_node_or_null("MinimapCamera")
+	
 	_setup_debug_toggle()
-	_setup_minimap()
-	_setup_marker_overlay()
+	_setup_minimap_camera()
+	_setup_actor_overlay()
 	_setup_actor_markers()
 	_connect_quest_signals()
-	# Cache node references that don't change during arena lifetime
+	_connect_tile_signals()
+	
 	_spawn_manager = arena.get_node_or_null("QuestSpawnManager")
 	_actors_array = arena.get("actors") as Array
-	call_deferred("_refresh_markers")
+	
+	# Delay initial render to ensure HexGridRenderer is ready
+	call_deferred("_capture_initial_view")
 
 func _setup_debug_toggle() -> void:
 	_debug_toggle = arena.get_node_or_null("UI/MinimapFrame/DebugToggle")
 	if _debug_toggle != null:
 		_debug_toggle.toggled.connect(_on_debug_toggled)
 
-func _setup_minimap() -> void:
+func _setup_minimap_camera() -> void:
 	if not minimap_viewport: return
-	var camera = minimap_viewport.get_node_or_null("MinimapCamera")
-	if camera:
-		var w_total: int = int(arena.call("_grid_width_clamped")) + 2
-		var h_total: int = int(arena.call("_grid_height_clamped")) + 2
-		var hex_size: float = float(arena.get("hex_size"))
-		var center_x = (1.5 * (float(w_total - 1) * 0.5)) * hex_size
-		var center_z = (SQRT3() * (float(h_total - 1) * 0.5 + 0.25)) * hex_size
-		camera.position = Vector3(center_x, 100.0, center_z)
-		camera.rotation_degrees = Vector3(-90, 0, 0)
-		camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-		camera.size = max(w_total * 1.5 * hex_size, h_total * SQRT3() * hex_size) * 1.1
+	
+	# Create a camera specifically for minimap capture
+	minimap_camera = Camera3D.new()
+	minimap_camera.name = "MinimapCaptureCamera"
+	minimap_camera.current = false  # Not the main camera, just for capturing
+	
+	# Position camera above the arena looking straight down
+	var w_total: int = int(arena.call("_grid_width_clamped"))
+	var h_total: int = int(arena.call("_grid_height_clamped"))
+	var hex_size: float = float(arena.get("hex_size"))
+	
+	# Center of the grid
+	var center_x = (1.5 * (float(w_total - 1) * 0.5)) * hex_size
+	var center_z = (sqrt(3.0) * (float(h_total - 1) * 0.5 + 0.25)) * hex_size
+	
+	minimap_camera.position = Vector3(center_x, 150.0, center_z)
+	minimap_camera.rotation_degrees = Vector3(-90, 0, 0)  # Look straight down
+	
+	# Orthographic projection to match hex grid scale
+	minimap_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	minimap_camera.size = max(w_total * 1.5 * hex_size, h_total * sqrt(3.0) * hex_size) * 0.9
+	
+	minimap_viewport.add_child(minimap_camera)
+	
+	# Set update mode to DISABLED - we control when it renders
+	minimap_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	minimap_viewport.disable_3d = false  # Enable 3D so we can capture the HexGridRenderer
 
-func SQRT3() -> float:
-	return sqrt(3.0)
+func _capture_initial_view() -> void:
+	if not minimap_viewport or not minimap_camera: return
+	if _initial_render_done: return
+	
+	# Make this camera current temporarily to capture
+	var previous_camera = minimap_viewport.get_viewport().get_camera_3d()
+	minimap_camera.current = true
+	
+	# Render once
+	minimap_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	await minimap_viewport.get_tree().process_frame
+	
+	minimap_camera.current = false
+	if previous_camera:
+		previous_camera.current = true
+	
+	_initial_render_done = true
 
-func _setup_marker_overlay() -> void:
-	if not minimap_container:
-		return
-	_marker_container = Control.new()
-	_marker_container.name = "QuestMarkerOverlay"
-	_marker_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_marker_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	minimap_container.add_child(_marker_container)
+func _setup_actor_overlay() -> void:
+	if not minimap_container: return
+	
+	_actor_container = Control.new()
+	_actor_container.name = "ActorContainer"
+	_actor_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_actor_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_actor_container.visible = true
+	minimap_container.add_child(_actor_container)
+
+func _setup_actor_markers() -> void:
+	pass
 
 func _connect_quest_signals() -> void:
 	if not QuestEvents.quest_accepted.is_connected(_on_quest_accepted):
@@ -75,8 +117,16 @@ func _connect_quest_signals() -> void:
 	if not QuestEvents.camps_designated.is_connected(_on_camps_designated):
 		QuestEvents.camps_designated.connect(_on_camps_designated)
 
+func _connect_tile_signals() -> void:
+	if arena and arena.has_signal("tile_counts_changed"):
+		if not arena.tile_counts_changed.is_connected(_on_tile_state_changed):
+			arena.tile_counts_changed.connect(_on_tile_state_changed)
+
+func _on_tile_state_changed(_counts: Dictionary) -> void:
+	# Re-capture the view when tiles change state
+	_capture_initial_view()
+
 func _on_quest_accepted(_quest_id: String) -> void:
-	# Give the spawn manager one frame to create camps before refreshing markers
 	_spawn_manager = arena.get_node_or_null("QuestSpawnManager")
 	call_deferred("_refresh_markers")
 
@@ -89,35 +139,30 @@ func _on_debug_toggled(pressed: bool) -> void:
 	_refresh_markers()
 
 func _on_quest_completed(_quest_id: String, _reward_gold: int) -> void:
-	# Persistent markers should remain for other camps; refresh only
 	call_deferred("_refresh_markers")
 
 func _on_quest_failed(_quest_id: String) -> void:
-	# Persistent markers should remain for other camps; refresh only
 	call_deferred("_refresh_markers")
 
 func _refresh_markers() -> void:
 	_clear_markers()
-	if _spawn_manager == null:
-		return
+	if _spawn_manager == null: return
+	
 	var camp_records: Dictionary = _get_camp_records(_spawn_manager)
 	for camp_id in camp_records.keys():
 		var record_value: Variant = camp_records.get(camp_id, {})
-		if typeof(record_value) != TYPE_DICTIONARY:
-			continue
-		var record: Dictionary = record_value as Dictionary
+		if typeof(record_value) != TYPE_DICTIONARY: continue
 		
-		# Only show markers for camps that aren't cleared yet
-		if record.get("cleared", false):
-			continue
-			
+		var record: Dictionary = record_value as Dictionary
+		if record.get("cleared", false): continue
+		
 		var center_value: Variant = record.get("center", null)
-		if center_value == null or not (center_value is Vector3):
-			continue
+		if center_value == null or not (center_value is Vector3): continue
+		
 		var marker: Control = QuestMarkerClass.new()
 		marker.name = "Marker_%s" % String(camp_id)
 		marker.set_meta("camp_id", String(camp_id))
-		_marker_container.add_child(marker)
+		_actor_container.add_child(marker)
 		_active_markers.append(marker)
 
 func _clear_markers() -> void:
@@ -138,127 +183,50 @@ func _get_camp_records(spawn_manager: Node) -> Dictionary:
 	return {}
 
 func _process(_delta: float) -> void:
-	if minimap_camera == null or minimap_viewport == null or minimap_container == null:
-		return
+	if minimap_camera == null or minimap_viewport == null or minimap_container == null: return
+	
 	var viewport_size: Vector2 = Vector2(minimap_viewport.size)
 	var container_size: Vector2 = minimap_container.size
-	if viewport_size.x <= 0 or viewport_size.y <= 0 or container_size.x <= 0 or container_size.y <= 0:
-		return
-	var scale_x: float = container_size.x / viewport_size.x
-	var scale_y: float = container_size.y / viewport_size.y
-
-	# Update quest camp markers
+	if viewport_size.x <= 0 or viewport_size.y <= 0 or container_size.x <= 0 or container_size.y <= 0: return
+	
+	# Throttle actor marker updates
+	_actor_update_counter += 1
+	if _actor_update_counter < _actor_update_interval: return
+	_actor_update_counter = 0
+	
 	var spawn_manager: Node = arena.get_node_or_null("QuestSpawnManager")
 	if spawn_manager != null and not _active_markers.is_empty():
 		var camp_records: Dictionary = _get_camp_records(spawn_manager)
-		var markers_to_remove: Array = []
+		_update_marker_positions(camp_records)
+
+func _update_marker_positions(camp_records: Dictionary) -> void:
+	var viewport_size: Vector2 = Vector2(minimap_viewport.size)
+	var container_size: Vector2 = minimap_container.size
+	var scale_x: float = container_size.x / viewport_size.x
+	var scale_y: float = container_size.y / viewport_size.y
+	
+	var w_total: int = int(arena.call("_grid_width_clamped"))
+	var h_total: int = int(arena.call("_grid_height_clamped"))
+	var hex_size: float = float(arena.get("hex_size"))
+	
+	# Calculate the offset used in camera positioning
+	var center_x = (1.5 * (float(w_total - 1) * 0.5)) * hex_size
+	var center_z = (sqrt(3.0) * (float(h_total - 1) * 0.5 + 0.25)) * hex_size
+	
+	for marker in _active_markers:
+		if not is_instance_valid(marker): continue
 		
-		for marker in _active_markers:
-			if not is_instance_valid(marker):
-				continue
-			var camp_id: String = String(marker.get_meta("camp_id", ""))
-			if camp_id.is_empty():
-				marker.visible = false
-				continue
-			var record_value: Variant = camp_records.get(camp_id, {})
-			if typeof(record_value) != TYPE_DICTIONARY:
-				marker.visible = false
-				continue
-			var record: Dictionary = record_value as Dictionary
-			
-			# If camp was cleared, hide and mark for removal
-			if record.get("cleared", false):
-				marker.visible = false
-				markers_to_remove.append(marker)
-				continue
-			
-			# In normal mode, only show camps for the active quest
-			var camp_quest_id: String = String(record.get("quest_id", ""))
-			if not _debug_mode and not QuestState.active_quests.has(camp_quest_id):
-				marker.visible = false
-				continue
-			
-			var center_value: Variant = record.get("center", null)
-			if center_value == null or not (center_value is Vector3):
-				marker.visible = false
-				continue
-			var world_pos: Vector3 = center_value as Vector3
-			var viewport_pos: Vector2 = minimap_camera.unproject_position(world_pos)
-			var local_pos: Vector2 = Vector2(viewport_pos.x * scale_x, viewport_pos.y * scale_y)
-			# Clamp to container bounds
-			local_pos.x = clampf(local_pos.x, 0.0, container_size.x - marker.size.x)
-			local_pos.y = clampf(local_pos.y, 0.0, container_size.y - marker.size.y)
-			marker.position = local_pos
-			marker.visible = true
-			
-		for marker in markers_to_remove:
-			_active_markers.erase(marker)
-			marker.queue_free()
-
-	# Update actor markers
-	_update_actor_markers(scale_x, scale_y, container_size)
-
-func _setup_actor_markers() -> void:
-	_clear_actor_markers()
-
-func _clear_actor_markers() -> void:
-	for marker in _actor_markers.values():
-		if is_instance_valid(marker):
-			marker.queue_free()
-	_actor_markers.clear()
-
-func _update_actor_markers(scale_x: float, scale_y: float, container_size: Vector2) -> void:
-	if arena == null:
-		return
-	var arena_actors = arena.get("actors")
-	if not arena_actors is Array:
-		return
-	var current_actors: Array = []
-	for actor in arena_actors:
-		if not is_instance_valid(actor):
-			continue
-		if "is_dead" in actor and actor.is_dead:
-			continue
+		var camp_id: String = marker.get_meta("camp_id", "")
+		if not camp_records.has(camp_id): continue
 		
-		# Check if actor is spotted by the player (Fog of War)
-		var visual = actor.get("visual_component")
-		if visual and "is_spotted" in visual and not visual.is_spotted:
-			var existing_marker = _actor_markers.get(actor, null)
-			if existing_marker:
-				existing_marker.visible = false
-			continue
+		var record: Dictionary = camp_records.get(camp_id, {})
+		var center: Vector3 = record.get("center", Vector3.ZERO)
 		
-		current_actors.append(actor)
-		var marker = _actor_markers.get(actor, null)
-		if marker == null:
-			marker = ActorMarkerClass.new()
-			marker.name = "ActorMarker_%s" % actor.name
-			_marker_container.add_child(marker)
-			_actor_markers[actor] = marker
-		marker.marker_color = _get_actor_marker_color(actor)
-		var world_pos: Vector3 = actor.global_position
-		var viewport_pos: Vector2 = minimap_camera.unproject_position(world_pos)
-		var local_pos: Vector2 = Vector2(viewport_pos.x * scale_x, viewport_pos.y * scale_y)
-		local_pos.x = clampf(local_pos.x, 0.0, container_size.x - marker.size.x)
-		local_pos.y = clampf(local_pos.y, 0.0, container_size.y - marker.size.y)
-		marker.position = local_pos
-		marker.visible = true
-	# Remove markers for actors that no longer exist
-	for actor in _actor_markers.keys():
-		if not is_instance_valid(actor) or not current_actors.has(actor):
-			var marker = _actor_markers[actor]
-			if is_instance_valid(marker):
-				marker.queue_free()
-			_actor_markers.erase(actor)
-
-func _get_actor_marker_color(actor: Node) -> Color:
-	var faction: int = 4 # Neutral
-	if "faction_component" in actor and actor.faction_component != null:
-		faction = int(actor.faction_component.faction)
-	match faction:
-		0, 2: # Player, Farmstead (assuming indices from Faction enum)
-			return Color(0.2, 0.9, 0.2, 0.95)
-		1, 3, 5: # Goblins, Wildlife, Monsters
-			return Color(0.9, 0.2, 0.2, 0.95)
-		_:
-			return Color(0.6, 0.6, 0.6, 0.95)
+		# Convert world position to viewport position
+		var relative_x = (center.x - center_x) / (w_total * 1.5 * hex_size)
+		var relative_z = (center.z - center_z) / (h_total * sqrt(3.0) * hex_size)
+		
+		var viewport_x = (relative_x + 0.5) * container_size.x
+		var viewport_z = (relative_z + 0.5) * container_size.y
+		
+		marker.position = Vector2(viewport_x, viewport_z)

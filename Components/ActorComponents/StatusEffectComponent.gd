@@ -2,6 +2,7 @@ class_name StatusEffectComponent
 extends Node
 
 ## Component that handles status effects like burning and water interactions for an Actor.
+## Uses the Actor's central tick system instead of individual timers.
 
 signal burning_started()
 signal burning_damage_taken()
@@ -25,11 +26,11 @@ var _is_in_water: bool = false
 var _actor: Actor
 var _body: Node3D
 var _splash_player: AudioStreamPlayer3D
+var _sink_tween: Tween
 
-var _burn_timer: Timer
-var _damage_tick_timer: Timer
-var _tile_check_timer: Timer
-var _splash_timer: Timer
+# Tick callback IDs for cleanup
+var _fast_tick_id: int = -1
+var _slow_tick_id: int = -1
 
 func setup(actor: Actor) -> void:
 	_actor = actor
@@ -38,9 +39,10 @@ func setup(actor: Actor) -> void:
 	_setup_fire_particles()
 	if actor.health_component:
 		actor.health_component.damage_received.connect(_on_damage_received)
-
-func _ready() -> void:
-	_setup_timers()
+	
+	# Register with central game clock (replaces 4 individual timers)
+	_fast_tick_id = _actor.register_tick(_on_fast_tick, TILE_CHECK_INTERVAL)
+	_slow_tick_id = _actor.register_tick(_on_slow_tick, 1.0)
 
 func _setup_fire_particles() -> void:
 	_fire_particles = GPUParticles3D.new()
@@ -62,31 +64,41 @@ func _setup_fire_particles() -> void:
 		"emission_box_extents": Vector3(0.3, 0.1, 0.3)
 	})
 
-func _setup_timers() -> void:
-	# Timers auto-start when added to the scene tree
-	_burn_timer = _create_timer("BurnTimer", TILE_CHECK_INTERVAL, _on_burn_timer_timeout, false, true)
-	_damage_tick_timer = _create_timer("DamageTickTimer", DAMAGE_TICK_INTERVAL, _on_damage_tick_timeout, false, true)
-	_tile_check_timer = _create_timer("TileCheckTimer", TILE_CHECK_INTERVAL, _on_tile_check_timer_timeout, false, true)
-	_splash_timer = _create_timer("SplashTimer", SPLASH_INTERVAL, _on_splash_timer_timeout, false, true)
-
-func _create_timer(name: String, wait_time: float, callback: Callable, one_shot: bool, autostart: bool = true) -> Timer:
-	var timer: Timer = Timer.new()
-	timer.name = name
-	timer.wait_time = wait_time
-	timer.one_shot = one_shot
-	timer.timeout.connect(callback)
-	add_child(timer)
-	if autostart:
-		timer.start()
-	return timer
-
 func _physics_process(_delta: float) -> void:
-	# Handle water sinking visual after BobComponent has set the position
-	if _is_in_water and _body:
-		var sprite: Sprite3D = _body as Sprite3D
-		if sprite:
-			var sink_offset: float = -SINK_OFFSET_PIXELS * sprite.pixel_size * sprite.scale.y
-			_body.position.y += sink_offset
+	pass  # All timing routed through GameClockComponent, sinking handled by tweens
+
+func _start_sinking() -> void:
+	if not _body or not is_instance_valid(_body):
+		return
+	if _sink_tween and _sink_tween.is_valid():
+		_sink_tween.kill()
+	var sink_offset: float = -SINK_OFFSET_PIXELS * (_body.scale.y * 0.01)
+	_sink_tween = create_tween()
+	_sink_tween.tween_property(_body, "position:y", sink_offset, 0.5).from_current()
+
+func _stop_sinking() -> void:
+	if _sink_tween and _sink_tween.is_valid():
+		_sink_tween.kill()
+	_sink_tween = create_tween()
+	_sink_tween.tween_property(_body, "position:y", 0.0, 0.5).from_current()
+
+func _on_fast_tick() -> void:
+	# Fast tick (0.1s) - handles tile checks and burn countdown
+	if _burning_time_left > 0:
+		_burning_time_left -= TILE_CHECK_INTERVAL
+		if _burning_time_left <= 0:
+			_end_burning()
+	else:
+		_check_ground_tile()
+
+func _on_slow_tick() -> void:
+	# 1.0s tick - handles burn damage and splash sounds
+	if _burning_time_left > 0:
+		_actor.take_damage(1, "burning", Vector3.UP)
+		burning_damage_taken.emit()
+	if _is_in_water:
+		_play_splash()
+		splash_triggered.emit()
 
 func is_burning() -> bool:
 	return _burning_time_left > 0.0
@@ -99,30 +111,7 @@ func extinguish() -> void:
 		_burning_time_left = 0.0
 		if _fire_particles:
 			_fire_particles.emitting = false
-		_burn_timer.stop()
-		_damage_tick_timer.stop()
 		burning_ended.emit()
-
-func _on_burn_timer_timeout() -> void:
-	if _burning_time_left > 0:
-		_burning_time_left -= TILE_CHECK_INTERVAL
-		if _burning_time_left <= 0:
-			_end_burning()
-	else:
-		_check_ground_tile()
-
-func _on_damage_tick_timeout() -> void:
-	if _burning_time_left > 0:
-		_actor.take_damage(1, "burning", Vector3.UP)
-		burning_damage_taken.emit()
-
-func _on_tile_check_timer_timeout() -> void:
-	if _burning_time_left <= 0:
-		_check_ground_tile()
-
-func _on_splash_timer_timeout() -> void:
-	_play_splash()
-	splash_triggered.emit()
 
 func _start_burning() -> void:
 	if _burning_time_left <= 0:
@@ -130,8 +119,6 @@ func _start_burning() -> void:
 		_actor.take_damage(1, "burning", Vector3.UP)
 		burning_damage_taken.emit()
 		burning_started.emit()
-		_damage_tick_timer.start()
-		_burn_timer.start()
 	else:
 		_burning_time_left = BURN_DURATION
 
@@ -139,7 +126,6 @@ func _end_burning() -> void:
 	var was_burning: bool = _fire_particles != null and _fire_particles.emitting
 	if _fire_particles:
 		_fire_particles.emitting = false
-	_damage_tick_timer.stop()
 	if was_burning:
 		burning_ended.emit()
 
@@ -152,7 +138,7 @@ func _check_ground_tile() -> void:
 	elif ground_tile and ground_tile.tile_type == TileConstants.Type.PUDDLE:
 		if not _is_in_water:
 			_is_in_water = true
-			_splash_timer.start()
+			_start_sinking()
 			entered_water.emit()
 
 		if _burning_time_left > 0:
@@ -160,7 +146,7 @@ func _check_ground_tile() -> void:
 	else:
 		if _is_in_water:
 			_is_in_water = false
-			_splash_timer.stop()
+			_stop_sinking()
 			exited_water.emit()
 
 func _play_splash() -> void:
@@ -172,3 +158,10 @@ func _on_damage_received(_amount: float, type: String) -> void:
 		_start_burning()
 	elif type == "water":
 		extinguish()
+
+func _exit_tree() -> void:
+	# Cleanup tick registrations
+	if _fast_tick_id >= 0:
+		_actor.unregister_tick(_fast_tick_id)
+	if _slow_tick_id >= 0:
+		_actor.unregister_tick(_slow_tick_id)

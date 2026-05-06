@@ -171,7 +171,7 @@ stretch = true
 [node name="SubViewport" type="SubViewport" parent="UI/MinimapFrame/MinimapContainer" unique_id=778743302]
 handle_input_locally = false
 size = Vector2i(196, 196)
-render_target_update_mode = 4
+render_target_update_mode = 0  # UPDATE_DISABLED - we update on-demand when tiles change
 
 [node name="MinimapCamera" type="Camera3D" parent="UI/MinimapFrame/MinimapContainer/SubViewport" unique_id=1787515761]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 53.91008, 100, 46.125)

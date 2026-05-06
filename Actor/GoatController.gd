@@ -114,7 +114,7 @@ func _update_wandering(delta: float) -> void:
 	
 	var a := actor as Actor
 	if a and a.detection_component:
-		var target := a.detection_component.detect_nearest_enemy()
+		var target := a.detection_component.detect_nearest_actor()
 		if target:
 			_target_actor = target
 			_transition_to(State.ALERT)

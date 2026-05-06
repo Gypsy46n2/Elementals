@@ -25,6 +25,7 @@ var actors: Array[Node3D] = []
 var renderer: HexGridRenderer
 var tile_system: TileSystem
 var physics: ArenaPhysics
+var game_clock: GameClockComponent
 var tile_interaction: ArenaTileInteractionComponent
 var tile_signals: TileSignalComponent
 var ui_component: Node # ArenaUIHandler
@@ -98,7 +99,14 @@ func _on_quest_tracker_toggle(pressed: bool) -> void:
 
 # Instantiates and attaches core logic components.
 # Should not be moved (Orchestrates arena-specific components).
+func get_game_clock() -> GameClockComponent:
+	return game_clock
+
 func _setup_components() -> void:
+	game_clock = GameClockComponent.new()
+	game_clock.name = "GameClock"
+	add_child(game_clock)
+	
 	renderer = HexGridRenderer.new()
 	renderer.name = "HexGridRenderer"
 	renderer.tile_scale = tile_scale

@@ -12,6 +12,15 @@ var _player_near: bool = false
 var _board_tile: HexTileData = null
 var _built: bool = false
 
+## Reference to TileSignalComponent for efficient event-driven proximity detection.
+var _tile_signal_component: TileSignalComponent = null
+
+## Proximity trigger for player detection.
+var _proximity_trigger: Dictionary = {}
+
+## Proximity radius in tiles (approximately matches OPEN_DISTANCE).
+const PROXIMITY_RADIUS: int = 3
+
 const OPEN_DISTANCE: float = 5.5
 
 func setup(p_arena: Node) -> void:
@@ -24,23 +33,6 @@ func _ready() -> void:
 		arena = get_parent()
 	_build_once()
 	call_deferred("_place_near_spawn")
-	
-	var timer = Timer.new()
-	timer.name = "PlayerConnectionTimer"
-	timer.wait_time = 1.0
-	timer.autostart = true
-	timer.timeout.connect(_check_player_connection)
-	add_child(timer)
-
-func _check_player_connection() -> void:
-	var player_node: Node3D = _get_player_node()
-	if player_node != null and player_node.has_signal("tile_changed"):
-		if not player_node.tile_changed.is_connected(_on_player_tile_changed):
-			player_node.tile_changed.connect(_on_player_tile_changed)
-	
-	# Fallback proximity check every second in case signals are missed 
-	# or player is moving within a single tile.
-	_on_player_tile_changed(null)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -146,18 +138,63 @@ func _place_near_spawn() -> void:
 	if arena.has_method("get_tile_data_at_world_position"):
 		_board_tile = arena.call("get_tile_data_at_world_position", global_position)
 
-	if player_node != null and player_node.has_signal("tile_changed"):
-		if not player_node.tile_changed.is_connected(_on_player_tile_changed):
-			player_node.tile_changed.connect(_on_player_tile_changed)
-		
-		var player_tile = null
-		if player_node.get("tile_interaction_component"):
-			player_tile = player_node.tile_interaction_component.get_ground_tile()
-		if player_tile:
-			_on_player_tile_changed(player_tile)
+	# Setup TileSignalComponent for efficient proximity detection.
+	_setup_proximity_trigger()
 	
 	if base_position != Vector3.ZERO:
 		rotation.y = 0  # Face south
+
+## Registers a proximity trigger with TileSignalComponent to detect when player is near.
+func _setup_proximity_trigger() -> void:
+	_tile_signal_component = null
+	_proximity_trigger = {}
+	
+	if arena == null or not arena.get("tile_signals"):
+		push_warning("QuestBoard3D: No TileSignalComponent found")
+		return
+	
+	_tile_signal_component = arena.tile_signals as TileSignalComponent
+	if _tile_signal_component == null:
+		push_warning("QuestBoard3D: tile_signals is not a TileSignalComponent")
+		return
+	
+	# Connect to trigger_deactivated signal to detect when player leaves range.
+	if not _tile_signal_component.trigger_deactivated.is_connected(_on_global_trigger_deactivated):
+		_tile_signal_component.trigger_deactivated.connect(_on_global_trigger_deactivated)
+	
+	# Register trigger centered on the board tile.
+	if _board_tile != null:
+		var callback: Callable = _on_proximity_trigger_activated
+		var metadata: Dictionary = {"board": self}
+		_proximity_trigger = _tile_signal_component.register_trigger(_board_tile, PROXIMITY_RADIUS, callback, metadata)
+		
+		# Do an immediate check to set initial state.
+		_player_near = _can_player_open_board()
+		_update_player_near()
+
+## Called when any trigger is deactivated - check if it's our proximity trigger.
+func _on_global_trigger_deactivated(trigger_data: Dictionary, actor: Node3D) -> void:
+	if trigger_data == _proximity_trigger and is_instance_valid(actor):
+		if actor.get("is_playable") == true:
+			_player_near = false
+			_update_player_near()
+
+## Cleans up the proximity trigger.
+func _cleanup_proximity_trigger() -> void:
+	if _tile_signal_component != null and not _proximity_trigger.is_empty():
+		_tile_signal_component.remove_trigger(_proximity_trigger)
+	_proximity_trigger = {}
+	_tile_signal_component = null
+
+## Called when an actor enters our proximity trigger.
+func _on_proximity_trigger_activated(entered_actor: Node3D, metadata: Dictionary) -> void:
+	if not is_instance_valid(entered_actor):
+		return
+	
+	# Only respond when the player (is_playable) enters our range.
+	if entered_actor.get("is_playable") == true:
+		_player_near = true
+		_update_player_near()
 
 func _get_player_node() -> Node3D:
 	if arena == null or not is_instance_valid(arena):
@@ -210,10 +247,6 @@ func _update_player_near() -> void:
 		else:
 			prompt_label.visible = false
 			prompt_label.text = "Quest Board"
-
-func _on_player_tile_changed(_new_tile: HexTileData) -> void:
-	_player_near = _can_player_open_board()
-	_update_player_near()
 
 func _can_player_open_board() -> bool:
 	var player_node: Node3D = _get_player_node()

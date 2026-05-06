@@ -302,7 +302,7 @@ func _find_nearest_enemy() -> Node3D:
 	if not actor or not actor.detection_component:
 		return null
 	
-	return actor.detection_component.detect_nearest_enemy()
+	return actor.detection_component.detect_nearest_actor()
 
 ## Returns true if the actor's health is below the flee threshold.
 func _should_flee() -> bool:

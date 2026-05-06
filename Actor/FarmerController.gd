@@ -10,10 +10,12 @@ var current_state: State = State.PATROLLING
 
 var _target_goat: Node3D = null
 var _state_timer: float = 0.0
+var _cached_farm_center: Vector3
 
 func _ready() -> void:
 	super._ready()
 	_rng.randomize()
+	_cached_farm_center = farm_center
 
 func _handle_ai_logic(delta: float) -> void:
 	if not actor or not actor.get("_arena_grid") or is_controlled:
@@ -46,7 +48,7 @@ func _update_herding(_delta: float) -> void:
 		return
 		
 	var dist_to_goat = actor.global_position.distance_to(_target_goat.global_position)
-	var goat_dist_to_center = _target_goat.global_position.distance_to(farm_center)
+	var goat_dist_to_center = _target_goat.global_position.distance_to(_cached_farm_center)
 	
 	if goat_dist_to_center < 5.0:
 		# Goat is back home
@@ -54,7 +56,7 @@ func _update_herding(_delta: float) -> void:
 		return
 		
 	# Move to the opposite side of the goat from the center
-	var dir_from_center = (_target_goat.global_position - farm_center).normalized()
+	var dir_from_center = (_target_goat.global_position - _cached_farm_center).normalized()
 	_movement_target = _target_goat.global_position + dir_from_center * 2.0
 	
 	if dist_to_goat < nudge_range:

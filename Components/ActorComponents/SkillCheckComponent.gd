@@ -10,10 +10,11 @@ func setup(p_actor: Node) -> void:
 	_owner_actor = p_actor
 
 ## Performs a standard d20 skill check.
+## Optional params allow detailed logging: stat_value (e.g. WIS), distance_mod, tiles
 ## Returns a Dictionary with: success (bool), roll (float), total (float), is_critical (bool)
-func perform_check(stat_value: float, difficulty: float, check_name: String = "Check", opponent: Node = null) -> Dictionary:
+func perform_check(total_mod: float, difficulty: float, check_name: String = "Check", opponent: Node = null, stat_value: float = 0.0, distance_mod: float = 0.0, tiles: int = 0) -> Dictionary:
 	var d20: int = randi() % 20 + 1
-	var total: float = d20 + stat_value
+	var total: float = d20 + stat_value + distance_mod
 	
 	# Natural 20 is typically an automatic success in these systems
 	var success: bool = (d20 == 20) or (total >= difficulty)
@@ -29,14 +30,21 @@ func perform_check(stat_value: float, difficulty: float, check_name: String = "C
 		var vs_text: String = ""
 		if opponent:
 			vs_text = " vs [%s]" % opponent.name
-			
-		var stat_str: String = str(stat_value) if stat_value != int(stat_value) else str(int(stat_value))
-		var total_str: String = str(result.total) if result.total != int(result.total) else str(int(result.total))
-		var dc_str: String = str(difficulty) if difficulty != int(difficulty) else str(int(difficulty))
-
-		print("[%s]%s %s Roll: %d + %s = %s (vs DC %s) | %s" % [
-			_owner_actor.name, vs_text, check_name, result.roll, stat_str, total_str, dc_str, 
-			"SUCCESS" if result.success else "FAILURE"
+		
+		var dist_sign: String = "+" if distance_mod >= 0 else ""
+		var dist_bonus_str: String = dist_sign + str(int(distance_mod))
+		
+		print("[%s]%s %s: d20=%d + WIS=%d + Dist=%s (%d tiles) = %d vs DC %d | %s" % [
+			_owner_actor.name,
+			vs_text,
+			check_name,
+			d20,
+			int(stat_value),
+			dist_bonus_str,
+			tiles,
+			int(total),
+			int(difficulty),
+			"SUCCESS" if success else "FAILURE"
 		])
 	
 	return result

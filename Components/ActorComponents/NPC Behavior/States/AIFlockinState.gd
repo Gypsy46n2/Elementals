@@ -4,6 +4,9 @@ extends AIState
 var _target_reached_threshold: float = 0.2
 var _retarget_timer: float = 0.0
 var _retarget_interval: float = 1.0
+var _cached_neighbors: Array[HexTileData] = []
+var _sort_ascending: bool = true  # true = seeking player, false = repelling
+var _last_player_pos: Vector3 = Vector3.ZERO
 
 func enter() -> void:
 	_retarget_timer = 0.0
@@ -73,16 +76,20 @@ func _choose_new_target() -> void:
 
 	if dist_to_player > goat_controller.max_follow_distance:
 		# Seek player: pick neighbor closest to player
-		neighbors.sort_custom(func(a, b):
+		_cached_neighbors = neighbors.duplicate()
+		_cached_neighbors.sort_custom(func(a, b):
 			return a.position.distance_to(player_goat.global_position) < b.position.distance_to(player_goat.global_position)
 		)
-		next_tile = neighbors[0]
+		_sort_ascending = true
+		next_tile = _cached_neighbors[0]
 	elif dist_to_player < goat_controller.min_follow_distance:
 		# Repel/Maintain: pick neighbor further from player
-		neighbors.sort_custom(func(a, b):
+		_cached_neighbors = neighbors.duplicate()
+		_cached_neighbors.sort_custom(func(a, b):
 			return a.position.distance_to(player_goat.global_position) > b.position.distance_to(player_goat.global_position)
 		)
-		next_tile = neighbors[0]
+		_sort_ascending = false
+		next_tile = _cached_neighbors[0]
 	else:
 		# Random wander within neighbors
 		var candidates = neighbors.filter(func(t): return t != controller._previous_tile)
