@@ -1,19 +1,20 @@
 class_name GoatScreamComponent
-extends Node
+extends CommunicationComponent
 
 ## Handles goat screaming mechanics including visuals, cooldowns, and social responses.
+## Extends CommunicationComponent for call-and-response behavior.
 
 const SCREAM_TEXTURE = preload("res://assets/generated/scream_bubble_frame_0_1774821924.png")
-const MAX_CONCURRENT_RESPONSES: int = 2
-static var _pending_responses_count: int = 0
 
-var actor: GoatActor
-var scream_cooldown: float = 2.0
+@export_group("Scream Settings")
+## The minimum time in seconds between consecutive screams for this goat.
+@export var scream_cooldown: float = 2.0
+
 var _scream_timer: float = 0.0
 
-func setup(p_actor: GoatActor, p_cooldown: float = 2.0) -> void:
-	actor = p_actor
-	scream_cooldown = p_cooldown
+func _ready() -> void:
+	super._ready()
+	broadcast_signal_name = &"screamed"  # Override with goat-specific signal
 
 func update(delta: float) -> void:
 	if _scream_timer > 0:
@@ -25,8 +26,30 @@ func can_scream() -> bool:
 func try_scream() -> bool:
 	if _scream_timer > 0:
 		return false
-	_scream()
+	broadcast()
 	return true
+
+## Override: Check if goat is stunned (can't respond if stunned).
+func _should_respond(source_actor: Actor, source_pos: Vector3) -> bool:
+	if not super._should_respond(source_actor, source_pos):
+		return false
+	
+	# Don't respond if stunned
+	if actor.has_method("is_stunned") and actor.is_stunned():
+		return false
+	
+	# Don't respond if currently charging
+	var ability_comp = actor.get("ability_component")
+	if ability_comp:
+		for action in ability_comp.actions:
+			if action.has("is_charging") and action.is_charging:
+				return false
+	
+	return true
+
+## Override: Delegate actual scream to the cooldown-protected method.
+func _execute_response(source_actor: Actor, source_pos: Vector3) -> void:
+	_scream()
 
 func _scream() -> void:
 	_scream_timer = scream_cooldown
@@ -34,30 +57,7 @@ func _scream() -> void:
 	if player and player.stream:
 		player.play()
 	_show_scream_visual()
-	actor.screamed.emit(actor.global_position)
-
-func try_respond_to_scream(pos: Vector3) -> void:
-	if _scream_timer > 0 or _pending_responses_count >= MAX_CONCURRENT_RESPONSES:
-		return
-	if pos.distance_to(actor.global_position) >= 15.0 or randf() >= 0.25:
-		return
-
-	_pending_responses_count += 1
-	var timer := actor.get_tree().create_timer(randf_range(0.3, 1.2))
-	timer.timeout.connect(func() -> void:
-		_pending_responses_count -= 1
-		if not is_instance_valid(actor):
-			return
-		var is_charging := false
-		var ability_comp = actor.get("ability_component")
-		if ability_comp:
-			for action in ability_comp.actions:
-				if action is GoatCharge and action.is_charging:
-					is_charging = true
-					break
-		if not is_charging and not actor.is_stunned():
-			try_scream()
-	)
+	actor.emit_signal("screamed", actor.global_position)
 
 func _show_scream_visual() -> void:
 	var sprite := Sprite3D.new()

@@ -93,6 +93,9 @@ var ability_component: AbilityComponent
 var faction_component: FactionComponent
 var terrain_speed_modifier_component: TerrainSpeedModifierComponent
 
+var status_effect_component: StatusEffectComponent
+var communication_component: CommunicationComponent
+
 var ability_scores_component: AbilityScoresComponent
 var armor_class_component: ArmorClassComponent
 var skill_check_component: SkillCheckComponent
@@ -271,6 +274,15 @@ func _setup_components() -> void:
 	# 9. Terrain Speed Modifier
 	terrain_speed_modifier_component = _add_comp(TerrainSpeedModifierComponent.new())
 	terrain_speed_modifier_component.setup(self)
+
+	# 10. Status Effects & Communication
+	status_effect_component = StatusEffectComponent.new()
+	status_effect_component.setup(self)
+	_add_comp(status_effect_component)
+
+	communication_component = CommunicationComponent.new()
+	communication_component.setup(self)
+	_add_comp(communication_component)
 
 	# Handle initial stealth/hidden state: anything not friendly starts hidden from the player.
 	# Deferred to allow post-spawn faction setup to take effect.

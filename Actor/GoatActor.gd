@@ -5,6 +5,9 @@ extends Actor
 ## Specialized Actor that represents a goat.
 ## Features a charge attack, terrain-based speed modifiers, and specialized visual effects.
 
+## Emitted when this goat screams, allowing other goats to respond.
+signal screamed(position: Vector3)
+
 @export_group("Goat Charge")
 ## The speed at which the goat charges forward.
 @export var charge_speed: float = 25.0
@@ -12,10 +15,9 @@ extends Actor
 @export var charge_distance: float = 5.0
 ## The time in seconds between consecutive charges.
 @export var charge_cooldown: float = 1.0
-## The minimum time in seconds between consecutive screams for this goat.
-@export var scream_cooldown: float = 2.0
 
-var status_effect_component: StatusEffectComponent
+## Goat-specific scream component (extends base CommunicationComponent).
+## Handles scream visuals, cooldowns, and social responses.
 var scream_component: GoatScreamComponent
 
 @onready var _whack_player: AudioStreamPlayer3D = get_node_or_null("WhackPlayer")
@@ -31,25 +33,13 @@ func _init() -> void:
 
 func _ready() -> void:
 	super._ready()
-	if faction_component.faction == FactionComponent.Faction.NEUTRAL:
-		faction_component.setup(FactionComponent.Faction.WILDLIFE)
 	
-	get_tree().node_added.connect(_on_node_added)
-	# Connect to existing goats
-	for node in get_tree().get_nodes_in_group("goats"):
-		if node != self:
-			node.screamed.connect(_on_other_goat_screamed)
-	add_to_group("goats")
-
-	status_effect_component = StatusEffectComponent.new()
-	add_child(status_effect_component)
-	status_effect_component.setup(self)
-	status_effect_component.burning_damage_taken.connect(_on_burning_damage_taken)
-
+	# Set up GoatScreamComponent for goat-specific screaming (visuals, cooldowns)
 	scream_component = GoatScreamComponent.new()
+	scream_component.setup(self)
 	add_child(scream_component)
-	scream_component.setup(self, scream_cooldown)
-
+	
+	# Configure goat-specific terrain speed modifiers
 	terrain_speed_modifier_component.configure_multipliers({
 		TileConstants.Type.MUD: 0.5,
 		TileConstants.Type.PUDDLE: 0.7,
@@ -57,6 +47,12 @@ func _ready() -> void:
 		TileConstants.Type.STONE: 1.0,
 		TileConstants.Type.FIRE: 1.3
 	})
+
+	# Configure goat-specific communication (uses the "screamed" signal)
+	if communication_component:
+		communication_component.broadcast_signal_name = &"screamed"
+		communication_component.range = 15.0
+		communication_component.probability = 0.25
 
 
 func _on_data_changed_impl() -> void:
@@ -93,12 +89,12 @@ const THWAK_TEXTURE = preload("res://assets/generated/thwak_popup_frame_0_177491
 func _create_controller() -> ActorAIController:
 	return GoatController.new()
 
-signal screamed(pos: Vector3)
-
 func _process(delta: float) -> void:
 	## Main update loop handling visual updates and cooldowns.
 	if scream_component:
 		scream_component.update(delta)
+	if status_effect_component and status_effect_component.is_burning():
+		_flash_red()
 
 func _physics_process(delta: float) -> void:
 	## Extends physics processing to delegate charge logic to the AbilityComponent.
@@ -203,13 +199,3 @@ func _scream() -> void:
 	## Triggers the goat's iconic scream sound and visual effect.
 	if scream_component:
 		scream_component.try_scream()
-
-func _on_other_goat_screamed(pos: Vector3) -> void:
-	## If another goat screams nearby, this goat might scream back.
-	if scream_component:
-		scream_component.try_respond_to_scream(pos)
-
-func _on_node_added(node: Node) -> void:
-	if node is GoatActor and node != self:
-		if not node.screamed.is_connected(_on_other_goat_screamed):
-			node.screamed.connect(_on_other_goat_screamed)

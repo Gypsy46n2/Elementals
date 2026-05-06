@@ -20,22 +20,6 @@ radius = 0.4
 [node name="GoatActor" type="CharacterBody3D" unique_id=1143038359]
 collision_layer = 2
 script = ExtResource("1")
-charge_speed = null
-charge_distance = null
-charge_cooldown = null
-scream_cooldown = null
-is_playable = null
-element_type = null
-actor_size = null
-data = null
-move_speed = null
-max_hp = null
-max_mana = null
-armor_class = null
-projectile_speed = null
-projectile_lifetime = null
-projectile_max_range = null
-should_bob = null
 
 [node name="Body" parent="." unique_id=1702842847 instance=ExtResource("2_model")]
 

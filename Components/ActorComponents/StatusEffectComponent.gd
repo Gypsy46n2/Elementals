@@ -36,9 +36,11 @@ func setup(actor: Actor) -> void:
 	_body = actor.get_node_or_null("Body")
 	_splash_player = actor.get_node_or_null("SplashPlayer")
 	_setup_fire_particles()
-	_setup_timers()
 	if actor.health_component:
 		actor.health_component.damage_received.connect(_on_damage_received)
+
+func _ready() -> void:
+	_setup_timers()
 
 func _setup_fire_particles() -> void:
 	_fire_particles = GPUParticles3D.new()
@@ -61,13 +63,11 @@ func _setup_fire_particles() -> void:
 	})
 
 func _setup_timers() -> void:
-	# Don't start timers yet - they only get started when status effects activate
-	_burn_timer = _create_timer("BurnTimer", TILE_CHECK_INTERVAL, _on_burn_timer_timeout, false, false)
-	_damage_tick_timer = _create_timer("DamageTickTimer", DAMAGE_TICK_INTERVAL, _on_damage_tick_timeout, false, false)
-	_tile_check_timer = _create_timer("TileCheckTimer", TILE_CHECK_INTERVAL, _on_tile_check_timer_timeout, false, false)
-	_splash_timer = _create_timer("SplashTimer", SPLASH_INTERVAL, _on_splash_timer_timeout, false, false)
-	# Start the tile check timer to monitor for fire/water tiles
-	_tile_check_timer.start()
+	# Timers auto-start when added to the scene tree
+	_burn_timer = _create_timer("BurnTimer", TILE_CHECK_INTERVAL, _on_burn_timer_timeout, false, true)
+	_damage_tick_timer = _create_timer("DamageTickTimer", DAMAGE_TICK_INTERVAL, _on_damage_tick_timeout, false, true)
+	_tile_check_timer = _create_timer("TileCheckTimer", TILE_CHECK_INTERVAL, _on_tile_check_timer_timeout, false, true)
+	_splash_timer = _create_timer("SplashTimer", SPLASH_INTERVAL, _on_splash_timer_timeout, false, true)
 
 func _create_timer(name: String, wait_time: float, callback: Callable, one_shot: bool, autostart: bool = true) -> Timer:
 	var timer: Timer = Timer.new()
