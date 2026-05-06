@@ -627,21 +627,16 @@ Updated all scene external references in actor/projectile scenes.
 - **AttackHitboxMaterial.tres**: Updated shader path from `res://Actor/AttackHitbox.gdshader` to `res://assets/Shaders/AttackHitbox.gdshader`
 - **DefaultGoat.tres**: Updated GoatVisuals path from `res://Actor/GoatVisuals.gd` to `res://src/actors/types/GoatVisuals.gd`
 
-### ⚠️ Known Issue: Shader Caching
-**Issue**: Error persists: `Cannot load shader: res://Actor/AttackHitbox.gdshader`
-
-**Root Cause**: Godot 4.x maintains internal caches (`.godot/uid_cache.bin`, scene import caches) that track file locations. These caches are NOT automatically updated when files are moved using file operations - only when Godot's editor itself handles the file move.
-
-**Solution**: The user needs to perform a **Project Restart**:
-1. Close the Godot Editor completely (not just the current project)
-2. Delete the `.godot` folder in the project directory
-3. Reopen the project - Godot will regenerate all caches with correct paths
-
-Alternatively, within the editor:
-1. Project → Restart Project (or close and reopen)
-2. If the error persists, use Project → Remove Current Project, then reopen
+### Phase 11: Final Cleanup ✅
+- User restarted Godot project - shader cache cleared
+- Deleted 13 orphaned .uid files from old Actor/ folder:
+  - Elemental.gd.uid, ElementalDecisionComponent.gd.uid, FarmerDecisionComponent.gd.uid
+  - FarmerElemental.gd.uid, FireElemental.gd.uid, GoatDecisionComponent.gd.uid
+  - GoatElemental.gd.uid, GoblinDecisionComponent.gd.uid, GoblinMinion_temp2.gd.uid
+  - NewGoblin.gd.uid, BaseProjectile.test.gd.uid, BaseProjectile_NEW.gd.uid, WaterElemental.gd.uid
 
 ### Remaining Items
-- [ ] User must restart Godot project to clear shader cache
-- [ ] Old Actor/ folder has .uid files that should be deleted after verification
-- Some scene files still reference Components/ActorComponents/ paths (expected - component scripts)
+- [x] User restarted Godot project to clear shader cache ✅
+- [x] Deleted old Actor/ .uid files after verification ✅
+- [x] Components/ActorComponents/ paths intentionally kept (actor-specific components)
+- [x] REFACTOR COMPLETE - all major goals achieved

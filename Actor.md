@@ -4,8 +4,8 @@
 ================================================================================
 VERSION CONTROL
 ================================================================================
-Document Version: 1.0
-Last Synced:     2025-01-09
+Document Version: 1.1
+Last Synced:     2025-01-10
 Godot Version:   4.2+
 
 SYNC RULE: When modifying actor structure (add/remove/modify components,
@@ -14,6 +14,7 @@ same commit. Keep version numbers in sync across files.
 
 VERSION LOG:
   v1.0 (2025-01-09) - Initial documentation
+  v1.1 (2025-01-10) - Updated file paths to reflect directory restructuring
 ================================================================================
 -->
 
@@ -27,24 +28,21 @@ The Actor system is a modular, component-based architecture for game entities. I
 
 ```
 Actor (CharacterBody2D)
-├── StatsComponent
-│   └── Handles: health, stamina, movement speed, damage
-├── HealthComponent
-│   └── Handles: death, damage events, invincibility frames
-├── CommunicationComponent
-│   └── Handles: radio chatter, voice lines, proximity dialogue
-├── TerrainSpeedModifierComponent
-│   └── Handles: speed multipliers based on terrain type
-├── SkillCheckComponent
-│   └── Handles: lockpicking, hacking, persuasion events
-├── AbilityComponent
-│   └── Handles: special actions, cooldowns, activation
-├── ActorAIController
-│   └── Manages AI state machine
-└── AI States (children of AIState)
+├── Components (in res://Components/ActorComponents/)
+│   ├── HealthComponent        - Death, damage events, invincibility frames
+│   ├── MovementComponent      - Movement speed, acceleration
+│   ├── CommunicationComponent - Radio chatter, voice lines
+│   ├── TerrainSpeedModifierComponent - Speed multipliers by terrain
+│   ├── SkillCheckComponent    - Lockpicking, hacking, persuasion
+│   ├── AbilityComponent      - Special actions, cooldowns
+│   └── (more components...)
+├── ActorAIController         - Manages AI state machine
+├── FactionComponent           - Faction relationships
+└── AI States (in res://src/actors/ai/states/)
 	├── AIIdleState
 	├── AIChaseState
-	└── AIAttackState
+	├── AIAttackState
+	└── (more states...)
 ```
 
 ---
@@ -60,8 +58,7 @@ The base class for all game actors (players, enemies, NPCs).
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `stats: StatsComponent` | StatsComponent | — | Reference to stats component |
-| `current_health: float` | float | `stats.max_health` | Current health pool |
+| `current_health: float` | float | `max_health` | Current health pool |
 | `can_take_damage: bool` | bool | `true` | Damage gate |
 | `is_invincible: bool` | bool | `false` | Invincibility frames active |
 | `invincibility_duration: float` | float | `0.2` | Invincibility duration after hit |
@@ -91,106 +88,33 @@ func die() -> void
 ```
 Triggers death sequence and emits `died` signal.
 
-```gdscript
-func get_stat(stat_name: String) -> Variant
-```
-Retrieves a stat value by name from StatsComponent.
-
 ---
 
-## Stat Component
+## Components
 
-**File:** `res://src/actors/components/StatsComponent.gd`
+Components are located in `res://Components/ActorComponents/`. See individual component files for detailed documentation.
 
-### Properties
+### HealthComponent
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `max_health: float` | float | Maximum health pool |
-| `base_damage: float` | float | Base damage dealt |
-| `base_armor: float` | float | Damage reduction |
-| `base_speed: float` | float | Movement speed |
-| `base_stamina: float` | float | Stamina pool |
-| `speed_multiplier: float` | float | Speed scaling factor |
+**File:** `res://Components/ActorComponents/HealthComponent.gd`
 
----
+Manages actor health with invincibility frames.
 
-## Health Component
+### MovementComponent
 
-**File:** `res://src/actors/components/HealthComponent.gd`
+**File:** `res://Components/ActorComponents/MovementComponent.gd`
 
-### Properties
+Handles movement speed, acceleration, and terrain modifications.
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `owner_actor: Actor` | Actor | Reference to parent actor |
-| `max_health: float` | float | Maximum health |
-| `current_health: float` | float | Current health |
-| `invincibility_duration: float` | float | Post-damage invincibility window |
+### CommunicationComponent
 
-### Signals
-
-| Signal | Parameters | Description |
-|--------|------------|-------------|
-| `health_depleted` | — | Emitted when health hits 0 |
-| `health_changed` | `old_value: float, new_value: float` | Emitted on health change |
-
----
-
-## Communication Component
-
-**File:** `res://src/actors/components/CommunicationComponent.gd`
+**File:** `res://Components/ActorComponents/CommunicationComponent.gd`
 
 Handles radio chatter and voice line playback.
 
-### Properties
+### TerrainSpeedModifierComponent
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `audio_stream_player: AudioStreamPlayer` | AudioStreamPlayer | Audio playback node |
-| `voice_lines: Dictionary` | Dictionary | Audio stream keyed by event type |
-| `voice_cooldown: float` | float | Minimum time between lines |
-| `current_voice_cooldown: float` | float | Cooldown timer |
-
-### Voice Line Events
-
-```gdscript
-# Dictionary structure
-{
-	"idle": AudioStreamMP3,
-	"chase": AudioStreamMP3,
-	"attack": AudioStreamMP3,
-	"death": AudioStreamMP3,
-	"alert": AudioStreamMP3,
-	"found_item": AudioStreamMP3,
-	"injured": AudioStreamMP3
-}
-```
-
-### Methods
-
-```gdscript
-func play_voice_line(event_type: String) -> void
-```
-Plays the voice line for the given event if cooldown allows.
-
-```gdscript
-func set_voice_line(event_type: String, audio_stream: AudioStream) -> void
-```
-Assigns an audio stream to an event type.
-
----
-
-## Terrain Speed Modifier Component
-
-**File:** `res://src/actors/components/TerrainSpeedModifierComponent.gd`
-
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `current_terrain: TerrainType` | enum | Active terrain type |
-| `base_speed: float` | float | Actor's base speed |
+**File:** `res://Components/ActorComponents/TerrainSpeedModifierComponent.gd`
 
 ### Terrain Types
 
@@ -207,93 +131,33 @@ enum TerrainType { GRASS, SAND, WATER, ROCK }
 | WATER | 0.5 |
 | ROCK | 0.8 |
 
-### Methods
+### SkillCheckComponent
 
-```gdscript
-func update_terrain(terrain: TerrainType) -> void
-```
-Sets terrain and recalculates speed.
-
-```gdscript
-func get_modified_speed() -> float
-```
-Returns speed after terrain modifier.
-
----
-
-## Skill Check Component
-
-**File:** `res://src/actors/components/SkillCheckComponent.gd`
+**File:** `res://Components/ActorComponents/SkillCheckComponent.gd`
 
 Handles contextual skill events (lockpicking, hacking, persuasion).
-
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `skill_type: SkillType` | enum | Current skill being used |
-
-### Skill Types
 
 ```gdscript
 enum SkillType { LOCKPICKING, HACKING, PERSUASION }
 ```
 
-### Signals
+### AbilityComponent
 
-| Signal | Parameters | Description |
-|--------|------------|-------------|
-| `skill_check_started` | `skill_type: SkillType` | Emitted when skill check begins |
-| `skill_check_completed` | `skill_type: SkillType, success: bool` | Emitted on completion |
-
-### Methods
-
-```gdscript
-func start_skill_check(skill: SkillType) -> void
-```
-Initiates a skill check and emits `skill_check_started`.
-
-```gdscript
-func complete_skill_check(success: bool) -> void
-```
-Completes the skill check with result.
-
----
-
-## Ability Component
-
-**File:** `res://src/actors/components/AbilityComponent.gd`
+**File:** `res://Components/ActorComponents/AbilityComponent.gd`
 
 Manages special abilities with cooldown management.
 
-### Properties
+### Ability Components
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `ability_scene: PackedScene` | PackedScene | Scene to spawn on activation |
-| `ability_cooldown: float` | float | Cooldown duration |
-| `current_cooldown: float` | float | Remaining cooldown |
-| `ability_owner: Node2D` | Node2D | Owner for spawned scene |
-| `ability_instance: Node2D` | Node2D | Active instance |
+Located in `res://Components/ActorComponents/AbilityComponents/`:
 
-### Signals
-
-| Signal | Parameters | Description |
-|--------|------------|-------------|
-| `ability_ready` | — | Emitted when cooldown completes |
-| `ability_activated` | — | Emitted on successful activation |
-
-### Methods
-
-```gdscript
-func try_activate_ability() -> bool
-```
-Attempts activation. Returns `true` if cooldown is ready and owner is valid.
-
-```gdscript
-func reset_cooldown() -> void
-```
-Resets cooldown to 0.
+| File | Description |
+|------|-------------|
+| `AbilityComponent.gd` | Base ability management |
+| `AbilityAction.gd` | Action triggers |
+| `GoatCharge.gd` | Goat-specific charge ability |
+| `NimbleEscape.gd` | Quick escape ability |
+| `RedirectAttack.gd` | Attack redirection |
 
 ---
 
@@ -330,11 +194,34 @@ Updates the target reference.
 
 ### AI States
 
+Located in `res://src/actors/ai/states/`:
+
+| File | Description |
+|------|-------------|
+| `AIState.gd` | Base class |
+| `AIIdleState.gd` | Default patrol/idle behavior |
+| `AIChaseState.gd` | Pursues target |
+| `AIAttackState.gd` | Attacks target |
+| `AIFleeState.gd` | Flees from threat |
+| `AIDeathState.gd` | Death handling |
+| `AIFlockinState.gd` | Flocking behavior |
+| `AIInvestigateState.gd` | Investigates detected activity |
+| `AIRoamState.gd` | Roaming/wandering |
+| `AIStunnedState.gd` | Stunned state |
+| `Dormant.gd` | Dormant/inactive state |
+
+### AI Behavior Overview
+
 ```
-AIState (base class)
-├── AIIdleState
-├── AIChaseState
-└── AIAttackState
+AIIdleState
+	↓ (target detected)
+AIChaseState
+	↓ (in attack range)
+AIAttackState
+	↓ (target escapes / low health)
+AIChaseState / AIFleeState
+	↓ (death)
+AIDeathState
 ```
 
 ---
@@ -362,87 +249,88 @@ func physics_process_state(delta: float) -> void  # _physics_process callback
 
 ---
 
-### AIIdleState.gd
+## Actor Controllers
 
-**File:** `res://src/actors/ai/states/AIIdleState.gd`
+Actor-specific AI controllers located in `res://src/actors/types/`:
 
-Default patrol/idle behavior. Scans for targets.
-
-### Behavior
-
-1. Sets actor movement to `Vector2.ZERO`
-2. Checks `ai_controller.target`
-3. If target found within `awareness_radius`, transitions to `AIChaseState`
-
----
-
-### AIChaseState.gd
-
-**File:** `res://src/actors/ai/states/AIChaseState.gd`
-
-Pursues the target actor.
-
-### Behavior
-
-1. Moves actor toward target position using `chase_speed`
-2. Recalculates direction each frame
-3. If target within `attack_range`, transitions to `AIAttackState`
-4. If target exits `awareness_radius`, returns to `AIIdleState`
-
----
-
-### AIAttackState.gd
-
-**File:** `res://src/actors/ai/states/AIAttackState.gd`
-
-Attacks the target actor.
-
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `attack_cooldown: float` | float | Time between attacks |
-| `attack_damage: float` | float | Damage per hit |
-| `attack_knockback: Vector2` | Vector2 | Knockback force |
-| `current_cooldown: float` | float | Cooldown timer |
-
-### Behavior
-
-1. Stops actor movement
-2. Applies damage to target with knockback
-3. Starts `attack_cooldown` timer
-4. After cooldown, checks if target still in range
-5. Returns to `AIChaseState` if out of range
+| File | Description |
+|------|-------------|
+| `GoatController.gd` | AI logic for GoatActor |
+| `FarmerController.gd` | AI logic for FarmerActor |
+| `GoblinController.gd` | AI logic for GoblinMinion |
 
 ---
 
 ## Derived Actors
 
+All actor types are located in `res://src/actors/types/`.
+
 ### GoatActor
 
-**File:** `res://src/actors/GoatActor.gd`
-
-Example derived actor class.
+**File:** `res://src/actors/types/GoatActor.gd`
 
 ```gdscript
 class_name GoatActor
 extends Actor
 ```
 
-Initializes with custom values:
-- `base_speed`: 100.0
-- `awareness_radius`: 250.0
-
 ### FireActor
 
-**File:** `res://src/actors/FireActor.gd`
-
-Example fire/hazard actor.
+**File:** `res://src/actors/types/FireActor.gd`
 
 ```gdscript
 class_name FireActor
 extends Actor
 ```
+
+### FarmerActor
+
+**File:** `res://src/actors/types/FarmerActor.gd`
+
+```gdscript
+class_name FarmerActor
+extends Actor
+```
+
+### WaterActor
+
+**File:** `res://src/actors/types/WaterActor.gd`
+
+```gdscript
+class_name WaterActor
+extends Actor
+```
+
+### GoblinMinion
+
+**File:** `res://src/actors/types/GoblinMinion.gd`
+
+```gdscript
+class_name GoblinMinion
+extends Actor
+```
+
+### ScarecrowDummy
+
+**File:** `res://src/actors/types/ScarecrowDummy.gd`
+
+```gdscript
+class_name ScarecrowDummy
+extends Actor
+```
+
+---
+
+## Visual Components
+
+Located in `res://src/actors/types/`:
+
+| File | Description |
+|------|-------------|
+| `GoatVisuals.gd` | Goat visual management |
+| `DormantVisual3D.gd` | 3D dormant visual effect |
+| `StunVisual3D.gd` | 3D stun visual effect |
+| `GoblinModels/GoblinModel.gd` | Goblin model management |
 
 ---
 
@@ -499,15 +387,15 @@ ai_controller.set_target(player_actor)
 actor.health_changed.connect(_on_health_changed)
 
 func _on_health_changed(old_val: float, new_val: float):
-    var damage = old_val - new_val
-    print("Took %s damage, health: %s" % [damage, new_val])
+	var damage = old_val - new_val
+	print("Took %s damage, health: %s" % [damage, new_val])
 
 # Subscribe to death
 actor.died.connect(_on_death)
 
 func _on_death():
-    queue_free()
-    # Spawn death effects, drop loot, etc.
+	queue_free()
+	# Spawn death effects, drop loot, etc.
 ```
 
 ### Using Voice Lines
@@ -529,7 +417,7 @@ var speed = terrain_mod_component.get_modified_speed()
 ```gdscript
 ability_component.ability_scene = preload("res://scenes/Fireball.tscn")
 if ability_component.try_activate_ability():
-    print("Ability activated!")
+	print("Ability activated!")
 ```
 
 ### Skill Check
@@ -538,10 +426,10 @@ if ability_component.try_activate_ability():
 skill_check_component.skill_check_completed.connect(_on_skill_done)
 
 func _on_skill_done(skill_type, success):
-    if success:
-        print("Skill check passed!")
-    else:
-        print("Skill check failed!")
+	if success:
+		print("Skill check passed!")
+	else:
+		print("Skill check failed!")
 
 skill_check_component.start_skill_check(SkillCheckComponent.SkillType.LOCKPICKING)
 ```
@@ -561,23 +449,33 @@ skill_check_component.start_skill_check(SkillCheckComponent.SkillType.LOCKPICKIN
 
 ## File Structure
 
+### Source Code
+
 ```
 res://src/actors/
 ├── base/
 │   └── Actor.gd
 ├── types/
 │   ├── GoatActor.gd
+│   ├── GoatController.gd
+│   ├── GoatVisuals.gd
 │   ├── FireActor.gd
 │   ├── FarmerActor.gd
+│   ├── FarmerController.gd
 │   ├── WaterActor.gd
 │   ├── GoblinMinion.gd
-│   └── ScarecrowDummy.gd
+│   ├── GoblinController.gd
+│   ├── GoblinModels/
+│   │   └── GoblinModel.gd
+│   ├── ScarecrowDummy.gd
+│   ├── DormantVisual3D.gd
+│   └── StunVisual3D.gd
 ├── ai/
 │   ├── ActorAIController.gd
 │   ├── ActorController.gd
 │   ├── ActorStateMachine.gd
-│   ├── FactionComponent.gd
 │   ├── ActorTileNavigationComponent.gd
+│   ├── FactionComponent.gd
 │   └── states/
 │       ├── AIState.gd
 │       ├── AIIdleState.gd
@@ -590,19 +488,48 @@ res://src/actors/
 │       ├── AIRoamState.gd
 │       ├── AIStunnedState.gd
 │       └── Dormant.gd
-├── projectiles/
-│   ├── BaseProjectile.gd
-│   ├── WaveProjectile.gd
-│   ├── LobProjectile.gd
-│   ├── FireProjectile.gd
-│   ├── FireLobProjectile.gd
-│   ├── WaterProjectile.gd
-│   ├── WaterLobProjectile.gd
-│   ├── HandaxeProjectile.gd
-│   └── WaveProjectile.gd
-└── models/
-	└── (actor visual model scenes)
+└── projectiles/
+	├── BaseProjectile.gd
+	├── WaveProjectile.gd
+	├── LobProjectile.gd
+	├── FireProjectile.gd
+	├── FireLobProjectile.gd
+	├── WaterProjectile.gd
+	├── WaterLobProjectile.gd
+	└── HandaxeProjectile.gd
 
+res://Components/ActorComponents/
+├── HealthComponent.gd
+├── MovementComponent.gd
+├── CommunicationComponent.gd
+├── TerrainSpeedModifierComponent.gd
+├── SkillCheckComponent.gd
+├── AbilityScoresComponent.gd
+├── ActorData.gd
+├── ActorParticleComponent.gd
+├── ActorTileInteractionComponent.gd
+├── ActorVisualComponent.gd
+├── ArmorClassComponent.gd
+├── BobComponent.gd
+├── ChargeVisualComponent.gd
+├── DamageComponent.gd
+├── DetectionComponent.gd
+├── GoatScreamComponent.gd
+├── HealthBarPool.gd
+├── ManaComponent.gd
+├── StatusEffectComponent.gd
+├── StunComponent.gd
+└── AbilityComponents/
+	├── AbilityComponent.gd
+	├── AbilityAction.gd
+	├── GoatCharge.gd
+	├── NimbleEscape.gd
+	└── RedirectAttack.gd
+```
+
+### Scenes
+
+```
 res://scenes/
 ├── actors/
 │   ├── GoatActor.tscn
@@ -613,9 +540,7 @@ res://scenes/
 │   ├── ScarecrowDummy.tscn
 │   └── models/
 │       ├── GoatModel.tscn
-│       ├── GoatHead.tscn
-│       ├── GoblinModel.tscn
-│       └── GoblinHead.tscn
+│       └── GoblinModel.tscn
 ├── projectiles/
 │   ├── FireProjectile.tscn
 │   ├── FireLobProjectile.tscn
@@ -638,7 +563,7 @@ res://scenes/
 
 ---
 
-*Generated from codebase on 2025-01-09*
+*Generated from codebase on 2025-01-10*
 
 ---
 
@@ -647,6 +572,7 @@ res://scenes/
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-01-09 | Initial documentation |
+| 1.1 | 2025-01-10 | Updated file paths to reflect directory restructuring |
 
 ---
 
