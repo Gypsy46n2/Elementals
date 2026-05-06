@@ -3,6 +3,10 @@ extends Control
 var color: Color = Color.WHITE
 var mana_value: float = 1.0 # 0.0 to 1.0
 var _last_mana_value: float = -1.0
+var _viewport: Viewport
+
+func _ready() -> void:
+	_viewport = get_viewport()
 
 var attack_pattern: int = 0: # Actor.AttackPattern
 	set(value):
@@ -62,4 +66,4 @@ func _process(_delta: float) -> void:
 		queue_redraw()
 		_last_mana_value = mana_value
 	
-	position = get_viewport().get_mouse_position() - size / 2.0
+	position = _viewport.get_mouse_position() - size / 2.0

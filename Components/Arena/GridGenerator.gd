@@ -14,9 +14,11 @@ var house_tile: HexTileData = null
 
 var _neighbor_cache: Dictionary = {}
 var _tile_lookup: Dictionary = {}
+var _radius_cache: Dictionary = {}  # Precomputed relative offsets: radius -> Array[Vector2i]
 
 func setup(p_arena: ArenaGrid) -> void:
 	arena = p_arena
+	_build_radius_cache()
 
 ## Generates the hex grid, assigns initial states, and applies noise-based height.
 func initialize_grid() -> void:
@@ -37,6 +39,7 @@ func initialize_grid() -> void:
 	arena.tile_counts.clear()
 	_neighbor_cache.clear()
 	_tile_lookup.clear()
+	_radius_cache.clear()
 	for state in TileConstants.State.values():
 		arena.tile_counts[state] = 0
 	
@@ -219,6 +222,12 @@ func offset_to_axial(col: int, row: int) -> Vector2i:
 	var r = row - (col - (col & 1)) / 2
 	return Vector2i(q, r)
 
+## Converts axial coordinates to offset grid coordinates.
+func axial_to_offset(q: int, r: int) -> Vector2i:
+	var col = q
+	var row = r + (q - (q & 1)) / 2
+	return Vector2i(col, row)
+
 ## Calculates the axial distance between two axial coordinates.
 func axial_distance(a: Vector2i, b: Vector2i) -> int:
 	var dq = a.x - b.x
@@ -286,37 +295,66 @@ func get_tile_at_grid_coords(x: int, y: int) -> HexTileData:
 	return _tile_lookup.get(Vector2i(x, y), null)
 
 ## Returns an array of tiles within a hexagonal radius of the center tile.
-## Uses a breadth-first search on the neighbor cache for O(Radius^2) complexity.
+## Uses precomputed offset lookup for O(Radius) complexity with O(1) tile lookups.
 func get_tiles_in_radius(center: HexTileData, radius: int) -> Array[HexTileData]:
 	var results: Array[HexTileData] = []
 	if not center or radius < 0:
 		return results
 	
-	results.append(center)
-	if radius == 0:
-		return results
-		
-	var visited: Dictionary = {center: true}
-	var queue: Array = [[center, 0]]
+	# Use precomputed axial offsets for this radius
+	var offsets: Array[Vector2i] = []
+	if _radius_cache.has(radius):
+		offsets = _radius_cache[radius]
+	else:
+		# Fallback: compute offsets on demand for uncached radii
+		offsets = _compute_radius_offsets(radius)
 	
-	var head: int = 0
-	while head < queue.size():
-		var current: Array = queue[head]
-		head += 1
-		
-		var tile: HexTileData = current[0]
-		var dist: int = current[1]
-		
-		if dist >= radius:
-			continue
-			
-		for n in get_neighbors(tile):
-			if not visited.has(n):
-				visited[n] = true
-				results.append(n)
-				queue.append([n, dist + 1])
+	# Offsets are in axial coordinates; convert to offset coords for dictionary lookup
+	var center_axial: Vector2i = center.axial
+	for offset in offsets:
+		var target_axial: Vector2i = center_axial + offset
+		var target_offset: Vector2i = axial_to_offset(target_axial.x, target_axial.y)
+		var tile: HexTileData = _tile_lookup.get(target_offset, null)
+		if tile:
+			results.append(tile)
 	
 	return results
+
+## Builds the radius cache on setup. Precomputes relative hex offsets for
+## radii 0-20 so get_tiles_in_radius can use O(1) dictionary lookups.
+func _build_radius_cache() -> void:
+	_radius_cache.clear()
+	# Precompute common radii used by AI and area-of-effect logic
+	for r in range(0, 21):
+		_radius_cache[r] = _compute_radius_offsets(r)
+
+## Computes the relative hex offsets that fall within a given radius.
+## Uses axial coordinate math to avoid iterative expansion.
+func _compute_radius_offsets(radius: int) -> Array[Vector2i]:
+	var offsets: Array[Vector2i] = []
+	if radius < 0:
+		return offsets
+	
+	offsets.append(Vector2i(0, 0))  # Center tile always included
+	
+	if radius == 0:
+		return offsets
+	
+	# Spiral outward using axial coordinate generation
+	# For hex grids: iterate q from -radius to radius
+	# then iterate r based on constraints for valid hex ring
+	var q_min: int = -radius
+	var q_max: int = radius
+	for dq in range(q_min, q_max + 1):
+		var r_start: int = max(-radius, -dq - radius)
+		var r_end: int = min(radius, -dq + radius)
+		for dr in range(r_start, r_end + 1):
+			# Skip center (already added)
+			if dq == 0 and dr == 0:
+				continue
+			offsets.append(Vector2i(dq, dr))
+	
+	return offsets
 
 func _grid_width_clamped() -> int: return max(1, arena.grid_width)
 func _grid_height_clamped() -> int: return max(1, arena.grid_height)

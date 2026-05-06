@@ -78,6 +78,8 @@ func register_trigger(center_tile: Object, radius: int, callback: Callable, meta
 	for actor in _actor_tiles:
 		if is_instance_valid(actor):
 			var tile = _actor_tiles[actor]
+			if tile == null or not "axial_coords" in tile:
+				continue
 			var distance = _get_hex_distance(tile.axial_coords, center_tile.axial_coords)
 			if distance <= radius:
 				_activate_trigger_for_actor(trigger, actor)
@@ -95,11 +97,16 @@ func remove_trigger(trigger: Dictionary) -> void:
 func _on_actor_tile_changed(new_tile: Object, actor: Node3D) -> void:
 	if not is_instance_valid(actor) or new_tile == null:
 		return
+	if not "axial_coords" in new_tile:
+		return
 		
 	_update_actor_tile_mapping(actor, new_tile)
 	
 	for trigger in _triggers:
-		var distance: int = _get_hex_distance(new_tile.axial_coords, trigger["center"].axial_coords)
+		var center = trigger.get("center")
+		if center == null or not "axial_coords" in center:
+			continue
+		var distance: int = _get_hex_distance(new_tile.axial_coords, center.axial_coords)
 		var is_inside = distance <= trigger["radius"]
 		var was_inside = actor in trigger["active_actors"]
 		
@@ -129,6 +136,8 @@ func _get_hex_distance(a: Vector2i, b: Vector2i) -> int:
 	return (abs(a.x - b.x) + abs(a.x + a.y - b.x - b.y) + abs(a.y - b.y)) / 2
 
 func update_trigger_center(trigger: Dictionary, new_tile: Object) -> void:
+	if new_tile == null or not "axial_coords" in new_tile:
+		return
 	if trigger.get("center") == new_tile:
 		return
 	trigger["center"] = new_tile
@@ -137,7 +146,7 @@ func update_trigger_center(trigger: Dictionary, new_tile: Object) -> void:
 		if not is_instance_valid(tracked_actor):
 			continue
 		var tile = _actor_tiles[tracked_actor]
-		if tile == null:
+		if tile == null or not "axial_coords" in tile:
 			continue
 		var distance: int = _get_hex_distance(tile.axial_coords, new_tile.axial_coords)
 		var is_inside: bool = distance <= trigger["radius"]

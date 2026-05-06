@@ -13,6 +13,28 @@ extends Node
 @export var wisdom: float = 0
 @export var charisma: float = 0
 
+## Emitted when any ability score changes. Used by components that cache score-dependent values.
+signal scores_changed
+
+func set_strength(value: float) -> void:
+	strength = value
+	scores_changed.emit()
+func set_dexterity(value: float) -> void:
+	dexterity = value
+	scores_changed.emit()
+func set_constitution(value: float) -> void:
+	constitution = value
+	scores_changed.emit()
+func set_intelligence(value: float) -> void:
+	intelligence = value
+	scores_changed.emit()
+func set_wisdom(value: float) -> void:
+	wisdom = value
+	scores_changed.emit()
+func set_charisma(value: float) -> void:
+	charisma = value
+	scores_changed.emit()
+
 ## Returns the effective score for an ability (Score = 10 + Modifier * 2).
 ## This is used for requirement checks like Heavy Armor strength requirements.
 func get_score(modifier_value: float) -> int:

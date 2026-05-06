@@ -11,6 +11,9 @@ var arena: Node3D # ArenaGrid
 @export var scarecrow_scene: PackedScene = preload("res://Actor/ScarecrowDummy.tscn")
 @export_range(0, 20, 1) var random_wild_goat_count: int = 4
 
+func _get_selected_actor_type() -> String:
+	return GameSettings.selected_actor_type
+
 func setup(p_arena: Node3D) -> void:
 	arena = p_arena
 
@@ -42,10 +45,7 @@ func spawn_initial_actors() -> void:
 							(goat as GoatActor).goat_data = goat_data
 
 func get_selected_actor_scene() -> PackedScene:
-	var gs: Node = get_node_or_null("/root/GameSettings")
-	var type: String = "farmer"
-	if gs:
-		type = String(gs.get("selected_actor_type"))
+	var type: String = _get_selected_actor_type()
 
 	match type:
 		"farmer": return farmer_scene
@@ -221,10 +221,7 @@ func spawn_scarecrow() -> void:
 			break
 
 func spawn_selected_actor_at_tile(tile: HexTileData) -> Node3D:
-	var gs: Node = get_node_or_null("/root/GameSettings")
-	var type: String = "farmer"
-	if gs:
-		type = String(gs.get("selected_actor_type"))
+	var type: String = _get_selected_actor_type()
 
 	var scene: PackedScene = get_selected_actor_scene()
 	if scene:
@@ -248,7 +245,7 @@ func spawn_selected_actor_at_tile(tile: HexTileData) -> Node3D:
 			player_goat.goat_data.goat_name = "Player Goat"
 
 		var wl: Node = get_node_or_null("/root/ItemsAutoload")
-		if gs and wl:
+		if wl:
 			var default_weapon_name: String = "Quarterstaff"
 			if type == "goblin":
 				default_weapon_name = "Dagger"

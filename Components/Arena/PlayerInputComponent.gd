@@ -24,6 +24,11 @@ var _ability_press_time: int = 0
 var _hide_triggered: bool = false
 const HOLD_THRESHOLD_MS: int = 300
 
+# Camera cache for _get_mouse_3d_position optimization
+var _cached_camera: Camera3D
+var _camera_cache_time: float = 0.0
+const CAMERA_CACHE_INTERVAL: float = 0.5  # Refresh every 500ms
+
 ## Initializes the component with a reference to the ArenaGrid.
 func setup(p_arena: ArenaGrid) -> void:
 	arena = p_arena
@@ -147,16 +152,21 @@ func _find_playable_actor(start_index: int, step: int) -> int:
 	return -1
 
 ## Uses a raycast from the mouse position to find the world-space coordinate.
-# TODO(Optimization): Avoid repeated camera/project_ray/intersect_ray computations; cache camera and ray params to reduce CPU (~0.5% CPU)
+## Camera is cached and refreshed periodically to avoid repeated get_camera_3d() calls.
 func _get_mouse_3d_position() -> Vector3:
-	var camera = get_viewport().get_camera_3d()
-	if not camera:
+	# Refresh camera cache periodically
+	_camera_cache_time -= get_process_delta_time()
+	if _camera_cache_time <= 0.0 or not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d()
+		_camera_cache_time = CAMERA_CACHE_INTERVAL
+	
+	if not _cached_camera:
 		return Vector3.ZERO
 	
-	var mouse_pos = get_viewport().get_mouse_position()
+	var mouse_pos = _cached_camera.get_viewport().get_mouse_position()
 	
-	var ray_origin = camera.project_ray_origin(mouse_pos)
-	var ray_direction = camera.project_ray_normal(mouse_pos)
+	var ray_origin = _cached_camera.project_ray_origin(mouse_pos)
+	var ray_direction = _cached_camera.project_ray_normal(mouse_pos)
 	
 	var space_state = arena.get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(ray_origin, ray_origin + ray_direction * 1000.0)

@@ -29,6 +29,11 @@ var _cached_mouse_dir: Vector3 = Vector3.ZERO
 var _last_cam_right: Vector3 = Vector3.ZERO
 var _last_target_dir: Vector3 = Vector3.ZERO
 
+# Viewport caching to avoid repeated scene tree traversal
+var _cached_viewport: Viewport
+var _viewport_cache_time: float = 0.0
+const VIEWPORT_CACHE_INTERVAL: float = 0.5
+
 func _ready() -> void:
 	# Initial camera fetch
 	_camera = get_viewport().get_camera_3d()
@@ -37,6 +42,13 @@ func _get_camera() -> Camera3D:
 	if not is_instance_valid(_camera):
 		_camera = get_viewport().get_camera_3d()
 	return _camera
+
+func _get_viewport() -> Viewport:
+	_viewport_cache_time -= get_process_delta_time()
+	if _viewport_cache_time <= 0.0 or _cached_viewport == null or not is_instance_valid(_cached_viewport):
+		_viewport_cache_time = VIEWPORT_CACHE_INTERVAL
+		_cached_viewport = get_viewport()
+	return _cached_viewport
 
 func setup(p_actor: Actor, p_body: Node3D) -> void:
 	actor = p_actor
@@ -188,7 +200,7 @@ func _update_model_rotation(delta: float, p_camera: Camera3D) -> void:
 		body_model.global_transform.basis = next_basis.scaled(initial_model_scale)
 
 func _get_mouse_direction(p_camera: Camera3D) -> Vector3:
-	var mouse_pos = get_viewport().get_mouse_position()
+	var mouse_pos = _get_viewport().get_mouse_position()
 	
 	# Optimization: skip raycast if mouse and actor haven't moved
 	if mouse_pos == _last_mouse_pos and actor.global_position.is_equal_approx(_last_actor_pos):

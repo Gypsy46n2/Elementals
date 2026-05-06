@@ -1,7 +1,8 @@
 class_name HealthComponent
 extends Node3D
 
-## A unified health management component with built-in 3D UI.
+## A unified health management component.
+## Health bars are pooled via HealthBarPool singleton for efficiency.
 
 signal health_changed(current: float, max: float)
 signal health_depleted()
@@ -18,27 +19,36 @@ signal damage_received(amount: float, type: String)
 @export var bar_visible_always: bool = false
 @export var bar_size: Vector2 = Vector2(128, 16)
 
-var _hp_bar_node: ProgressBar
-var _hp_viewport: SubViewport
-var _hp_sprite: Sprite3D
+# Reference to the pooled health bar (if this actor has one)
+var _pooled_bar: bool = false
 
 func _ready() -> void:
-	_setup_hp_bar()
+	# Register with health bar pool if this actor needs visual health display
+	if bar_visible_always or needs_health_bar():
+		_register_with_pool()
+
+func _enter_tree() -> void:
+	# Re-register if we get added to a new scene
+	if bar_visible_always or needs_health_bar():
+		call_deferred("_register_with_pool")
+
+func _exit_tree() -> void:
+	# Unregister from pool when removed
+	_unregister_from_pool()
 
 func set_max_health(v: float) -> void:
 	max_health = v
 	if is_node_ready():
-		if _hp_bar_node:
-			_hp_bar_node.max_value = max_health
 		# Use the setter directly to clamp current health if needed
-		current_health = min(current_health, max_health)
+		current_health = mini(current_health, max_health)
+		_notify_pool()
 
 func set_current_health(v: float) -> void:
-	var old = current_health
-	current_health = clamp(v, 0, max_health)
+	var old := current_health
+	current_health = clampf(v, 0.0, max_health)
 	if old != current_health:
 		health_changed.emit(current_health, max_health)
-		_update_hp_bar()
+		_notify_pool()
 		if current_health <= 0:
 			health_depleted.emit()
 
@@ -58,55 +68,31 @@ func roll_max_health(die_count: int, die_sides: int, rng: RandomNumberGenerator 
 	current_health = result
 	return result
 
-func _setup_hp_bar() -> void:
-	# Create a SubViewport for the UI
-	_hp_viewport = SubViewport.new()
-	_hp_viewport.size = bar_size
-	_hp_viewport.transparent_bg = true
-	_hp_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-	add_child(_hp_viewport)
-	
-	# Create the ProgressBar
-	_hp_bar_node = ProgressBar.new()
-	_hp_bar_node.size = bar_size
-	_hp_bar_node.max_value = max_health
-	_hp_bar_node.value = current_health
-	_hp_bar_node.show_percentage = false
-	
-	# Style the ProgressBar
-	var sb_fg = StyleBoxFlat.new()
-	sb_fg.bg_color = bar_color
-	sb_fg.set_border_width_all(2)
-	sb_fg.border_color = Color.BLACK
-	
-	var sb_bg = StyleBoxFlat.new()
-	sb_bg.bg_color = Color(0.1, 0.1, 0.1, 1.0)
-	
-	_hp_bar_node.add_theme_stylebox_override("fill", sb_fg)
-	_hp_bar_node.add_theme_stylebox_override("background", sb_bg)
-	_hp_viewport.add_child(_hp_bar_node)
-	
-	# Create the Sprite3D to display it
-	_hp_sprite = Sprite3D.new()
-	_hp_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_hp_sprite.no_depth_test = true
-	_hp_sprite.render_priority = 10
-	_hp_sprite.texture = _hp_viewport.get_texture()
-	_hp_sprite.position = bar_offset
-	_hp_sprite.pixel_size = 0.015
-	add_child(_hp_sprite)
-	
-	_update_hp_bar()
+func needs_health_bar() -> bool:
+	return true  # Override in subclasses to disable bars for certain actors
 
-func _update_hp_bar() -> void:
-	if _hp_bar_node:
-		_hp_bar_node.value = current_health
-	
-	if _hp_viewport:
-		_hp_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-	
-	if _hp_sprite:
-		_hp_sprite.visible = bar_visible_always or (current_health < max_health and current_health > 0)
+func _register_with_pool() -> void:
+	if _pooled_bar:
+		return
+	var pool := HealthBarPool.get_instance()
+	if pool:
+		pool.show_bar(self, current_health, max_health, bar_color, bar_offset, bar_visible_always)
+		_pooled_bar = true
+
+func _unregister_from_pool() -> void:
+	if not _pooled_bar:
+		return
+	var pool := HealthBarPool.get_instance()
+	if pool:
+		pool.hide_bar(self)
+	_pooled_bar = false
+
+func _notify_pool() -> void:
+	if not _pooled_bar:
+		return
+	var pool := HealthBarPool.get_instance()
+	if pool:
+		pool.show_bar(self, current_health, max_health, bar_color, bar_offset, bar_visible_always)
 
 func take_damage(amount: float, type: String = "normal", direction: Vector3 = Vector3.ZERO) -> void:
 	current_health -= amount

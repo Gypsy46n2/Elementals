@@ -25,21 +25,43 @@ var _perception_cooldown: float = 0.0
 ## Single timer for processing expired perceptions instead of per-frame iteration.
 var _expiry_timer: Timer
 
+## Cached detection range value to avoid repeated lookups and calculations.
+var _cached_detection_range: float = 10.0
+## Cached reference to ability_scores_component for efficient access.
+var _cached_ability_scores: Node = null
+
 ## Detection range computed from Wisdom: base 10 + (Wisdom × 2).
+## Cached and recomputed only when wisdom changes.
 var detection_range: float:
 	get:
-		var asc = actor.get("ability_scores_component") if actor else null
-		if asc:
-			return 10.0 + (asc.wisdom * 2.0)
-		return 10.0
+		return _cached_detection_range
 
 ## Perception check DC expiry time.
 const PERCEPTION_EXPIRY: float = 3.0
 ## Cooldown between perception checks.
 const PERCEPTION_COOLDOWN: float = 1.0
 
+func _update_cached_detection_range() -> void:
+	if _cached_ability_scores:
+		_cached_detection_range = 10.0 + (_cached_ability_scores.wisdom * 2.0)
+	else:
+		_cached_detection_range = 10.0
+
+func _on_ability_scores_changed() -> void:
+	_update_cached_detection_range()
+
 func setup(p_actor: Node3D) -> void:
 	actor = p_actor
+	
+	# Cache ability scores component reference
+	_cached_ability_scores = actor.get("ability_scores_component") if actor else null
+	
+	# Connect to wisdom changes for cache invalidation
+	if _cached_ability_scores:
+		_cached_ability_scores.scores_changed.connect(_on_ability_scores_changed)
+	
+	# Initialize cached detection range
+	_update_cached_detection_range()
 	
 	# Setup the expiry timer once
 	_setup_expiry_timer()
