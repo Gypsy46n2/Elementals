@@ -3,12 +3,12 @@ extends Node
 
 var arena: Node3D # ArenaGrid
 
-@export var farmer_scene: PackedScene = preload("res://Actor/FarmerActor.tscn")
-@export var fire_actor_scene: PackedScene = preload("res://Actor/FireActor.tscn")
-@export var water_actor_scene: PackedScene = preload("res://Actor/WaterActor.tscn")
-@export var goat_actor_scene: PackedScene = preload("res://Actor/GoatActor.tscn")
-@export var goblin_scene: PackedScene = preload("res://Actor/GoblinMinion.tscn")
-@export var scarecrow_scene: PackedScene = preload("res://Actor/ScarecrowDummy.tscn")
+@export var farmer_scene: PackedScene = preload("res://scenes/actors/FarmerActor.tscn")
+@export var fire_actor_scene: PackedScene = preload("res://scenes/actors/FireActor.tscn")
+@export var water_actor_scene: PackedScene = preload("res://scenes/actors/WaterActor.tscn")
+@export var goat_actor_scene: PackedScene = preload("res://scenes/actors/GoatActor.tscn")
+@export var goblin_scene: PackedScene = preload("res://scenes/actors/GoblinMinion.tscn")
+@export var scarecrow_scene: PackedScene = preload("res://scenes/actors/ScarecrowDummy.tscn")
 @export_range(0, 20, 1) var random_wild_goat_count: int = 4
 
 func _get_selected_actor_type() -> String:

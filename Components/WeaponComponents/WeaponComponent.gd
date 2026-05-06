@@ -121,7 +121,7 @@ func drop_inventory() -> void:
 	
 	var projectile_path = weapon_data.projectile_scene_path
 	if projectile_path == "":
-		projectile_path = "res://Actor/Projectiles/ArrowProjectile.tscn"
+		projectile_path = "res://scenes/projectiles/ArrowProjectile.tscn"
 		
 	var proj_scene = load(projectile_path)
 	if not proj_scene: return

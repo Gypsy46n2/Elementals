@@ -30,18 +30,18 @@ func launch(target_position: Vector3, _dir: Vector3, is_secondary: bool = false)
 	var direction: Vector3 = (target_position - spawn_pos).normalized()
 	
 	# Determine projectile path based on weapon data
-	var projectile_path: String = "res://Actor/Projectiles/ArrowProjectile.tscn"
+	var projectile_path: String = "res://scenes/projectiles/ArrowProjectile.tscn"
 	
 	if "bow" in _weapon_data.name.to_lower() or "crossbow" in _weapon_data.name.to_lower():
-		projectile_path = "res://Actor/Projectiles/ArrowProjectile.tscn"
+		projectile_path = "res://scenes/projectiles/ArrowProjectile.tscn"
 	elif _weapon_data.projectile_scene_path != "":
 		projectile_path = _weapon_data.projectile_scene_path
 	elif _weapon_data.name == "Dagger" or "Dagger" in _weapon_data.name:
-		projectile_path = "res://Actor/Projectiles/DaggerProjectile.tscn"
+		projectile_path = "res://scenes/projectiles/DaggerProjectile.tscn"
 	elif "Javelin" in _weapon_data.name:
-		projectile_path = "res://Actor/Projectiles/JavelinProjectile.tscn"
+		projectile_path = "res://scenes/projectiles/JavelinProjectile.tscn"
 	elif "Crossbow" in _weapon_data.name:
-		projectile_path = "res://Actor/Projectiles/ArrowProjectile.tscn"
+		projectile_path = "res://scenes/projectiles/ArrowProjectile.tscn"
 		
 	var proj_scene: PackedScene = load(projectile_path)
 	if not proj_scene:

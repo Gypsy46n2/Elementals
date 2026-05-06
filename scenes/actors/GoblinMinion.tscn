@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://dnr67p6yfynnt"]
+
+[ext_resource type="Script" uid="uid://dvxgv2wmx7qf7" path="res://src/actors/types/GoblinMinion.gd" id="1_goblin"]
+[ext_resource type="PackedScene" uid="uid://sqhy615yrjo5" path="res://scenes/actors/models/GoblinModel.tscn" id="2_model"]
+[ext_resource type="AudioStream" uid="uid://da7kfmcufs83v" path="res://assets/SoundFiles/Whack.mp3" id="3_whack"]
+[ext_resource type="AudioStream" uid="uid://p1w0ucmu7w5n" path="res://assets/SoundFiles/Swoosh noise.mp3" id="4_swoosh"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_goblin"]
+radius = 0.3
+height = 1.0
+
+[node name="GoblinMinion" type="CharacterBody3D" unique_id=1780537612]
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("1_goblin")
+
+[node name="Body" parent="." unique_id=1522816416 instance=ExtResource("2_model")]
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1887034217]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("CapsuleShape3D_goblin")
+
+[node name="TileDetector" type="RayCast3D" parent="." unique_id=288792408]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+target_position = Vector3(0, -1.5, 0)
+
+[node name="WhackPlayer" type="AudioStreamPlayer3D" parent="." unique_id=7877138]
+stream = ExtResource("3_whack")
+
+[node name="SwooshPlayer" type="AudioStreamPlayer3D" parent="." unique_id=985128834]
+stream = ExtResource("4_swoosh")

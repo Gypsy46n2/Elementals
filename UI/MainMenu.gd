@@ -18,12 +18,12 @@ extends Control
 var selected_actor_path: String = ""
 
 const ACTOR_SCENES: Dictionary = {
-	"farmer": "res://Actor/FarmerActor.tscn",
-	"fire": "res://Actor/FireActor.tscn",
-	"water": "res://Actor/WaterActor.tscn",
-	"goat": "res://Actor/GoatActor.tscn",
-	"goblin": "res://Actor/GoblinMinion.tscn",
-	"scarecrow": "res://Actor/ScarecrowDummy.tscn"
+	"farmer": "res://scenes/actors/FarmerActor.tscn",
+	"fire": "res://scenes/actors/FireActor.tscn",
+	"water": "res://scenes/actors/WaterActor.tscn",
+	"goat": "res://scenes/actors/GoatActor.tscn",
+	"goblin": "res://scenes/actors/GoblinMinion.tscn",
+	"scarecrow": "res://scenes/actors/ScarecrowDummy.tscn"
 }
 
 var CHARACTER_EQUIPMENT: Dictionary = {}

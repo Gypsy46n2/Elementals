@@ -1,0 +1,40 @@
+[gd_scene load_steps=6 format=3 uid="uid://blp6fmitpavew"]
+
+[ext_resource type="Script" uid="uid://c5ummbndhdffe" path="res://src/actors/types/FarmerActor.gd" id="1_farmer"]
+[ext_resource type="Script" uid="uid://dfuui0forq1w0" path="res://Components/ActorComponents/AbilityScoresComponent.gd" id="2_ability"]
+[ext_resource type="AudioStream" uid="uid://da7kfmcufs83v" path="res://assets/SoundFiles/Whack.mp3" id="3_whack"]
+[ext_resource type="AudioStream" uid="uid://p1w0ucmu7w5n" path="res://assets/SoundFiles/Swoosh noise.mp3" id="4_swoosh"]
+[ext_resource type="SpriteFrames" uid="uid://cd82ivtk0sqys" path="res://assets/sprites/characters/farmer_sprite_frames.tres" id="5_frames"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_farmer"]
+radius = 0.4
+height = 1.2
+
+[node name="Farmer" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("1_farmer")
+
+[node name="Body" type="AnimatedSprite3D" parent="."]
+pixel_size = 0.02
+billboard = 1
+sprite_frames = ExtResource("5_frames")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("CapsuleShape3D_farmer")
+
+[node name="TileDetector" type="RayCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+target_position = Vector3(0, -1.5, 0)
+
+[node name="WhackPlayer" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("3_whack")
+
+[node name="SwooshPlayer" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("4_swoosh")
+
+[node name="AbilityScoresComponent" type="Node" parent="."]
+script = ExtResource("2_ability")

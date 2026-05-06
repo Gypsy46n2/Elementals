@@ -39,7 +39,7 @@ func update_model() -> void:
 		# Specialized model loading (e.g., Dagger)
 		var custom_scene_path: String = ""
 		if _weapon_data.name == "Dagger":
-			custom_scene_path = "res://Actor/Projectiles/DaggerProjectile.tscn"
+			custom_scene_path = "res://scenes/projectiles/DaggerProjectile.tscn"
 		elif _weapon_data.projectile_scene_path != "":
 			custom_scene_path = _weapon_data.projectile_scene_path
 			

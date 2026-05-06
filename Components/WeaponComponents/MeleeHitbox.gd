@@ -123,7 +123,7 @@ func _setup_hitbox_visual() -> void:
 	_hitbox_visual.mesh = plane
 	_hitbox_visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	
-	var mat = preload("res://Actor/AttackHitboxMaterial.tres")
+	var mat = preload("res://assets/materials/AttackHitboxMaterial.tres")
 	if mat:
 		mat = mat.duplicate()
 		mat.set_shader_parameter("angle_degrees", _weapon_data.cone_width)

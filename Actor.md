@@ -52,7 +52,7 @@ Actor (CharacterBody2D)
 ## Core: Actor.gd
 
 **Type:** `CharacterBody2D`  
-**File:** `res://src/actors/Actor.gd`
+**File:** `res://src/actors/base/Actor.gd`
 
 The base class for all game actors (players, enemies, NPCs).
 
@@ -458,7 +458,7 @@ add_child(new_actor)
 ### Creating an Actor from Scene
 
 ```gdscript
-const ACTOR_SCENE = preload("res://src/actors/FireActor.tscn")
+const ACTOR_SCENE = preload("res://scenes/actors/FireActor.tscn")
 var actor = ACTOR_SCENE.instantiate()
 add_child(actor)
 actor.global_position = Vector2(100, 200)
@@ -563,23 +563,77 @@ skill_check_component.start_skill_check(SkillCheckComponent.SkillType.LOCKPICKIN
 
 ```
 res://src/actors/
-├── Actor.gd
-├── GoatActor.gd
-├── FireActor.gd
-├── components/
-│   ├── StatsComponent.gd
-│   ├── HealthComponent.gd
-│   ├── CommunicationComponent.gd
-│   ├── TerrainSpeedModifierComponent.gd
-│   ├── SkillCheckComponent.gd
-│   └── AbilityComponent.gd
-└── ai/
-    ├── ActorAIController.gd
-    └── states/
-        ├── AIState.gd
-        ├── AIIdleState.gd
-        ├── AIChaseState.gd
-        └── AIAttackState.gd
+├── base/
+│   └── Actor.gd
+├── types/
+│   ├── GoatActor.gd
+│   ├── FireActor.gd
+│   ├── FarmerActor.gd
+│   ├── WaterActor.gd
+│   ├── GoblinMinion.gd
+│   └── ScarecrowDummy.gd
+├── ai/
+│   ├── ActorAIController.gd
+│   ├── ActorController.gd
+│   ├── ActorStateMachine.gd
+│   ├── FactionComponent.gd
+│   ├── ActorTileNavigationComponent.gd
+│   └── states/
+│       ├── AIState.gd
+│       ├── AIIdleState.gd
+│       ├── AIChaseState.gd
+│       ├── AIAttackState.gd
+│       ├── AIFleeState.gd
+│       ├── AIDeathState.gd
+│       ├── AIFlockinState.gd
+│       ├── AIInvestigateState.gd
+│       ├── AIRoamState.gd
+│       ├── AIStunnedState.gd
+│       └── Dormant.gd
+├── projectiles/
+│   ├── BaseProjectile.gd
+│   ├── WaveProjectile.gd
+│   ├── LobProjectile.gd
+│   ├── FireProjectile.gd
+│   ├── FireLobProjectile.gd
+│   ├── WaterProjectile.gd
+│   ├── WaterLobProjectile.gd
+│   ├── HandaxeProjectile.gd
+│   └── WaveProjectile.gd
+└── models/
+	└── (actor visual model scenes)
+
+res://scenes/
+├── actors/
+│   ├── GoatActor.tscn
+│   ├── FireActor.tscn
+│   ├── FarmerActor.tscn
+│   ├── WaterActor.tscn
+│   ├── GoblinMinion.tscn
+│   ├── ScarecrowDummy.tscn
+│   └── models/
+│       ├── GoatModel.tscn
+│       ├── GoatHead.tscn
+│       ├── GoblinModel.tscn
+│       └── GoblinHead.tscn
+├── projectiles/
+│   ├── FireProjectile.tscn
+│   ├── FireLobProjectile.tscn
+│   ├── WaterProjectile.tscn
+│   ├── WaterLobProjectile.tscn
+│   ├── ArrowProjectile.tscn
+│   ├── ClubProjectile.tscn
+│   ├── DaggerProjectile.tscn
+│   ├── HandaxeProjectile.tscn
+│   ├── JavelinProjectile.tscn
+│   ├── ScimitarProjectile.tscn
+│   └── ShortbowProjectile.tscn
+└── weapons/
+	├── ClubModel.tscn
+	├── HandaxeModel.tscn
+	├── JavelinModel.tscn
+	├── ScimitarModel.tscn
+	└── ShortbowModel.tscn
 ```
 
 ---

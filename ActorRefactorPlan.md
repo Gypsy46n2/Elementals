@@ -518,8 +518,130 @@ res://src/actors/npc_behavior/
 
 ---
 
-*Document Version: 1.1*
+*Document Version: 1.2*
 *Last Updated: 2025*
-*Status: Ready for Implementation*
+*Status: Phase 1-9 Completed, Partial Phase 11*
 *Approach: Incremental file moves with operator verification after each step*
 *Backup: GitHub*
+
+## Executed Changes Summary
+
+### Phase 2: Created New Folder Structure ✅
+- res://src/actors/base/
+- res://src/actors/types/
+- res://src/actors/ai/
+- res://src/actors/ai/states/
+- res://src/actors/projectiles/
+- res://scenes/actors/
+- res://scenes/actors/models/
+- res://scenes/projectiles/
+- res://scenes/weapons/
+- res://assets/materials/
+- res://assets/sprites/characters/
+- res://assets/goats/
+- res://assets/shaders/
+
+### Phase 3: Moved Core Actor Files ✅
+- Actor.gd → src/actors/base/Actor.gd
+
+### Phase 3.2: Moved AI Controller ✅
+- ActorAIController.gd → src/actors/ai/
+- ActorController.gd → src/actors/ai/
+- ActorStateMachine.gd → src/actors/ai/
+- ActorTileNavigationComponent.gd → src/actors/ai/
+- FactionComponent.gd → src/actors/ai/
+
+### Phase 3.3: Moved AI States ✅
+- AIState.gd → src/actors/ai/
+- AIIdleState.gd → src/actors/ai/states/
+- AIFleeState.gd → src/actors/ai/states/
+- AIChaseState.gd → src/actors/ai/states/
+- AIAttackState.gd → src/actors/ai/states/
+- AIDeathState.gd → src/actors/ai/states/
+- AIFlockinState.gd → src/actors/ai/states/
+- AIInvestigateState.gd → src/actors/ai/states/
+- AIRoamState.gd → src/actors/ai/states/
+- AIStunnedState.gd → src/actors/ai/states/
+- Dormant.gd → src/actors/ai/states/
+
+### Phase 4.1: Moved Actor Types ✅
+- GoatActor.gd → src/actors/types/
+- FireActor.gd → src/actors/types/
+- FarmerActor.gd → src/actors/types/
+- WaterActor.gd → src/actors/types/
+- GoblinMinion.gd → src/actors/types/
+- ScarecrowDummy.gd → src/actors/types/
+- GoatController.gd → src/actors/types/
+- FarmerController.gd → src/actors/types/
+- GoblinController.gd → src/actors/types/
+- GoatVisuals.gd → src/actors/types/
+- DormantVisual3D.gd → src/actors/types/
+- StunVisual3D.gd → src/actors/types/
+- GoblinModel.gd → src/actors/types/GoblinModels/
+
+### Phase 4.2: Moved Actor Models ✅
+- GoatModel.tscn → scenes/actors/models/
+- GoatHead.tscn → scenes/actors/models/
+- GoblinModel.tscn → scenes/actors/models/
+- GoblinHead.tscn → scenes/actors/models/
+
+### Phase 5.1: Moved Projectile Scenes ✅
+- FireProjectile.tscn → scenes/projectiles/
+- FireLobProjectile.tscn → scenes/projectiles/
+- WaterProjectile.tscn → scenes/projectiles/
+- WaterLobProjectile.tscn → scenes/projectiles/
+- ArrowProjectile.tscn → scenes/projectiles/
+- ClubProjectile.tscn → scenes/projectiles/
+- DaggerProjectile.tscn → scenes/projectiles/
+- HandaxeProjectile.tscn → scenes/projectiles/
+- JavelinProjectile.tscn → scenes/projectiles/
+- ScimitarProjectile.tscn → scenes/projectiles/
+- ShortbowProjectile.tscn → scenes/projectiles/
+
+### Phase 5.2: Moved Weapon Models ✅
+- ClubModel.tscn → scenes/weapons/
+- HandaxeModel.tscn → scenes/weapons/
+- JavelinModel.tscn → scenes/weapons/
+- ScimitarModel.tscn → scenes/weapons/
+- ShortbowModel.tscn → scenes/weapons/
+
+### Phase 8: Updated References ✅
+Updated all preload/load references in:
+- ArenaSpawner.gd
+- FireActor.gd
+- WaterActor.gd
+- MeleeHitbox.gd
+- MainMenu.gd
+- WeaponVisualComponent.gd
+- WeaponComponent.gd
+- RangedComponent.gd
+- ItemsAutoload.gd
+
+Updated all scene external references in actor/projectile scenes.
+
+### Phase 9: Updated Documentation ✅
+- Actor.md updated with new file paths
+- File structure section updated
+
+### Phase 10: Fixed Shader References ✅
+- **AttackHitboxMaterial.tres**: Updated shader path from `res://Actor/AttackHitbox.gdshader` to `res://assets/Shaders/AttackHitbox.gdshader`
+- **DefaultGoat.tres**: Updated GoatVisuals path from `res://Actor/GoatVisuals.gd` to `res://src/actors/types/GoatVisuals.gd`
+
+### ⚠️ Known Issue: Shader Caching
+**Issue**: Error persists: `Cannot load shader: res://Actor/AttackHitbox.gdshader`
+
+**Root Cause**: Godot 4.x maintains internal caches (`.godot/uid_cache.bin`, scene import caches) that track file locations. These caches are NOT automatically updated when files are moved using file operations - only when Godot's editor itself handles the file move.
+
+**Solution**: The user needs to perform a **Project Restart**:
+1. Close the Godot Editor completely (not just the current project)
+2. Delete the `.godot` folder in the project directory
+3. Reopen the project - Godot will regenerate all caches with correct paths
+
+Alternatively, within the editor:
+1. Project → Restart Project (or close and reopen)
+2. If the error persists, use Project → Remove Current Project, then reopen
+
+### Remaining Items
+- [ ] User must restart Godot project to clear shader cache
+- [ ] Old Actor/ folder has .uid files that should be deleted after verification
+- Some scene files still reference Components/ActorComponents/ paths (expected - component scripts)
