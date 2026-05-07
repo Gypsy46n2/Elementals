@@ -27,11 +27,11 @@ func spawn_initial_actors() -> void:
 	# Spawn ambient wildlife through the arena spawner, not through the quest board.
 	spawn_random_wild_goats(random_wild_goat_count)
 
-	# Spawn persistent/selected goats from GoatManager if applicable.
-	if has_node("/root/GoatManager"):
-		var gm: Node = get_node("/root/GoatManager")
-		if gm.has_method("get_selected_goats"):
-			var selected_value: Variant = gm.call("get_selected_goats")
+	# Spawn persistent/selected goats from HerdManager if applicable.
+	if has_node("/root/HerdManager"):
+		var hm: Node = get_node("/root/HerdManager")
+		if hm.has_method("get_selected_goats"):
+			var selected_value: Variant = hm.call("get_selected_goats")
 			var selected_goats: Array = (selected_value as Array) if typeof(selected_value) == TYPE_ARRAY else []
 			for goat_data in selected_goats:
 				var g_tile: HexTileData = _get_random_spawn_tile()

@@ -17,28 +17,34 @@
 
 ```
 res://
-├── Actor/                    # All playable/NPC entities
-│   ├── Actor.gd            # Base class - all living entities inherit from here
-│   ├── ActorController.gd   # Base controller (human input)
-│   ├── ActorAIController.gd # AI behavior with state machine
-│   ├── GoatActor.gd         # Player-controlled goat
-│   ├── FarmerActor.gd       # NPC farmer
-│   ├── FireActor.gd        # Fire elemental
-│   ├── WaterActor.gd       # Water elemental
-│   ├── GoblinController.gd # Goblin NPC controller
-│   ├── GoblinMinion.gd     # Goblin NPC
-│   ├── Projectiles/        # All projectile types
-│   └── ScarecrowDummy.gd   # Training dummy
+├── src/actors/               # All playable/NPC entities
+│   ├── base/
+│   │   ├── Actor.gd          # Base class - all living entities inherit from here
+│   │   ├── ActorController.gd  # Base controller (human input)
+│   │   └── ActorData.gd     # RPG stat container
+│   ├── ai/                   # AI behavior system
+│   │   ├── ActorAIController.gd  # Base AI controller
+│   │   ├── ActorStateMachine.gd  # State machine for AI
+│   │   ├── AIState.gd            # Base state class
+│   │   └── states/           # Individual AI states
+│   │       ├── AIFlockState.gd
+│   │       └── ...           # Other AI states (idle, roam, chase, attack, flee, etc.)
+│   ├── types/                # Specific actor implementations
+│   │   ├── GoatActor.gd      # Player-controlled goat
+│   │   ├── GoatController.gd # Goat AI controller
+│   │   ├── FarmerActor.gd    # NPC farmer
+│   │   ├── FireActor.gd      # Fire elemental
+│   │   ├── WaterActor.gd     # Water elemental
+│   │   ├── GoblinMinion.gd   # Goblin NPC
+│   │   ├── GoblinController.gd  # Goblin AI controller
+│   │   └── ScarecrowDummy.gd   # Training dummy
+│   └── projectiles/          # All projectile types
+│       ├── BaseProjectile.gd
+│       └── ...               # (FireProjectile, WaterLobProjectile, etc.)
 │
-├── Components/              # Modular components attached to actors
-│   ├── ActorComponents/    # Components usable by any Actor
-│   │   ├── AbilityComponents/  # Special abilities (GoatCharge, NimbleEscape, etc.)
-│   │   ├── NPC Behavior/        # AI state machine system
-│   │   │   ├── ActorAIController.gd
-│   │   │   ├── ActorStateMachine.gd
-│   │   │   ├── AIState.gd
-│   │   │   └── States/          # Individual AI states
-│   │   ├── ActorData.gd         # RPG stat container
+├── Components/               # Modular components attached to actors
+│   ├── ActorComponents/      # Components usable by any Actor
+│   │   ├── AbilityComponents/    # Special abilities (GoatCharge, NimbleEscape, etc.)
 │   │   ├── ActorTileInteractionComponent.gd
 │   │   ├── DetectionComponent.gd   # Perception/enemy detection
 │   │   ├── HealthComponent.gd      # Health management
@@ -46,18 +52,7 @@ res://
 │   │   ├── ProjectileComponent.gd   # Ranged attacks
 │   │   ├── TerrainSpeedModifierComponent.gd
 │   │   └── WeaponComponent.gd
-│   │
-│   ├── Arena/              # Components for ArenaGrid management
-│   │   ├── GameClockComponent.gd  # *** CENTRALIZED TIMING SYSTEM ***
-│   │   ├── TileSignalComponent.gd  # *** CENTRAL DISTANCE ROUTING ***
-│   │   ├── ArenaPhysics.gd          # Collision/physics
-│   │   ├── ArenaTileInteractionComponent.gd
-│   │   ├── GridGenerator.gd        # Grid creation/farmstead
-│   │   ├── HexGridRenderer.gd      # 3D tile rendering
-│   │   └── TileSystem.gd           # Tile state logic
-│   │
-│   ├── WeaponComponents/  # Combat systems
-│   ├── BreedingComponents/ # Goat genetics/breeding
+│   ├── BreedingComponents/   # Goat genetics/breeding
 │   └── DebugComponent.gd
 │
 ├── Play Space/             # World objects
@@ -409,8 +404,8 @@ var arena = get_node("/root/Arena")  # If path is known
 | Centralized Timing | `Components/Arena/GameClockComponent.gd` | Single clock for all game timing |
 | Hex Grid | `Play Space/hex_tile_data.gd` | Tile data structure |
 | Distance/Triggers | `Components/Arena/TileSignalComponent.gd` | Central proximity system |
-| Actor System | `Actor/Actor.gd` | Base entity class |
-| AI Behavior | `Components/ActorComponents/NPC Behavior/ActorAIController.gd` | NPC controller |
+| Actor System | `src/actors/base/Actor.gd` | Base entity class |
+| AI Behavior | `src/actors/ai/ActorAIController.gd` | NPC controller |
 | Movement | `Components/ActorComponents/MovementComponent.gd` | Hex-grid movement |
 | Perception | `Components/ActorComponents/DetectionComponent.gd` | Enemy detection |
 | Events | `Core/GameEvents.gd` | Global event bus |

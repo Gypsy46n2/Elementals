@@ -1,44 +1,54 @@
 class_name BreedingComponent
 extends Node
 
-func breed_goats(doe: GoatData, buck: GoatData) -> bool:
-	if doe.gender != GoatData.Gender.DOE or buck.gender != GoatData.Gender.BUCK:
-		return false
+func breed(parent_a: ActorData, parent_b: ActorData) -> bool:
+	# Find which is male and which is female
+	var male: ActorData
+	var female: ActorData
 	
-	if doe.is_pregnant or doe.is_exhausted or buck.is_exhausted:
+	if parent_a.gender == ActorData.Gender.MALE and parent_b.gender == ActorData.Gender.FEMALE:
+		male = parent_a
+		female = parent_b
+	elif parent_a.gender == ActorData.Gender.FEMALE and parent_b.gender == ActorData.Gender.MALE:
+		male = parent_b
+		female = parent_a
+	else:
+		return false  # Must be male + female
+	
+	if female.is_pregnant or female.is_exhausted or male.is_exhausted:
 		return false
 		
-	doe.is_pregnant = true
-	doe.pregnancy_timer = 3 # 3 days pregnancy
-	doe.pregnancy_father = buck
+	female.is_pregnant = true
+	female.pregnancy_timer = 3 # 3 days pregnancy
+	female.pregnancy_father = male
 	
 	# Breeding is tiring
-	doe.is_exhausted = true
-	buck.is_exhausted = true
+	female.is_exhausted = true
+	male.is_exhausted = true
 	
 	GameEvents.herd_updated.emit()
 	return true
 
-func process_pregnancy(herd: Array[GoatData]) -> Array[GoatData]:
-	var new_kids: Array[GoatData] = []
-	for goat in herd:
-		if goat.is_pregnant:
-			goat.pregnancy_timer -= 1
-			if goat.pregnancy_timer <= 0:
-				goat.is_pregnant = false
-				var buck = goat.pregnancy_father
-				if not buck:
-					buck = _find_random_buck(herd)
+func process_pregnancy(actors: Array) -> Array[ActorData]:
+	var new_offspring: Array[ActorData] = []
+	for actor in actors:
+		if actor is ActorData and actor.is_pregnant:
+			actor.pregnancy_timer -= 1
+			if actor.pregnancy_timer <= 0:
+				actor.is_pregnant = false
+				var partner = actor.pregnancy_father
+				if not partner:
+					partner = _find_random_male(actors)
 				
-				if buck:
-					var kid = GoatData.create_offspring(goat, buck)
-					new_kids.append(kid)
+				if partner:
+					var kid = actor.create_offspring(partner)
+					new_offspring.append(kid)
 				
-				goat.pregnancy_father = null
-	return new_kids
+				actor.pregnancy_father = null
+	return new_offspring
 
-func _find_random_buck(herd: Array[GoatData]) -> GoatData:
-	var bucks = herd.filter(func(g): return g.gender == GoatData.Gender.BUCK)
-	if bucks.is_empty():
+func _find_random_male(actors: Array[ActorData]) -> ActorData:
+	var males = actors.filter(func(a): return a.gender == ActorData.Gender.MALE)
+	if males.is_empty():
 		return null
-	return bucks.pick_random()
+	return males.pick_random()

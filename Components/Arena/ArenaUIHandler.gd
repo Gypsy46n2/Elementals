@@ -102,8 +102,8 @@ func update_ui_text() -> void:
 
 func _on_finish_day_pressed() -> void:
 	GameEvents.day_finished.emit()
-	if arena.has_node("/root/GoatManager"):
-		arena.get_node("/root/GoatManager").next_day()
+	if arena.has_node("/root/HerdManager"):
+		arena.get_node("/root/HerdManager").next_day()
 	arena.get_tree().change_scene_to_file("res://Ranch/Ranch.tscn")
 
 func handle_game_over() -> void:

@@ -56,7 +56,10 @@ func _physics_process(delta: float) -> void:
 		cb_with_force.velocity += external_velocity
 		external_velocity = Vector3.ZERO
 
-	if target is CharacterBody3D:
+	# Skip floor validation for static actors (move_speed == 0) to avoid unnecessary processing
+	var is_static: bool = move_speed == 0.0 and not _is_interpolating
+	
+	if target is CharacterBody3D and not is_static:
 		var cb: CharacterBody3D = target as CharacterBody3D
 		_sanitize_character_body(cb)
 

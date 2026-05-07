@@ -33,8 +33,8 @@ func _ready() -> void:
 	max_level_goat_button.pressed.connect(_on_max_level_goat_pressed)
 	
 	refresh_ui()
-	_on_gold_changed(GoatManager.gold)
-	_on_day_advanced(GoatManager.current_day)
+	_on_gold_changed(HerdManager.gold)
+	_on_day_advanced(HerdManager.current_day)
 	
 	# Ensure mouse is visible
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -43,7 +43,7 @@ func refresh_ui() -> void:
 	_clear_containers()
 	
 	# Sort herd by name for stability
-	var sorted_herd = GoatManager.herd.duplicate()
+	var sorted_herd = HerdManager.herd.duplicate()
 	sorted_herd.sort_custom(func(a, b): 
 		return a.goat_name < b.goat_name
 	)
@@ -53,7 +53,7 @@ func refresh_ui() -> void:
 		card.goat_data = goat
 		card.selected.connect(_on_goat_selected)
 		
-		if goat.gender == GoatData.Gender.DOE:
+		if goat.gender == ActorData.Gender.FEMALE:
 			does_container.add_child(card)
 		else:
 			bucks_container.add_child(card)
@@ -71,7 +71,7 @@ func _clear_containers() -> void:
 		child.queue_free()
 
 func _on_goat_selected(goat: GoatData) -> void:
-	if goat.gender == GoatData.Gender.DOE:
+	if goat.gender == ActorData.Gender.FEMALE:
 		if selected_doe == goat:
 			selected_doe = null
 		else:
@@ -96,22 +96,22 @@ func _update_breeding_selection() -> void:
 	
 	breed_button.disabled = not (selected_doe and selected_buck)
 	
-	var selected = GoatManager.get_selected_goats()
+	var selected = HerdManager.get_selected_goats()
 	# next_day_button.disabled = selected.is_empty() # Allow entering without goats
-	# Accessing MAX_TEAM_SIZE from GoatManager autoload instance
-	next_day_button.text = "Enter Arena (%d/%d)" % [selected.size(), GoatManager.MAX_TEAM_SIZE]
+	# Accessing MAX_TEAM_SIZE from HerdManager autoload instance
+	next_day_button.text = "Enter Arena (%d/%d)" % [selected.size(), HerdManager.MAX_TEAM_SIZE]
 
 func _on_enter_arena_pressed() -> void:
 	get_tree().change_scene_to_file("res://Play Space/Arena.tscn")
 
 func _on_breed_pressed() -> void:
-	if GoatManager.breed_goats(selected_doe, selected_buck):
+	if HerdManager.breed(selected_doe, selected_buck):
 		selected_doe = null
 		selected_buck = null
 		refresh_ui()
 
 func _on_next_day_pressed() -> void:
-	GoatManager.next_day()
+	HerdManager.next_day()
 
 func _on_day_advanced(day: int) -> void:
 	day_label.text = "Day: %d" % day
@@ -126,7 +126,7 @@ func _on_max_level_goat_pressed() -> void:
 	var max_goat = GoatData.new()
 	max_goat.goat_name = "Mega Goat"
 	max_goat.level = 20
-	max_goat.gender = GoatData.Gender.BUCK if randf() < 0.5 else GoatData.Gender.DOE
+	max_goat.gender = ActorData.Gender.MALE if randf() < 0.5 else ActorData.Gender.FEMALE
 	max_goat.strength = 20.0
 	max_goat.dexterity = 20.0
 	max_goat.constitution = 20.0
@@ -134,6 +134,6 @@ func _on_max_level_goat_pressed() -> void:
 	max_goat.wisdom = 20.0
 	max_goat.charisma = 20.0
 	
-	GoatManager.add_goat(max_goat)
+	HerdManager.add_goat(max_goat)
 	cheat_panel.visible = false
 	refresh_ui()

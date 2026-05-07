@@ -10,7 +10,9 @@ func _ready() -> void:
 	should_bob = false
 	
 	super._ready()
-	faction_component.setup(FactionComponent.Faction.NEUTRAL)
+	# FARMSTEAD faction is friendly to PLAYER, so scarecrow stays visible as a target dummy.
+	# Unlike PLAYER faction, this won't make the scarecrow selectable or controllable.
+	faction_component.setup(FactionComponent.Faction.FARMSTEAD)
 	
 	if health_component:
 		health_component.bar_visible_always = true

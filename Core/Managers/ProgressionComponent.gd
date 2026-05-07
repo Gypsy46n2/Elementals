@@ -6,7 +6,7 @@ var current_day: int = 1
 func initialize(initial_day: int) -> void:
 	current_day = initial_day
 
-func advance_day(herd: Array[GoatData]) -> void:
+func advance_day(herd: Array[ActorData]) -> void:
 	current_day += 1
 	
 	for goat in herd:

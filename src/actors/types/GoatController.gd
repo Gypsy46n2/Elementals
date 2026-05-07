@@ -11,7 +11,7 @@ var current_state: State = State.WANDERING
 @export var cooldown_duration: float = 3.0
 
 ## Flocking needs to be upgraded to a State
-## make a res://Components/ActorComponents/NPC Behavior/States/AIFlockinState.gd and move function there.
+## make a res://src/actors/ai/states/AIFlockState.gd and move function there.
 @export_group("Flocking")
 ## Minimum distance to keep from the player goat.
 @export var min_follow_distance: float = 1.0

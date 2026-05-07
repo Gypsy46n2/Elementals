@@ -1,7 +1,8 @@
 extends Node
 
-## GoatManager orchestrates herd, economy, and progression systems.
+## HerdManager orchestrates herd, economy, and progression systems.
 ## Delegating work to specialized components to avoid god-object patterns.
+## This manager is actor-type-agnostic — it works with any ActorData subclass.
 
 # Components
 var herd_manager: HerdComponent
@@ -10,7 +11,7 @@ var progression_manager: ProgressionComponent
 var save_manager: SaveComponent
 var breeding_manager: BreedingComponent
 
-var herd: Array[GoatData]:
+var herd: Array[ActorData]:
 	get: return herd_manager.herd
 
 var gold: int:
@@ -68,32 +69,39 @@ func _connect_signals() -> void:
 
 # --- Delegate Methods ---
 
-func toggle_selection(goat: GoatData) -> bool:
-	return herd_manager.toggle_selection(goat)
+func toggle_selection(actor: ActorData) -> bool:
+	return herd_manager.toggle_selection(actor)
 
-func get_selected_goats() -> Array[GoatData]:
+func get_selected_goats() -> Array[ActorData]:
 	return herd_manager.get_selected_goats()
 
-func add_goat(goat: GoatData) -> void:
-	herd_manager.add_goat(goat)
+func add_goat(actor: ActorData) -> void:
+	herd_manager.add_goat(actor)
 
-func remove_goat(goat: GoatData) -> void:
-	herd_manager.remove_goat(goat)
+func remove_goat(actor: ActorData) -> void:
+	herd_manager.remove_goat(actor)
 
-func sell_goat(goat: GoatData) -> void:
-	economy_manager.gold += goat.gold_value
-	remove_goat(goat)
+func sell_goat(actor: ActorData) -> void:
+	# Cast to GoatData for goat-specific property, but design supports any ActorData
+	var goat = actor as GoatData
+	if goat:
+		economy_manager.gold += goat.gold_value
+	remove_goat(actor)
 
-func breed_goats(doe: GoatData, buck: GoatData) -> bool:
-	return breeding_manager.breed_goats(doe, buck)
+func breed(parent_a: ActorData, parent_b: ActorData) -> bool:
+	return breeding_manager.breed(parent_a, parent_b)
 
 func next_day() -> void:
 	progression_manager.advance_day(herd_manager.herd)
 	
-	# Process pregnancies
-	var new_kids: Array[GoatData] = breeding_manager.process_pregnancy(herd_manager.herd)
+	# Process pregnancies with generic handler
+	var new_kids: Array[ActorData] = breeding_manager.process_pregnancy(herd_manager.herd)
 	for kid in new_kids:
-		add_goat(kid)
+		# For now, add as GoatData if possible; future types may have their own handlers
+		var goat_kid = kid as GoatData
+		if goat_kid:
+			add_goat(goat_kid)
+		# TODO: Add handlers for other actor types (GoblinData, ElementalData, etc.)
 	
 	# Any other day-transition logic...
 	GameEvents.herd_updated.emit()

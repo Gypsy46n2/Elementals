@@ -87,7 +87,7 @@ func _update_resource_ui() -> void:
 	if not name_edit.has_focus():
 		name_edit.text = actor_resource.goat_name
 	
-	var gender_str = "Doe" if actor_resource.gender == GoatData.Gender.DOE else "Buck"
+	var gender_str = "Female" if actor_resource.gender == ActorData.Gender.FEMALE else "Male"
 	info_label.text = "%s - Lvl: %d - Age: %d" % [gender_str, actor_resource.level, actor_resource.age_days]
 	
 	if actor_resource.is_pregnant:
@@ -189,7 +189,7 @@ func _handle_selection() -> void:
 	super._handle_selection()
 
 func _toggle_arena_selection() -> void:
-	GoatManager.toggle_selection(actor_resource)
+	HerdManager.toggle_selection(actor_resource)
 
 func _on_name_submitted(new_text: String) -> void:
 	if actor_resource:

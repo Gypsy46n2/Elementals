@@ -4,7 +4,6 @@ extends ActorData
 enum HornType { NONE, SMALL, LARGE, SPIRAL }
 enum BodyType { SMALL, MEDIUM, LARGE }
 enum PatternType { SOLID, PIEBALD, SPOTTED }
-enum Gender { BUCK, DOE }
 
 @export_group("Identity")
 @export var goat_name: String = "New Goat":
@@ -16,11 +15,6 @@ enum Gender { BUCK, DOE }
 	set(v):
 		if level == v: return
 		level = v
-		stats_changed.emit()
-@export var gender: Gender = Gender.DOE:
-	set(v): 
-		if gender == v: return
-		gender = v
 		stats_changed.emit()
 
 @export_group("Genetics")
@@ -38,16 +32,6 @@ enum Gender { BUCK, DOE }
 	set(v): 
 		if pattern_type == v: return
 		pattern_type = v
-		stats_changed.emit()
-@export var base_color: Color = Color.WHITE:
-	set(v): 
-		if base_color == v: return
-		base_color = v
-		stats_changed.emit()
-@export var pattern_color: Color = Color.GRAY:
-	set(v): 
-		if pattern_color == v: return
-		pattern_color = v
 		stats_changed.emit()
 
 func _init() -> void:
@@ -76,26 +60,6 @@ func _init() -> void:
 		if age_days == v: return
 		age_days = v
 		stats_changed.emit()
-@export var is_pregnant: bool = false:
-	set(v): 
-		if is_pregnant == v: return
-		is_pregnant = v
-		stats_changed.emit()
-@export var pregnancy_timer: int = 0:
-	set(v): 
-		if pregnancy_timer == v: return
-		pregnancy_timer = v
-		stats_changed.emit()
-@export var pregnancy_father: GoatData = null:
-	set(v):
-		if pregnancy_father == v: return
-		pregnancy_father = v
-		stats_changed.emit()
-@export var is_exhausted: bool = false:
-	set(v): 
-		if is_exhausted == v: return
-		is_exhausted = v
-		stats_changed.emit()
 @export var is_selected: bool = false:
 	set(v): 
 		if is_selected == v: return
@@ -109,23 +73,24 @@ func _init() -> void:
 		gold_value = v
 		stats_changed.emit()
 
-## Helper to create a child from two parents (simplified genetics)
-static func create_offspring(doe: GoatData, buck: GoatData) -> GoatData:
+## Creates offspring from this actor and a partner
+func create_offspring(partner: ActorData) -> ActorData:
 	var kid = GoatData.new()
 	
-	kid.goat_name = "Kid of " + doe.goat_name
-	kid.gender = Gender.DOE if randf() < 0.5 else Gender.BUCK
+	# Use reflection for goat-specific fields
+	kid.goat_name = "Kid of " + (goat_name if "goat_name" in self else "Unknown")
+	kid.gender = ActorData.Gender.FEMALE if randf() < 0.5 else ActorData.Gender.MALE
 	
 	# Genetic inheritance with slight mutation
-	kid.base_color = doe.base_color.lerp(buck.base_color, randf())
-	kid.horn_type = doe.horn_type if randf() < 0.5 else buck.horn_type
-	kid.body_type = doe.body_type if randf() < 0.5 else buck.body_type
+	kid.base_color = base_color.lerp(partner.base_color, randf())
+	kid.horn_type = horn_type if randf() < 0.5 else partner.horn_type
+	kid.body_type = body_type if randf() < 0.5 else partner.body_type
 	
-	kid.strength = (doe.strength + buck.strength) * 0.5 * randf_range(0.9, 1.1)
-	kid.dexterity = (doe.dexterity + buck.dexterity) * 0.5 * randf_range(0.9, 1.1)
-	kid.constitution = (doe.constitution + buck.constitution) * 0.5 * randf_range(0.9, 1.1)
-	kid.intelligence = (doe.intelligence + buck.intelligence) * 0.5 * randf_range(0.9, 1.1)
-	kid.wisdom = (doe.wisdom + buck.wisdom) * 0.5 * randf_range(0.9, 1.1)
-	kid.charisma = (doe.charisma + buck.charisma) * 0.5 * randf_range(0.9, 1.1)
+	kid.strength = (strength + partner.strength) * 0.5 * randf_range(0.9, 1.1)
+	kid.dexterity = (dexterity + partner.dexterity) * 0.5 * randf_range(0.9, 1.1)
+	kid.constitution = (constitution + partner.constitution) * 0.5 * randf_range(0.9, 1.1)
+	kid.intelligence = (intelligence + partner.intelligence) * 0.5 * randf_range(0.9, 1.1)
+	kid.wisdom = (wisdom + partner.wisdom) * 0.5 * randf_range(0.9, 1.1)
+	kid.charisma = (charisma + partner.charisma) * 0.5 * randf_range(0.9, 1.1)
 	
 	return kid

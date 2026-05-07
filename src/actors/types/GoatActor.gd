@@ -79,8 +79,8 @@ func die() -> void:
 	super.die()
 	
 	# Goat-specific: Permanent removal from the persistent herd
-	if has_node("/root/GoatManager"):
-		get_node("/root/GoatManager").remove_goat(goat_data)
+	if has_node("/root/HerdManager"):
+		get_node("/root/HerdManager").remove_goat(goat_data)
 
 
 

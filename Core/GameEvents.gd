@@ -11,6 +11,9 @@ signal day_advanced(new_day: int)
 signal day_finished()
 
 # UI/Interaction Signals
-signal goat_selection_toggled(goat: GoatData, is_selected: bool)
+signal actor_selection_toggled(actor: ActorData, is_selected: bool)
 signal request_ui_update()
 signal weapon_equipped(weapon: WeaponData)
+
+# Deprecated: Use actor_selection_toggled instead
+# signal goat_selection_toggled(goat: GoatData, is_selected: bool)

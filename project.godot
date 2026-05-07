@@ -23,7 +23,7 @@ config/icon="res://icon.svg"
 
 GameEvents="*res://Core/GameEvents.gd"
 GameSettings="*res://Core/GameSettings.gd"
-GoatManager="*res://Components/BreedingComponents/GoatManager.gd"
+HerdManager="*res://Components/BreedingComponents/HerdManager.gd"
 ItemsAutoload="*res://Core/ItemsAutoload.gd"
 QuestEvents="*res://QuestSystem/QuestEvents.gd"
 QuestDatabase="*res://QuestSystem/QuestDatabase.gd"
