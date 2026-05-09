@@ -17,10 +17,10 @@ enum FoliageShape {
 @export_range(2.0, 6.0, 0.1) var base_height: float = 8.0
 
 ## Radius at the base of the trunk.
-@export_range(0.5, 2.0, 0.1) var base_radius: float = 1.0
+@export_range(0.1, 1.0, 0.1) var base_radius: float = 1.0
 
 ## Number of cylindrical/conical segments composing the trunk.
-@export_range(1, 2, 1) var segment_count: int = 3
+@export_range(2, 4, 1) var segment_count: int = 3
 
 ## Maximum bend angle (degrees) per trunk segment. Adds organic variation.
 @export_range(0.0, 15.0, 0.5) var jank_factor: float = 5.0
@@ -46,7 +46,7 @@ enum FoliageShape {
 @export var branch_radius_ratio: Vector2 = Vector2(0.5, 0.65)
 
 ## Probability (0-1) that each branch spawns with foliage at its tip.
-@export_range(0.0, 1.0, 0.05) var branch_foliage_ratio: float = 0.3
+@export_range(0.0, 1.0, 0.05) var branch_foliage_ratio: float = 0.1
 
 ## Fraction of trunk height to reserve at top and bottom (no branch spawn zone).
 ## Applied equally to top and bottom, so effective usable range is padding*2 to 1-padding*2.

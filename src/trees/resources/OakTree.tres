@@ -1,15 +1,14 @@
 [gd_resource type="Resource" script_class="TreeBlueprint" format=3 uid="uid://rnw0jsoa5yi3"]
 
-[ext_resource type="Script" uid="uid://di11fawgvi8ry" path="res://src/trees/TreeBlueprint.gd" id="1_blueprint"]
+[ext_resource type="Script" uid="uid://dqkhb3ooifvw0" path="res://src/trees/TreeBlueprint.gd" id="1_blueprint"]
 
 [resource]
 script = ExtResource("1_blueprint")
-base_height = 2.0
-base_radius = 0.1
-jank_factor = 2.0
-total_branch_budget = 1
-branch_length_min = 0.5
+base_height = 4.1
+base_radius = 0.2
+segment_count = 4
 branch_length_max = 1.5
-branch_angle_min = 20.0
-branch_angle_max = 40.0
-branch_tint = Color(0.864, 0.9, 0.17999998, 1)
+branch_foliage_ratio = 1.0
+foliage_layers_min = 3
+foliage_layers_max = 4
+foliage_size = 2.0
