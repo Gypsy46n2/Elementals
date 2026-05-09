@@ -89,7 +89,6 @@ func initialize_grid() -> void:
 				arena.renderer.update_fire_effect(tile, true)
 	
 	plan_farmstead()
-	spawn_initial_trees()
 	
 	for tile in arena.tile_data_grid:
 		if tile.current_state == TileConstants.State.STONE:
@@ -190,24 +189,6 @@ func plan_farmstead() -> void:
 		# Randomly pick a perimeter tile for the house
 		var house_idx = randi() % farmstead_perimeter_tiles.size()
 		house_tile = farmstead_perimeter_tiles[house_idx]
-
-## Spawns trees across the grid, avoiding the farmstead area.
-func spawn_initial_trees() -> void:
-	for tile in arena.tile_data_grid:
-		if tile.current_state == TileConstants.State.GRASS:
-			if tile in farmstead_interior_tiles or tile in farmstead_perimeter_tiles:
-				continue
-			if randf() < 0.05:
-				spawn_tree(tile)
-
-## Instantiates a tree at the given tile's position.
-func spawn_tree(tile: HexTileData) -> void:
-	var tree = arena.tree_feature_scene.instantiate()
-	tree.transform.origin = tile.position + Vector3(0, get_tile_surface_y(tile), 0)
-	arena.add_child(tree)
-	tile.feature = tree
-	if tree.has_method("set_tile"):
-		tree.set_tile(tile)
 
 ## Calculates the world position of a hex cell based on its grid coordinates.
 func calculate_hex_position(column: int, row: int) -> Vector2:

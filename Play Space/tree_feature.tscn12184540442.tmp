@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://do3vs2cl6f0nj"]
+
+[ext_resource type="Script" path="res://Play Space/TreeFeature.gd" id="1_x0r5v"]
+[ext_resource type="Texture2D" uid="uid://bmufhry2dpiqr" path="res://assets/generated/archive/tree_simple_frame_0_1774734106.png" id="3_v1yv3"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_tree"]
+radius = 0.4
+
+[node name="TreeFeature" type="Node3D" unique_id=720785343]
+script = ExtResource("1_x0r5v")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=849647278]
+billboard = 1
+texture_filter = 0
+texture = ExtResource("3_v1yv3")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1071180164]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=1743159761]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CylinderShape3D_tree")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1130074294]
+volume_db = -5.0

@@ -20,8 +20,8 @@ func get_traversable_neighbors(tile: HexTileData, max_step_up: float = 3.0) -> A
 		if t == null or t.current_state == TileConstants.State.STONE:
 			return false
 		if t.feature:
-			if t.feature is TreeFeature:
-				if t.feature.current_state in [TreeFeature.State.TREE, TreeFeature.State.STUMP, TreeFeature.State.BURNT_STUMP]:
+			if t.feature is HarvestableTree:
+				if t.feature.get_state() in [HarvestableTree.State.STANDBY, HarvestableTree.State.FELLEDB]:
 					return false
 			elif t.feature is FenceFeature:
 				return false

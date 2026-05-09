@@ -39,6 +39,29 @@ should be able to participate in the breeding system.
 |-----------|------|--------|-------|
 | `BreedableComponent` | `res://Components/BreedingComponents/BreedableComponent.gd` | ❌ Not created | Planned but not needed for Phase 1 |
 | `TraitInheritanceEngine` | `res://Core/Managers/TraitInheritanceEngine.gd` | ❌ Not created | Genetics calculator |
+
+### TraitInheritanceEngine Design
+- **Purpose**: Calculate inheritance of traits across any `ActorData` subclass.
+- **Core Classes**:
+  - `TraitInheritanceEngine` (RefCounted singleton): entry point and registry manager.
+  - `TraitDescriptor` (RefCounted): metadata for each trait (inheritance_mode, property_name, dominance_map, variance_range, mutation rates).
+- **Inheritance Modes**:
+  1. **MENDELIAN** — Discrete traits with dominant/recessive alleles and mutation chance.
+  2. **QUANTITATIVE** — Continuous (stat, color) blending with variance and mutation.
+  3. **ENVIRONMENTAL** — Parent/environment-driven traits (no blending).
+  4. **MUTATIONAL** — Force novel traits entirely.
+- **Registry & Registration**:
+  - Static registry mapping actor_type → array of `TraitDescriptor`.
+  - Base traits registered for `ActorData`; type-specific traits (e.g. goat) extend registry.
+- **Key Methods**:
+  - `get_trait_registry(actor_type: String) -> Array[TraitDescriptor]`
+  - `inherit_trait(parent_a, parent_b, trait_id, actor_type) -> Variant`
+  - `generate_offspring_traits(parent_a, parent_b, actor_type) -> Dictionary`
+  - `apply_traits_to_actor(actor_data, traits: Dictionary) -> void`
+- **Goat-specific Implementations**:
+  - `generate_novel_goat_trait(trait_id)` for goat-enums randomization.
+  - `create_goat_offspring(mother, father)` orchestrating trait inheritance, blending, and inbreeding penalty calculation.
+
 | `GoblinData` | `res://Components/BreedingComponents/GoblinData.gd` | ❌ Not created | Goblin-specific traits |
 | `ElementalData` | `res://Components/BreedingComponents/ElementalData.gd` | ❌ Not created | Elemental-specific traits |
 | `CaptureComponent` | `res://Components/BreedingComponents/CaptureComponent.gd` | ❌ Not created | Wild capture system |

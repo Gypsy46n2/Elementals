@@ -26,6 +26,17 @@ func load_game() -> GoatSaveData:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return null
 	
+	# Check if file is empty or too small to be valid
+	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if file == null:
+		push_warning("Could not open save file for reading: " + str(FileAccess.get_open_error()))
+		return null
+	var file_size = file.get_length()
+	file.close()
+	if file_size < 10:  # Minimum size for a valid .tres file
+		push_warning("Save file is too small or empty, skipping load")
+		return null
+	
 	var save = ResourceLoader.load(SAVE_PATH, "", ResourceLoader.CACHE_MODE_IGNORE)
 	if save is GoatSaveData:
 		# Convert legacy GoatData entries to ActorData for generic handling
@@ -35,4 +46,5 @@ func load_game() -> GoatSaveData:
 				converted_herd.append(actor)
 		save.herd = converted_herd
 		return save
+	push_warning("Save file is corrupted or invalid format")
 	return null
