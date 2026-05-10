@@ -11,4 +11,6 @@ branch_length_max = 1.5
 branch_foliage_ratio = 1.0
 foliage_layers_min = 3
 foliage_layers_max = 4
-foliage_size = 2.0
+foliage_density_min = 4.0
+foliage_size = 3.0
+foliage_scale = 1.5

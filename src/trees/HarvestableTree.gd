@@ -103,7 +103,7 @@ func _create_foliage_layer(foliage: TreeBlueprint.FoliageData) -> void:
 	sphere.position = foliage.position
 	sphere.rotation.y = foliage.rotation_y
 	sphere.use_collision = false  # Foliage typically doesn't need collision
-	sphere.material = blueprint.create_foliage_material()
+	sphere.material = blueprint.create_foliage_material_with_shader()
 
 	add_child(sphere)
 	_csg_foliage_nodes.append(sphere)

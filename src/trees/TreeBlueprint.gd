@@ -77,7 +77,11 @@ enum FoliageShape {
 @export_range(3.0, 5.0, 0.5) var foliage_density_max: float = 5.0
 
 ## Base size of foliage primitives.
-@export_range(0.5, 2.0, 0.1) var foliage_size: float = 1.2
+@export_range(0.5, 4.0, 0.1) var foliage_size: float = 1.2
+
+## Uniform scale multiplier applied to all foliage primitives.
+## Does not affect layer count — use this to make foliage chunks larger or smaller.
+@export_range(0.5, 3.0, 0.1) var foliage_scale: float = 1.0
 #endregion
 
 #region Materials
@@ -331,7 +335,7 @@ func _generate_branches_at_joint(joint_position: Vector3, parent_radius: float, 
 		var f := FoliageData.new()
 		f.anchor_point = tip_position
 		f.position = tip_position  # Tip is center, no variance
-		f.radius = randf_range(0.4, 0.8)
+		f.radius = randf_range(0.4, 0.8) * foliage_scale
 		f.scale = randf_range(1.0 - layer_scale_variance, 1.0 + layer_scale_variance)
 		f.rotation_y = randf_range(0, deg_to_rad(layer_rotation_variance))
 		branch_foliage.append(f)
@@ -365,7 +369,7 @@ func _generate_foliage(anchor_segment: TrunkSegment) -> Array[FoliageData]:
 		layer.anchor_point = anchor_point
 		layer.position = anchor_point  # Terminal is center, no variance
 		
-		layer.radius = base_radius * randf_range(1.0 - layer_scale_variance, 1.0 + layer_scale_variance)
+		layer.radius = base_radius * foliage_scale * randf_range(1.0 - layer_scale_variance, 1.0 + layer_scale_variance)
 		layer.scale = randf_range(1.0 - layer_scale_variance, 1.0 + layer_scale_variance)
 		layer.rotation_y = randf_range(0, deg_to_rad(layer_rotation_variance))
 		
@@ -400,6 +404,27 @@ func create_foliage_material() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = foliage_tint
 	mat.roughness = 0.8
+	return mat
+
+
+## Creates a foliage material using the foliage sphere shader with wind and SSS.
+func create_foliage_material_with_shader() -> ShaderMaterial:
+	var shader := preload("res://assets/Shaders/foliage_sphere.gdshader")
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	
+	# Set foliage color from blueprint
+	mat.set_shader_parameter("foliage_color", foliage_tint)
+	
+	# Default values for other parameters
+	mat.set_shader_parameter("brightness", 1.0)
+	mat.set_shader_parameter("color_variation", 0.1)
+	mat.set_shader_parameter("ambient", 0.35)
+	mat.set_shader_parameter("sss_strength", 0.35)
+	mat.set_shader_parameter("sss_color", foliage_tint.lightened(0.2))
+	mat.set_shader_parameter("rim_strength", 0.25)
+	mat.set_shader_parameter("rim_power", 3.0)
+	
 	return mat
 
 
