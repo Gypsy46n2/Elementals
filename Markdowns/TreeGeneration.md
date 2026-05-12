@@ -116,12 +116,17 @@ Foliage is constructed from spheres/cones layered around the upper trunk and bra
 |----------|-------------|-------|
 | `foliage_layers_min/max` | Number of distinct canopy layers | 1 – 4 |
 | `foliage_shape` | Primitive type (sphere, cone, capsule) | [configurable] |
+| `foliage_size` | Radius of each foliage sphere | 0.5 – 4.0 units |
+| `foliage_scale` | Uniform scale multiplier applied to all foliage | 0.5 – 3.0 |
+| `leaf_size` | Size of individual leaf/foliage clusters in shader. Higher = larger, fewer pieces | 0.5 – 4.0 |
 | `layer_offset_variance` | Up/down offset jitter per layer | ±0.5 units |
 | `layer_scale_variance` | Scale jitter per layer | ±15% |
 | `layer_rotation_variance` | Random rotation when placing each layer | 0° – 30° |
 | `foliage_density` | How many primitives per layer (for spread) | 2 – 5 |
 
 Foliage layers are stacked vertically. Each layer can be composed of multiple primitives spread around the trunk circumference to produce bushy canopies.
+
+The `leaf_size` parameter controls the visual appearance of foliage in the shader. Higher values create chunkier, more solid-looking leaves, while lower values produce denser, more intricate foliage with more individual pieces visible.
 
 ---
 
@@ -141,17 +146,43 @@ Random seeds should be exposed when needed (e.g., for deterministic level genera
 
 ---
 
-## 5. Resource Yield Table (Wood)
+## 5. Resource Yield Table
 
-The following table maps blueprint metrics to approximate wood yield ranges. These ranges will later drive harvesting logic that reads the active blueprint parameters.
+Each physical piece of a tree yields a unit of resource when harvested. Wood comes from trunk segments and branches; leaf litter comes from foliage layers (a trash/placeholder item until it has a use).
 
-| Trunk Height (units) | Branch Count | Foliage Volume | Wood Yield (units) |
-|----------------------|--------------|----------------|--------------------|
-| 4.0 – 6.0 | 2 – 4 | Low | 5 – 8 |
-| 6.0 – 9.0 | 3 – 6 | Medium | 9 – 14 |
-| 9.0 – 12.0 | 5 – 8 | High | 15 – 22 |
+### 5.1 Wood Yield Formula
 
-Wood yield will be computed by evaluating the blueprint's trunk height factor, branch contribution, and foliage factors. The values above are tuning placeholders and can be refined once integrated gameplay feedback is available.
+```
+wood_yield = segment_count + branch_count
+```
+
+| Piece Type | Count Range | Wood Per Piece | Total Wood Range |
+|------------|-------------|----------------|------------------|
+| Trunk segments | 2 – 4 | 1 | 2 – 4 |
+| Branches | 2 – 8 | 1 | 2 – 8 |
+| **Total** | — | — | **4 – 12** |
+
+### 5.2 Leaf Litter Yield Formula
+
+```
+leaf_litter_yield = foliage_layer_count
+```
+
+| Foliage Volume | Layers Range | Leaf Litter Range |
+|----------------|--------------|-------------------|
+| Low | 1 – 2 | 1 – 2 |
+| Medium | 2 – 3 | 2 – 3 |
+| High | 3 – 4 | 3 – 4 |
+
+### 5.3 Combined Yield Table
+
+| Tree Size | Trunk Height | Segments | Branches | Layers | **Wood** | **Leaf Litter** |
+|-----------|--------------|----------|----------|--------|----------|-----------------|
+| Small | 4.0 – 6.0 | 2 | 2 – 4 | 1 – 2 | 4 – 6 | 1 – 2 |
+| Medium | 6.0 – 9.0 | 3 | 3 – 6 | 2 – 3 | 6 – 9 | 2 – 3 |
+| Large | 9.0 – 12.0 | 4 | 5 – 8 | 3 – 4 | 9 – 12 | 3 – 4 |
+
+Leaf litter is a placeholder resource. It spawns on harvest but has no consumer use yet.
 
 ---
 
@@ -333,7 +364,7 @@ var current_hp: int
 - `can_interact(actor: Node3D, tool_type: String) -> bool` — validates actor proximity and tool
 - `apply_damage(amount: int, actor: Node3D) -> void` — reduces HP, spawns partial yield, transitions on HP = 0
 - `process_branch(actor: Node3D) -> void` — removes one branch, spawns a log pile
-- `get_yield() -> Dictionary` — returns resource dictionary for the remaining yield
+- `get_yield() -> Dictionary` — returns `{wood: int, leaf_litter: int}` based on piece count
 
 ### 8.6 Collision Setup
 
@@ -430,7 +461,7 @@ Trees occupy exactly one hex tile. The spawner enforces a **1:1 tile-to-tree rat
 ```gdscript
 # Check if tile already has a tree before placing
 if tile.occupied_by_tree:
-    continue
+	continue
 tile.occupied_by_tree = true  # mark after placing
 ```
 
@@ -545,17 +576,17 @@ Dense forests with many trees require distance-based LOD to maintain frame rate:
 **LOD Switching:**
 ```gdscript
 func _process_lod() -> void:
-    var cam := get_viewport().get_camera_3d()
-    var dist := global_position.distance_to(cam.global_position)
-    
-    if dist < 30:
-        _set_lod(0)
-    elif dist < 60:
-        _set_lod(1)
-    elif dist < 100:
-        _set_lod(2)
-    else:
-        _set_lod(3)  # hide
+	var cam := get_viewport().get_camera_3d()
+	var dist := global_position.distance_to(cam.global_position)
+	
+	if dist < 30:
+		_set_lod(0)
+	elif dist < 60:
+		_set_lod(1)
+	elif dist < 100:
+		_set_lod(2)
+	else:
+		_set_lod(3)  # hide
 ```
 
 ### 13.3 Spawn Budgeting
@@ -566,15 +597,15 @@ To prevent frame spikes during world generation, tree spawning is spread across 
 const SPAWN_BATCH_SIZE := 10  # trees per frame
 
 func _deferred_spawn_trees(trees: Array) -> void:
-    var batch: Array = trees.slice(0, SPAWN_BATCH_SIZE)
-    var remaining: Array = trees.slice(SPAWN_BATCH_SIZE)
-    
-    for tile in batch:
-        _spawn_single_tree(tile)
-    
-    if not remaining.is_empty():
-        await get_tree().process_frame
-        _deferred_spawn_trees(remaining)
+	var batch: Array = trees.slice(0, SPAWN_BATCH_SIZE)
+	var remaining: Array = trees.slice(SPAWN_BATCH_SIZE)
+	
+	for tile in batch:
+		_spawn_single_tree(tile)
+	
+	if not remaining.is_empty():
+		await get_tree().process_frame
+		_deferred_spawn_trees(remaining)
 ```
 
 ### 13.4 Batching Guidelines
@@ -644,6 +675,23 @@ position = anchor_point + outward_direction * (outward_ratio * radius)
 ```
 
 Where `outward_ratio` is `randf_range(0.30, 0.60)`. This ensures the trunk/branch visibly "enters" the foliage from below rather than attaching at the sphere's center.
+
+### 15.4 Foliage Count and Randomization
+
+The base number of foliage clusters is determined by tree structure:
+
+| Source | Foliage Count |
+|--------|---------------|
+| Top trunk segment | +1 (always) |
+| Each branch | +1 per branch |
+
+**Oak-style trees** may spawn with additional extra foliage:
+- `extra_foliage_max` controls the maximum (0-2 extra)
+- Actual count is randomly chosen each generation
+- Extra foliage placement uses **distance optimization**: the algorithm samples 16 candidate positions and picks the one that maximizes the minimum distance to existing foliage clusters
+- All foliage (base and extra) must stay within the top terminal branch's radius
+
+This produces natural-looking canopies where extra foliage "fills gaps" between existing clusters rather than clustering together.
 
 ### 15.4 Blueprint Owns Its Construction
 

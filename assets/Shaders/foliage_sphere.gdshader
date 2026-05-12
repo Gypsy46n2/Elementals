@@ -25,12 +25,34 @@ float hash3(vec3 p) {
 	return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453123);
 }
 
+// === TRANSPARENCY CONTROLS ===
+// Cutout threshold (0 = fully solid, 1 = mostly empty)
+uniform float cutout_threshold : hint_range(0.0, 1.0) = 0.3;
+// Noise scale for cutout pattern
+uniform float cutout_scale : hint_range(1.0, 20.0) = 8.0;
+// Size of leaf/foliage clusters. Higher = larger, fewer individual pieces
+uniform float leaf_size : hint_range(0.5, 4.0) = 1.0;
+
 void fragment() {
 	// === SEED GENERATION ===
 	// Use world position for variation (INSTANCE_ID not available for CSG nodes)
 	vec3 world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	float seed = fract(sin(dot(world_pos, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
 	float seed2 = fract(sin(dot(world_pos, vec3(39.346, 11.135, 83.155))) * 12345.6789);
+	
+	// === CUTOUT ALPHA ===
+	// Generate noise-based alpha for leaf-like transparency
+	// Scale noise frequency by 1/leaf_size so higher values = larger foliage patches
+	float noise_freq = cutout_scale / max(leaf_size, 0.1);
+	float alpha_noise = hash3(normalize(NORMAL) * noise_freq + vec3(seed * 0.5, seed2, seed));
+	
+	// Discard fragments below threshold
+	if (alpha_noise < cutout_threshold) {
+		discard;
+	}
+	
+	// Scale alpha based on noise (1.0 at solid, lower at cutout areas)
+	ALPHA = smoothstep(cutout_threshold, cutout_threshold + 0.15, alpha_noise);
 	
 	// === COLOR VARIATION ===
 	// Generate per-sphere and per-fragment variation

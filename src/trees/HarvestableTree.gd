@@ -4,16 +4,17 @@ extends Node3D
 ## Handles state transitions and harvesting mechanics.
 
 signal harvest_started(actor: Node3D)
-signal harvest_completed(actor: Node3D, wood_yield: float)
+signal harvest_completed(actor: Node3D, wood_yield: int, leaf_litter_yield: int)
 signal tree_fallen
 
 enum State { STANDBY, FELLING, FELLEDB }
 
 @export var blueprint: TreeBlueprint
-@export var current_hp: float
-@export var max_hp: float
+
+var _health_component: HealthComponent
 
 var _state: State = State.STANDBY
+var _last_damage_source: Node3D = null  # Stored for yield attribution
 var _harvesters: Dictionary = {}  # actor_id -> accumulated_damage
 var _animation_player: AnimationPlayer
 var _collision_shapes: Array[CollisionShape3D] = []
@@ -26,7 +27,18 @@ var _generated_tree: TreeBlueprint.GeneratedTree
 
 
 func _ready() -> void:
+	_setup_health_component()
 	_setup_from_blueprint()
+
+
+func _setup_health_component() -> void:
+	_health_component = DamageComponent.find_health_component(self)
+	if not _health_component:
+		_health_component = HealthComponent.new()
+		add_child(_health_component)
+	
+	_health_component.health_depleted.connect(_on_health_depleted)
+	_health_component.bar_visible_always = false  # Trees don't need persistent health bars
 
 
 func _setup_from_blueprint() -> void:
@@ -34,10 +46,11 @@ func _setup_from_blueprint() -> void:
 		push_warning("HarvestableTree: No blueprint assigned")
 		return
 
-	# Initialize HP if not set
-	if max_hp <= 0:
-		max_hp = blueprint.compute_max_hp(blueprint.total_branch_budget)
-		current_hp = max_hp
+	# Initialize HP via blueprint formula if not already set
+	if _health_component.max_health <= 0:
+		var branch_count: int = blueprint.get_total_branch_budget()
+		_health_component.max_health = blueprint.compute_max_hp(branch_count)
+		_health_component.current_health = _health_component.max_health
 
 	_build_csge_tree()
 
@@ -162,10 +175,7 @@ func apply_damage(damage: float, actor: Node3D = null) -> void:
 	if _state != State.STANDBY:
 		return
 
-	current_hp = max(0.0, current_hp - damage)
-
-	if current_hp <= 0:
-		_trigger_felling(actor)
+	_health_component.take_damage(damage, "normal", Vector3.ZERO)
 
 
 func _process(delta: float) -> void:
@@ -180,15 +190,20 @@ func _process(delta: float) -> void:
 			continue
 
 		harvester.accumulated += harvester.dps * delta
-		current_hp = max(0.0, current_hp - harvester.dps * delta)
+		_health_component.take_damage(harvester.dps * delta, "harvest", Vector3.ZERO)
 
-		if current_hp <= 0:
-			_trigger_felling(harvester.actor)
-			return
+
+func _on_health_depleted() -> void:
+	# Find the last active harvester as the "killing" actor
+	var last_actor: Node3D = null
+	if not _harvesters.is_empty():
+		last_actor = _harvesters.values()[0].actor
+	_trigger_felling(last_actor)
 
 
 func _trigger_felling(actor: Node3D = null) -> void:
 	_state = State.FELLING
+	_last_damage_source = actor
 
 	# Create AnimationPlayer if not exists
 	if not _animation_player:
@@ -240,16 +255,19 @@ func _finalize_felling(actor: Node3D = null) -> void:
 
 	tree_fallen.emit()
 
-	# Calculate and grant wood yield
-	if actor or not _harvesters.is_empty():
-		var branch_count = _csg_branch_nodes.size()
-		var wood_yield = blueprint.compute_wood_yield(branch_count)
+	# Calculate and grant yields based on piece count
+	var segment_count: int = _generated_tree.segments.size()
+	var branch_count: int = _generated_tree.branches.size()
+	var foliage_count: int = _generated_tree.foliage.size()
+	
+	var wood_yield: int = blueprint.compute_wood_yield(segment_count, branch_count)
+	var leaf_litter_yield: int = blueprint.compute_leaf_litter_yield(foliage_count)
 
-		if actor:
-			harvest_completed.emit(actor, wood_yield)
-		else:
-			for harvester_data in _harvesters.values():
-				harvest_completed.emit(harvester_data.actor, wood_yield)
+	# Use the stored damage source for yield attribution
+	var yield_target: Node3D = _last_damage_source if _last_damage_source else _harvesters.values()[0].actor if not _harvesters.is_empty() else null
+	
+	if yield_target:
+		harvest_completed.emit(yield_target, wood_yield, leaf_litter_yield)
 
 
 func _add_fallen_collision() -> void:
@@ -330,10 +348,10 @@ func get_state() -> State:
 
 
 func get_hp_ratio() -> float:
-	if max_hp <= 0:
+	if _health_component.max_health <= 0:
 		return 1.0
-	return current_hp / max_hp
+	return _health_component.current_health / _health_component.max_health
 
 
 func is_harvestable() -> bool:
-	return _state == State.STANDBY and current_hp > 0
+	return _state == State.STANDBY and not _health_component.is_dead()

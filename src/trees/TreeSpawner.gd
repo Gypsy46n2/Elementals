@@ -168,10 +168,11 @@ func _spawn_tree_now(tile: HexTileData, blueprint: Resource) -> Node3D:
 	# Initialize with blueprint
 	tree.blueprint = blueprint
 	
-	# Initialize HP if needed
-	if tree.max_hp <= 0:
-		tree.max_hp = blueprint.compute_max_hp(blueprint.total_branch_budget)
-		tree.current_hp = tree.max_hp
+	# Initialize HP if needed (HealthComponent handles this via blueprint)
+	# The tree's _setup_from_blueprint will initialize HP from blueprint on _ready()
+	# Just ensure HealthComponent exists
+	if not tree.has_node("HealthComponent"):
+		tree._setup_health_component()
 	
 	# Attach to arena
 	_arena.add_child(tree)

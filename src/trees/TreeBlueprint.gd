@@ -82,6 +82,14 @@ enum FoliageShape {
 ## Uniform scale multiplier applied to all foliage primitives.
 ## Does not affect layer count — use this to make foliage chunks larger or smaller.
 @export_range(0.5, 3.0, 0.1) var foliage_scale: float = 1.0
+
+## Size of individual leaf clusters in the shader. Higher values = larger, fewer pieces.
+## Effective range: 0.5 (dense, small leaves) to 4.0 (chunky foliage).
+@export_range(0.5, 4.0, 0.1) var leaf_size: float = 1.5
+
+## Number of extra foliage clusters (0-2) added to oak-style trees.
+## Additional foliage is placed with distance optimization from existing clusters.
+@export_range(0, 2, 1) var extra_foliage_max: int = 2
 #endregion
 
 #region Materials
@@ -93,6 +101,9 @@ enum FoliageShape {
 
 ## Tint color applied to foliage meshes.
 @export var foliage_tint: Color = Color(0.2, 0.55, 0.15, 1.0)
+
+## Custom foliage material. If null, creates default shader material from foliage_tint.
+@export var foliage_material: ShaderMaterial
 #endregion
 
 #region LOD Meshes
@@ -174,13 +185,16 @@ func compute_max_hp(branch_count: int) -> int:
 	var base_hp := 10
 	return int(base_hp + (base_height * height_factor) + (branch_count * branch_factor))
 
-## Returns an estimated wood yield based on tree parameters.
-## This is a tuning placeholder — adjust coefficients based on gameplay feedback.
-func compute_wood_yield(branch_count: int) -> int:
-	var base_yield := 5
-	var height_contribution := int(base_height * 1.2)
-	var branch_contribution := branch_count * 2
-	return base_yield + height_contribution + branch_contribution
+## Returns wood yield based on tree piece count.
+## Each trunk segment and branch yields 1 wood unit.
+func compute_wood_yield(segment_count: int, branch_count: int) -> int:
+	return segment_count + branch_count
+
+
+## Returns leaf litter yield based on foliage layer count.
+## Currently a placeholder resource until foliage has a use.
+func compute_leaf_litter_yield(foliage_layer_count: int) -> int:
+	return foliage_layer_count
 
 #endregion
 
@@ -240,7 +254,7 @@ func generate_tree() -> GeneratedTree:
 		current_origin = terminal
 	
 	# Generate foliage at the top (guaranteed - topmost trunk always gets foliage)
-	var trunk_foliage: Array[FoliageData] = _generate_foliage(tree.segments.back())
+	var trunk_foliage: Array[FoliageData] = _generate_foliage(tree.segments.back(), tree.branches.size())
 	trunk_foliage.append_array(branch_foliage)
 	tree.foliage = trunk_foliage
 	
@@ -357,25 +371,76 @@ func _rotation_to_align_with(direction: Vector3) -> Quaternion:
 
 
 ## Generates foliage data for the upper portion of the tree.
-func _generate_foliage(anchor_segment: TrunkSegment) -> Array[FoliageData]:
+## Base foliage count = branch_count + top trunk segment.
+## Additional extra foliage (0 to extra_foliage_max) is placed to maximize distance
+## from existing foliage while staying within the radius of the top terminal branch.
+func _generate_foliage(anchor_segment: TrunkSegment, branch_count: int) -> Array[FoliageData]:
 	var foliage: Array[FoliageData] = []
 	
 	var anchor_point := anchor_segment.terminal
-	var layer_count := randi_range(foliage_layers_min, foliage_layers_max)
-	var base_radius := foliage_size / layer_count
+	var base_count := branch_count + 1  # +1 for the top trunk segment
 	
-	for i in range(layer_count):
+	# Generate base foliage layers (one per branch + one for top trunk)
+	for i in range(base_count):
 		var layer := FoliageData.new()
 		layer.anchor_point = anchor_point
-		layer.position = anchor_point  # Terminal is center, no variance
+		layer.position = anchor_point
 		
-		layer.radius = base_radius * foliage_scale * randf_range(1.0 - layer_scale_variance, 1.0 + layer_scale_variance)
+		layer.radius = foliage_size * foliage_scale * randf_range(1.0 - layer_scale_variance, 1.0 + layer_scale_variance)
 		layer.scale = randf_range(1.0 - layer_scale_variance, 1.0 + layer_scale_variance)
 		layer.rotation_y = randf_range(0, deg_to_rad(layer_rotation_variance))
 		
 		foliage.append(layer)
 	
+	# Add extra foliage with distance optimization
+	var extra_count := randi() % (extra_foliage_max + 1)  # Random 0 to extra_foliage_max
+	for _i in range(extra_count):
+		var extra := FoliageData.new()
+		extra.anchor_point = anchor_point
+		extra.radius = foliage_size * foliage_scale * randf_range(1.0 - layer_scale_variance, 1.0 + layer_scale_variance)
+		extra.scale = randf_range(1.0 - layer_scale_variance, 1.0 + layer_scale_variance)
+		extra.rotation_y = randf_range(0, deg_to_rad(layer_rotation_variance))
+		
+		# Find position that maximizes distance from existing foliage
+		# but stays within the radius of the top terminal branch
+		extra.position = _find_foliage_position(anchor_point, extra.radius, foliage)
+		foliage.append(extra)
+	
 	return foliage
+
+
+## Finds a position for new foliage that maximizes distance from existing foliage
+## while staying within the top terminal branch's radius.
+func _find_foliage_position(anchor_point: Vector3, radius: float, existing_foliage: Array[FoliageData]) -> Vector3:
+	var max_distance := 0.0
+	var best_position := anchor_point  # Fallback
+	
+	# Sample multiple candidate positions and pick the one farthest from existing foliage
+	var samples := 16
+	for i in range(samples):
+		# Random position within the foliage cluster radius
+		var angle := randf_range(0, TAU)
+		var dist := randf_range(0.0, radius)
+		var offset := Vector3(
+			cos(angle) * dist,
+			0.0,  # Keep at same height as anchor
+			sin(angle) * dist
+		)
+		var candidate := anchor_point + offset
+		
+		# Calculate minimum distance to any existing foliage
+		var min_dist := INF
+		for f in existing_foliage:
+			var d := candidate.distance_to(f.position)
+			if d < min_dist:
+				min_dist = d
+		
+		# Keep the candidate with the maximum minimum distance
+		if min_dist > max_distance:
+			max_distance = min_dist
+			best_position = candidate
+	
+	return best_position
 
 
 #endregion
@@ -409,6 +474,10 @@ func create_foliage_material() -> StandardMaterial3D:
 
 ## Creates a foliage material using the foliage sphere shader with wind and SSS.
 func create_foliage_material_with_shader() -> ShaderMaterial:
+	# Use custom material if specified, otherwise create from foliage_tint
+	if foliage_material:
+		return foliage_material.duplicate()
+	
 	var shader := preload("res://assets/Shaders/foliage_sphere.gdshader")
 	var mat := ShaderMaterial.new()
 	mat.shader = shader
@@ -424,6 +493,7 @@ func create_foliage_material_with_shader() -> ShaderMaterial:
 	mat.set_shader_parameter("sss_color", foliage_tint.lightened(0.2))
 	mat.set_shader_parameter("rim_strength", 0.25)
 	mat.set_shader_parameter("rim_power", 3.0)
+	mat.set_shader_parameter("leaf_size", leaf_size)
 	
 	return mat
 

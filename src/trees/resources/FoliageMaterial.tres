@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cb5akst0dbvxo"]
+
+[ext_resource type="Shader" uid="uid://jvc6mxlm00ge" path="res://assets/Shaders/foliage_sphere.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/foliage_color = Color(0.15, 0.45, 0.12, 1)
+shader_parameter/brightness = 1.5
+shader_parameter/color_variation = 0.5
+shader_parameter/ambient = 0.554000026315
+shader_parameter/sss_strength = 0.374000017765
+shader_parameter/sss_color = Color(0.5, 0.7, 0.3, 1)
+shader_parameter/rim_strength = 0.25
+shader_parameter/rim_power = 2.42000006745
+shader_parameter/leaf_noise_scale = 0.5
+shader_parameter/leaf_edge_softness = 0.1
+shader_parameter/cutout_threshold = 0.3
