@@ -124,6 +124,9 @@ func spawn_all_immediately() -> void:
 func clear_all_trees() -> void:
 	for tree in spawned_trees:
 		if is_instance_valid(tree):
+			# Unregister from VisibilityManager before removal
+			if VisibilityManager and VisibilityManager.has_method("unregister_tree"):
+				VisibilityManager.unregister_tree(tree)
 			tree.get_parent().remove_child(tree)
 			tree.queue_free()
 	spawned_trees.clear()
@@ -168,17 +171,15 @@ func _spawn_tree_now(tile: HexTileData, blueprint: Resource) -> Node3D:
 	# Initialize with blueprint
 	tree.blueprint = blueprint
 	
-	# Initialize HP if needed (HealthComponent handles this via blueprint)
-	# The tree's _setup_from_blueprint will initialize HP from blueprint on _ready()
-	# Just ensure HealthComponent exists
-	if not tree.has_node("HealthComponent"):
-		tree._setup_health_component()
-	
 	# Attach to arena
 	_arena.add_child(tree)
 	
 	# Mark tile as having a feature
 	tile.feature = tree
+	
+	# Register with VisibilityManager for transparency tracking
+	if VisibilityManager and VisibilityManager.has_method("register_tree"):
+		VisibilityManager.register_tree(tree)
 	
 	return tree
 

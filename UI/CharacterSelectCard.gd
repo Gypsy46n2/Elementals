@@ -14,13 +14,19 @@ signal equipment_changed(actor_name: String, weapon_index: int, ability_index: i
 @onready var selection_indicator: Control = $SelectionIndicator
 
 var actor_name: String = ""
-var available_weapons: Array = []
-var available_abilities: Array = []
-var available_armor: Array = []
 
-var current_weapon_index: int = 0
-var current_ability_index: int = 0
-var current_armor_index: int = 0
+# Cycling state using stationary cyclers (from CyclingComponent autoload)
+var _weapon_cycler: CyclingComponent.StationaryCycler = CyclingComponent.StationaryCycler.new()
+var _ability_cycler: CyclingComponent.StationaryCycler = CyclingComponent.StationaryCycler.new()
+var _armor_cycler: CyclingComponent.StationaryCycler = CyclingComponent.StationaryCycler.new()
+
+# Expose current indices for external access (read-only via getters)
+var current_weapon_index: int:
+	get: return _weapon_cycler.current_index
+var current_ability_index: int:
+	get: return _ability_cycler.current_index
+var current_armor_index: int:
+	get: return _armor_cycler.current_index
 
 var is_selected_card: bool = false:
 	set(v):
@@ -64,19 +70,19 @@ func _ready() -> void:
 
 func setup(p_actor_name: String, p_weapons, p_abilities, p_armor, p_selected: bool = false, p_weapon_index: int = 0, p_ability_index: int = 0, p_armor_index: int = 0) -> void:
 	actor_name = p_actor_name
-	available_weapons = p_weapons
-	available_abilities = p_abilities
-	available_armor = p_armor
-	
 	name_label.text = actor_name.capitalize()
 	
+	# Initialize cyclers with items and saved indices
+	_weapon_cycler.set_items(p_weapons)
+	_weapon_cycler.set_index(clampi(p_weapon_index, 0, max(0, _weapon_cycler.items.size() - 1)))
+	
+	_ability_cycler.set_items(p_abilities)
+	_ability_cycler.set_index(clampi(p_ability_index, 0, max(0, _ability_cycler.items.size() - 1)))
+	
+	_armor_cycler.set_items(p_armor)
+	_armor_cycler.set_index(clampi(p_armor_index, 0, max(0, _armor_cycler.items.size() - 1)))
+	
 	_set_character_sprite()
-	
-	# Use saved indices if valid, otherwise default to 0
-	current_weapon_index = clampi(p_weapon_index, 0, max(0, available_weapons.size() - 1))
-	current_ability_index = clampi(p_ability_index, 0, max(0, available_abilities.size() - 1))
-	current_armor_index = clampi(p_armor_index, 0, max(0, available_armor.size() - 1))
-	
 	_update_display()
 
 func _set_character_sprite() -> void:
@@ -124,25 +130,31 @@ func _update_display() -> void:
 	_update_stats_visibility()
 
 func _update_weapon_button() -> void:
-	if available_weapons.size() > 0:
-		weapon_button.text = "<< %s >>" % available_weapons[current_weapon_index]
-		weapon_button.disabled = available_weapons.size() <= 1
+	var items = _weapon_cycler.items
+	var idx = _weapon_cycler.current_index
+	if items.size() > 0:
+		weapon_button.text = "<< %s >>" % items[idx]
+		weapon_button.disabled = items.size() <= 1
 	else:
 		weapon_button.text = "<< No Weapons >>"
 		weapon_button.disabled = true
 
 func _update_ability_button() -> void:
-	if available_abilities.size() > 0:
-		ability_button.text = "<< %s >>" % available_abilities[current_ability_index]
-		ability_button.disabled = available_abilities.size() <= 1
+	var items = _ability_cycler.items
+	var idx = _ability_cycler.current_index
+	if items.size() > 0:
+		ability_button.text = "<< %s >>" % items[idx]
+		ability_button.disabled = items.size() <= 1
 	else:
 		ability_button.text = "<< No Abilities >>"
 		ability_button.disabled = true
 
 func _update_armor_button() -> void:
-	if available_armor.size() > 0:
-		armor_button.text = "<< %s >>" % available_armor[current_armor_index]
-		armor_button.disabled = available_armor.size() <= 1
+	var items = _armor_cycler.items
+	var idx = _armor_cycler.current_index
+	if items.size() > 0:
+		armor_button.text = "<< %s >>" % items[idx]
+		armor_button.disabled = items.size() <= 1
 	else:
 		armor_button.text = "<< No Armor >>"
 		armor_button.disabled = true
@@ -222,49 +234,52 @@ func _on_info_pressed() -> void:
 
 func _on_weapon_meta_pressed() -> void:
 	# Meta button (right click) cycles backward
-	current_weapon_index = wrapi(current_weapon_index - 1, 0, available_weapons.size())
+	_weapon_cycler.cycle_backward()
 	_update_weapon_button()
-	equipment_changed.emit(actor_name, current_weapon_index, current_ability_index, current_armor_index)
+	_emit_equipment_changed()
 
 func _on_ability_meta_pressed() -> void:
-	current_ability_index = wrapi(current_ability_index - 1, 0, available_abilities.size())
+	_ability_cycler.cycle_backward()
 	_update_ability_button()
-	equipment_changed.emit(actor_name, current_weapon_index, current_ability_index, current_armor_index)
+	_emit_equipment_changed()
 
 func _on_armor_meta_pressed() -> void:
-	current_armor_index = wrapi(current_armor_index - 1, 0, available_armor.size())
+	_armor_cycler.cycle_backward()
 	_update_armor_button()
-	equipment_changed.emit(actor_name, current_weapon_index, current_ability_index, current_armor_index)
+	_emit_equipment_changed()
 
 func _on_card_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			# Select this card
 			character_selected.emit(actor_name)
 
 func _on_model_container_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			# Clicking on the model/sprite area selects this character
 			character_selected.emit(actor_name)
 
 func cycle_weapon() -> void:
-	if available_weapons.size() > 1:
-		current_weapon_index = wrapi(current_weapon_index + 1, 0, available_weapons.size())
+	if _weapon_cycler.cycle_forward():
 		_update_weapon_button()
-		equipment_changed.emit(actor_name, current_weapon_index, current_ability_index, current_armor_index)
+		_emit_equipment_changed()
 
 func cycle_ability() -> void:
-	if available_abilities.size() > 1:
-		current_ability_index = wrapi(current_ability_index + 1, 0, available_abilities.size())
+	if _ability_cycler.cycle_forward():
 		_update_ability_button()
-		equipment_changed.emit(actor_name, current_weapon_index, current_ability_index, current_armor_index)
+		_emit_equipment_changed()
 
 func cycle_armor() -> void:
-	if available_armor.size() > 1:
-		current_armor_index = wrapi(current_armor_index + 1, 0, available_armor.size())
+	if _armor_cycler.cycle_forward():
 		_update_armor_button()
-		equipment_changed.emit(actor_name, current_weapon_index, current_ability_index, current_armor_index)
+		_emit_equipment_changed()
+
+func _emit_equipment_changed() -> void:
+	equipment_changed.emit(
+		actor_name,
+		_weapon_cycler.current_index,
+		_ability_cycler.current_index,
+		_armor_cycler.current_index
+	)
 
 func get_selected_equipment() -> Dictionary:
 	return {

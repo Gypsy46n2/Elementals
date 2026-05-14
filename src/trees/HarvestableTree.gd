@@ -37,7 +37,8 @@ func _setup_health_component() -> void:
 		_health_component = HealthComponent.new()
 		add_child(_health_component)
 	
-	_health_component.health_depleted.connect(_on_health_depleted)
+	if not _health_component.health_depleted.is_connected(_on_health_depleted):
+		_health_component.health_depleted.connect(_on_health_depleted)
 	_health_component.bar_visible_always = false  # Trees don't need persistent health bars
 
 

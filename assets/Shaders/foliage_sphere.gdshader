@@ -1,4 +1,5 @@
 shader_type spatial;
+render_mode blend_premul_alpha, depth_draw_always;
 
 // === COLOR CONTROLS ===
 uniform vec3 foliage_color : source_color = vec3(0.2, 0.55, 0.15);
@@ -32,6 +33,8 @@ uniform float cutout_threshold : hint_range(0.0, 1.0) = 0.3;
 uniform float cutout_scale : hint_range(1.0, 20.0) = 8.0;
 // Size of leaf/foliage clusters. Higher = larger, fewer individual pieces
 uniform float leaf_size : hint_range(0.5, 4.0) = 1.0;
+// Current opacity for visibility transparency (0.0 = fully transparent, 1.0 = fully opaque)
+uniform float current_opacity : hint_range(0.0, 1.0) = 1.0;
 
 void fragment() {
 	// === SEED GENERATION ===
@@ -46,13 +49,12 @@ void fragment() {
 	float noise_freq = cutout_scale / max(leaf_size, 0.1);
 	float alpha_noise = hash3(normalize(NORMAL) * noise_freq + vec3(seed * 0.5, seed2, seed));
 	
-	// Discard fragments below threshold
-	if (alpha_noise < cutout_threshold) {
-		discard;
-	}
-	
 	// Scale alpha based on noise (1.0 at solid, lower at cutout areas)
-	ALPHA = smoothstep(cutout_threshold, cutout_threshold + 0.15, alpha_noise);
+	// Note: Not using discard so transparency blending works properly
+	float base_alpha = smoothstep(cutout_threshold, cutout_threshold + 0.15, alpha_noise);
+	
+	// Apply visibility transparency from VisibilityManager
+	ALPHA = base_alpha * current_opacity;
 	
 	// === COLOR VARIATION ===
 	// Generate per-sphere and per-fragment variation

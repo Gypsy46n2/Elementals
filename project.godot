@@ -21,10 +21,13 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+CyclingComponent="*res://Components/UI/CycleSelector.gd"
 GameEvents="*res://Core/GameEvents.gd"
 GameSettings="*res://Core/GameSettings.gd"
 HerdManager="*res://Components/BreedingComponents/HerdManager.gd"
 ItemsAutoload="*res://Core/ItemsAutoload.gd"
+MapSettingsHelper="*res://Components/UI/MapSettingsHelper.gd"
+VisibilityManager="*res://src/trees/VisibilityManager.gd"
 QuestEvents="*res://QuestSystem/QuestEvents.gd"
 QuestDatabase="*res://QuestSystem/QuestDatabase.gd"
 QuestState="*res://QuestSystem/QuestState.gd"

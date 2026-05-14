@@ -635,11 +635,147 @@ HarvestableComponent.apply_damage()
 
 ---
 
-## 15. Implementation Learnings
+## 16. Foliage Visibility System
+
+Trees naturally obstruct the player's view of their character and spotted enemies. The foliage visibility system dynamically increases the transparency of tree foliage and trunks when they occlude important targets, improving player awareness without removing trees from the scene.
+
+### 16.1 Design Goals
+
+1. **Character visibility:** The player must always be able to see their character, even when it is directly behind a tree trunk or within the canopy.
+2. **Spotted enemy visibility:** Enemies that the player's Actor has identified as a target should remain partially visible through foliage.
+3. **Non-disruptive transparency:** Trees should fade smoothly rather than pop to full transparency, preserving the forest atmosphere.
+4. **Performance-friendly:** The system should not require per-pixel raycasting or expensive shaders.
+
+### 16.2 Occlusion Targets
+
+The system tracks "visible actors" — entities whose visibility through foliage is prioritized:
+
+| Target | Source of Truth | Notes |
+|--------|-----------------|-------|
+| Player character | `Actor` or `PlayerController` node | Always visible |
+| Spotted enemy | `ActorController.target` when in `State.ALERT` or `State.COMBAT` | Visible only while actively targeted |
+
+**Spotted enemy logic:**
+- An enemy must be in an engaged state (ALERT or COMBAT) to trigger visibility
+- If the player deselects or loses the enemy, standard occlusion rules apply
+- The system does not reveal enemies the player has not detected
+
+### 16.3 Occlusion Detection
+
+Rather than per-pixel visibility testing, the system uses **axis-aligned occlusion checks** against foliage bounding volumes:
+
+```
+For each visible actor:
+  1. Calculate screen-space position of the actor
+  2. Find all foliage meshes whose screen-space bounds overlap the actor
+  3. Mark overlapping foliage as "occluding" for this frame
+```
+
+**Foliage bounding volumes:**
+- Trunk: cylinder bounds from ground to crown top
+- Canopy: sphere bounds per foliage cluster or combined canopy volume
+- These volumes are precomputed on tree generation and stored as `AABB` data
+
+**Optimization:** Only trees within a screen-space radius of the target are checked. Trees far from the actor's screen position are skipped entirely.
+
+### 16.4 Transparency Levels
+
+Foliage opacity is controlled by a shader uniform and follows a tiered model:
+
+| Level | Opacity | Condition |
+|-------|---------|-----------|
+| Full | 1.0 | No occlusion |
+| Partial | 0.4 – 0.6 | Actor occluded but not critical |
+| Fading | 0.1 – 0.3 | Actor directly behind trunk or high-density canopy |
+| Hidden | 0.0 | Reserved for extreme cases (e.g., character inside trunk bounds) |
+
+The exact opacity within each tier can be adjusted by a global `FoliageTransparency` setting.
+
+### 16.5 Shader Implementation
+
+A single `ShaderMaterial` applied to all foliage meshes exposes a `current_opacity` uniform:
+
+```gdscript
+# Foliage shader (gdshader)
+shader_type spatial;
+render_mode blend_transparent, depth_draw_always, cull_back;
+
+uniform float current_opacity : hint_range(0.0, 1.0) = 1.0;
+
+void fragment() {
+	ALBEDO = albedo_color;
+	ALPHA = current_opacity;
+}
+```
+
+**Key render mode flags:**
+- `blend_transparent` — enables alpha blending
+- `depth_draw_always` — prevents z-fighting with occluded actors (critical for visibility)
+- `cull_back` — foliage renders on both sides to avoid clipping issues at low opacity
+
+**Opacity update loop:**
+```gdscript
+func _process_transparency() -> void:
+	var visible_actors := _get_visible_actors()
+	var occluded_foliage := _find_occluding_foliage(visible_actors)
+	
+	for foliage in all_foliage_meshes:
+		if foliage in occluded_foliage:
+			foliage.material.set_shader_parameter("current_opacity", 0.4)
+		else:
+			foliage.material.set_shader_parameter("current_opacity", 1.0)
+```
+
+### 16.6 Trunk vs. Canopy Transparency
+
+Trunks and foliage behave differently:
+
+| Component | Behavior | Reason |
+|-----------|----------|--------|
+| Trunk | Fades to ~30% opacity when occluding actor | Trunks are visually heavy; too much transparency ruins the silhouette |
+| Canopy | Fades to ~50% opacity when occluding actor | Dense foliage should still block view but reveal movement beneath |
+| Both | Snap to full opacity within 0.5s of no occlusion | Prevents slow fade-in creating a "ghost" effect |
+
+This differentiation prevents canopies from disappearing entirely while still revealing actors moving through the understory.
+
+### 16.7 Performance Considerations
+
+- **No per-frame raycasting:** Occlusion checks use AABB overlap in screen space, not pixel-level ray tests
+- **Instanced materials:** All trees share a material template; only the `current_opacity` uniform is updated per-mesh
+- **Frustum culling:** Trees outside the camera frustum are skipped entirely
+- **Fade damping:** Opacity changes are lerped over 2–3 frames to avoid per-frame uniform updates for transient occlusions (actor briefly passing behind a branch)
+
+```gdscript
+# Lerped opacity update
+var target_opacity := is_occluding ? 0.4 : 1.0
+current_opacity = lerp(current_opacity, target_opacity, 0.3)  # ~3 frames to settle
+foliage.material.set_shader_parameter("current_opacity", current_opacity)
+```
+
+### 16.8 Integration Points
+
+| Component | Change |
+|-----------|--------|
+| `TreeBlueprint` | Add optional `foliage_shader_material` reference (defaults to shared transparent material) |
+| `HarvestableTree` | On `_ready()`, apply transparent material to foliage CSG nodes; store references for fast uniform updates |
+| `VisibilityManager` (new) | Singleton that tracks visible actors, runs occlusion checks, and updates foliage opacity each frame |
+| `ActorController` | Emit signal `target_spotted(enemy)` and `target_lost(enemy)` for the visibility manager |
+| `PlayerController` | Always reports player character as visible |
+
+### 16.9 Future Enhancements
+
+- **Depth-based fading:** Fade canopy more near its center and less at edges (natural gradient)
+- **Selective transparency:** Only occluding foliage layers fade; inner layers remain opaque for depth
+- **Enemy peripheral vision:** Reveal enemies that are about to spot the player (reactivity warning)
+- **Per-species transparency:** Some trees (e.g., sparse conifers) naturally allow more visibility; blueprint could include a `visibility_occlusion_factor` (0.0 – 1.0)
+
+---
+
+## 17. Implementation Learnings
 
 This section captures hard-won lessons from building the system. Update it as new patterns emerge.
 
-### 15.1 CSG Centering Behavior
+### 17.1 CSG Centering Behavior
 
 `CSGCylinder3D.position` is its **center point**, not one end. This is critical when chaining segments or positioning branches:
 
@@ -655,7 +791,7 @@ cylinder.height = origin.distance_to(terminal)
 
 The trunk segment chaining algorithm (section 3.1.2) relies on this behavior. Each segment's midpoint must be calculated as the average of its origin and terminal points.
 
-### 15.2 Foliage Guarantee
+### 17.2 Foliage Guarantee
 
 Every branch and the topmost trunk **always** gets at least one foliage sphere. There is no random roll for existence — only for position, scale, and rotation:
 
@@ -666,7 +802,7 @@ Every branch and the topmost trunk **always** gets at least one foliage sphere. 
 
 The `branch_foliage_ratio` parameter from earlier designs has been removed.
 
-### 15.3 Foliage Anchor Positioning
+### 17.3 Foliage Anchor Positioning
 
 Foliage is positioned so the trunk/branch origin falls **30–60% of the way from the sphere's outer edge toward its center**:
 
@@ -676,7 +812,7 @@ position = anchor_point + outward_direction * (outward_ratio * radius)
 
 Where `outward_ratio` is `randf_range(0.30, 0.60)`. This ensures the trunk/branch visibly "enters" the foliage from below rather than attaching at the sphere's center.
 
-### 15.4 Foliage Count and Randomization
+### 17.4 Foliage Count and Randomization
 
 The base number of foliage clusters is determined by tree structure:
 

@@ -248,8 +248,7 @@ func _on_height_changed(value: float) -> void:
 
 func _on_dirt_changed(value: float) -> void:
 	if dirt_value_label:
-		var normalized = clamp((value + 0.3) / 0.6, 0.0, 1.0)
-		dirt_value_label.text = "%.2f" % normalized
+		dirt_value_label.text = "%.2f" % MapSettingsHelper.normalize_dirt_value(value)
 
 func _on_character_tab_button_pressed() -> void:
 	character_tab_container.visible = !character_tab_container.visible
@@ -292,17 +291,12 @@ func _update_controls_panel_visibility() -> void:
 func _on_play_button_pressed() -> void:
 	var gs = get_node_or_null("/root/GameSettings")
 	if gs:
-		gs.grid_width = int(size_input.value)
-		gs.grid_height = int(size_input.value)
-		
-		if random_seed_check.button_pressed:
-			gs.noise_seed = randi() % 100000
-		else:
-			gs.noise_seed = int(seed_input.value)
-		
-		gs.noise_frequency = scale_slider.value
-		gs.height_step = height_slider.value
-		gs.dirt_threshold = dirt_slider.value
+		# Use helper to get settings from controls
+		var settings = MapSettingsHelper.get_settings_dict(
+			size_input, seed_input, random_seed_check,
+			scale_slider, height_slider, dirt_slider
+		)
+		MapSettingsHelper.apply_settings_to_game_settings(settings, gs)
 		
 		# Find the actor name from the path
 		for actor_name in ACTOR_SCENES:
