@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://cv6hjmmidepxs"]
 
-[ext_resource type="Script" uid="uid://b1uqxo8prdw7s" path="res://src/actors/projectiles/BaseProjectile.gd" id="1_script"]
+[ext_resource type="Script" path="res://src/actors/projectiles/BaseProjectile.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://chrd4q1bo3ldd" path="res://scenes/weapons/JavelinModel.tscn" id="2_model"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_1"]

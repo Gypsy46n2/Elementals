@@ -77,20 +77,17 @@ func _set_hide_active(active: bool) -> void:
 	
 	if actor:
 		if _is_hiding_intent:
-			print(actor.name, " is now HIDDEN")
 			if actor.movement_component:
 				actor.movement_component.speed_multiplier = 0.5
 			# Initial check when hiding
 			_perform_stealth_check()
 		else:
-			print(actor.name, " is now REVEALED")
 			is_hidden = false
 			if actor.movement_component:
 				actor.movement_component.speed_multiplier = 1.0
 			_update_visuals()
 
 func _disengage(custom_direction: Vector3 = Vector3.ZERO) -> void:
-	print(actor.name, " uses DISENGAGE")
 	is_disengaged = true
 	# Invulnerability frames for a short duration
 	var timer = actor.get_tree().create_timer(0.5)

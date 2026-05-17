@@ -1,7 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://dkt6sdrstxpva"]
+[gd_scene load_steps=5 format=3]
 
-[ext_resource type="Script" uid="uid://de5aie8x6hnqy" path="res://src/actors/types/FireActor.gd" id="1"]
-[ext_resource type="Script" uid="uid://dfuui0forq1w0" path="res://Components/ActorComponents/AbilityScoresComponent.gd" id="2_ability"]
+[ext_resource type="Script" path="res://src/actors/types/FireActor.gd" id="1"]
+[ext_resource type="Script" path="res://Components/ActorComponents/AbilityScoresComponent.gd" id="2_ability"]
 
 [sub_resource type="StandardMaterial3D" id="3"]
 albedo_color = Color(1, 0.4, 0.1, 1)

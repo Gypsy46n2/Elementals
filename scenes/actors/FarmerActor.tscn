@@ -1,10 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://blp6fmitpavew"]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" uid="uid://c5ummbndhdffe" path="res://src/actors/types/FarmerActor.gd" id="1_farmer"]
-[ext_resource type="Script" uid="uid://dfuui0forq1w0" path="res://Components/ActorComponents/AbilityScoresComponent.gd" id="2_ability"]
-[ext_resource type="AudioStream" uid="uid://da7kfmcufs83v" path="res://assets/SoundFiles/Whack.mp3" id="3_whack"]
-[ext_resource type="AudioStream" uid="uid://p1w0ucmu7w5n" path="res://assets/SoundFiles/Swoosh noise.mp3" id="4_swoosh"]
-[ext_resource type="SpriteFrames" uid="uid://cd82ivtk0sqys" path="res://assets/sprites/characters/farmer_sprite_frames.tres" id="5_frames"]
+[ext_resource type="Script" path="res://src/actors/types/FarmerActor.gd" id="1_farmer"]
+[ext_resource type="Script" path="res://Components/ActorComponents/AbilityScoresComponent.gd" id="2_ability"]
+[ext_resource type="AudioStream" path="res://assets/SoundFiles/Whack.mp3" id="3_whack"]
+[ext_resource type="AudioStream" path="res://assets/SoundFiles/Swoosh noise.mp3" id="4_swoosh"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/characters/farmer_sprite_frames.tres" id="5_frames"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_farmer"]
 radius = 0.4

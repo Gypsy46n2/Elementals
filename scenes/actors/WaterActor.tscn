@@ -1,7 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://d26rhv1m1yr1a"]
+[gd_scene load_steps=5 format=3]
 
-[ext_resource type="Script" uid="uid://cmonwb7mll5kb" path="res://src/actors/types/WaterActor.gd" id="1"]
-[ext_resource type="Script" uid="uid://dfuui0forq1w0" path="res://Components/ActorComponents/AbilityScoresComponent.gd" id="2_ability"]
+[ext_resource type="Script" path="res://src/actors/types/WaterActor.gd" id="1"]
+[ext_resource type="Script" path="res://Components/ActorComponents/AbilityScoresComponent.gd" id="2_ability"]
 
 [sub_resource type="StandardMaterial3D" id="3"]
 transparency = 1

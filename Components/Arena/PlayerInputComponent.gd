@@ -67,7 +67,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_ability_press_time = Time.get_ticks_msec()
 			elif event.keycode == KEY_R:
 				if current_controlled_actor and current_controlled_actor.ability_component:
-					current_controlled_actor.ability_component.execute_ability("ability_r")
+					current_controlled_actor.ability_component.execute_ability("ability_r", _get_mouse_3d_position())
+			elif event.keycode == KEY_C and not event.echo:
+				if current_controlled_actor.weapon_component:
+					current_controlled_actor.weapon_component.use_net_close_at(current_controlled_actor.global_position)
 		else: # Key Released
 			if event.keycode == KEY_SHIFT:
 				_ability_pressed = false

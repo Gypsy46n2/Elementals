@@ -12,6 +12,7 @@ extends Node
 
 ## If true, this component ignores AI logic and listens for player input instead.
 @export var is_controlled: bool = false
+var _capture_c_was_pressed: bool = false
 
 ## Main update loop that dispatches control to either player input or AI logic.
 func _physics_process(delta: float) -> void:
@@ -66,6 +67,15 @@ func _handle_controlled_input(delta: float) -> void:
 	# Handle jump input
 	if Input.is_key_pressed(KEY_SPACE):
 		movement_component.jump()
+	
+	# Fallback capture input polling for controlled actors.
+	# This catches cases where unhandled_input is consumed by other UI/game nodes.
+	var capture_pressed: bool = Input.is_key_pressed(KEY_C)
+	if capture_pressed and not _capture_c_was_pressed and actor and actor.get("weapon_component"):
+		var wc = actor.get("weapon_component")
+		if wc and wc.has_method("use_net_close_at"):
+			wc.call("use_net_close_at", actor.global_position)
+	_capture_c_was_pressed = capture_pressed
 
 ## Virtual method intended to be overridden by subclasses.
 ## Should implement the logic for picking a new destination (e.g., random wandering).

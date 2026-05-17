@@ -7,6 +7,7 @@ var _weapon_data: WeaponData
 var _weapon: Node3D
 var _whack_player: AudioStreamPlayer3D
 var _hitbox_visual: MeshInstance3D
+const MIMIC_ADHESIVE_STUN: float = 1.1
 
 ## Initializes the component with its parent weapon.
 func setup(p_weapon: Node3D) -> void:
@@ -96,6 +97,7 @@ func _handle_hit(target: Node3D, _dir: Vector3) -> void:
 		final_target.take_damage(damage, "normal", impact_dir)
 		if final_target.has_method("stun"):
 			final_target.stun(0.3)
+		_apply_mimic_adhesive_if_needed(final_target)
 		_play_whack()
 		_show_thwak_visual(final_target.global_position + Vector3(0, 1.0, 0))
 		
@@ -107,6 +109,18 @@ func _handle_hit(target: Node3D, _dir: Vector3) -> void:
 		# Miss - "Bounces off the armor"
 		if target.has_method("show_miss"):
 			target.call("show_miss", impact_dir)
+
+func _apply_mimic_adhesive_if_needed(target: Node3D) -> void:
+	if _owner_actor == null or target == null:
+		return
+	var owner_type: String = String(_owner_actor.get("element_type")).to_lower().strip_edges()
+	if owner_type != "mimic":
+		return
+	if not bool(_owner_actor.get_meta("mimic_object_form", false)):
+		return
+	if target.has_method("stun"):
+		target.stun(MIMIC_ADHESIVE_STUN)
+	print("[Mimic] Adhesive grip locked on %s." % target.name)
 
 func _play_whack() -> void:
 	if _whack_player:

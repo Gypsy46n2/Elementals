@@ -172,7 +172,7 @@ func stop_harvest(actor: Node3D) -> void:
 		# Harvest continues until HP depleted; stopping just removes this actor's contribution
 
 
-func apply_damage(damage: float, actor: Node3D = null) -> void:
+func apply_damage(damage: float, _actor: Node3D = null) -> void:
 	if _state != State.STANDBY:
 		return
 
@@ -321,10 +321,10 @@ func switch_to_lod(level: int) -> void:
 			set_process(false)
 
 
-func _set_csge_visible(visible: bool) -> void:
+func _set_csge_visible(p_visible: bool) -> void:
 	for node in get_children():
 		if node is CSGShape3D:
-			node.visible = visible
+			node.visible = p_visible
 
 
 func _show_lod_mesh(mesh: MeshInstance3D) -> void:

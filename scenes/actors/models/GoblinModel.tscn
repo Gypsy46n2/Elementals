@@ -1,7 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://sqhy615yrjo5"]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="Shader" uid="uid://c4y0amrlfaf34" path="res://assets/Shaders/instance_transparency.gdshader" id="1_shader"]
-[ext_resource type="Script" uid="uid://c3s3u7cvwjuu2" path="res://src/actors/types/GoblinModels/GoblinModel.gd" id="2_goblinmodel"]
+[ext_resource type="Shader" path="res://assets/Shaders/instance_transparency.gdshader" id="1_shader"]
+[ext_resource type="Script" path="res://src/actors/types/GoblinModels/GoblinModel.gd" id="2_goblinmodel"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_green"]
 render_priority = 0

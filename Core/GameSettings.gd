@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH = "user://settings.cfg"
 
-var selected_actor_type: String = "fire" # "fire", "water", or "goat"
+var selected_actor_type: String = "fire" # "fire", "water", "goat", "goblin", or "mimic"
 var selected_weapon_index: int = 0
 var selected_ability_index: int = 0
 var selected_armor_index: int = 0
@@ -48,6 +48,11 @@ const CHARACTER_EQUIPMENT: Dictionary = {
 		"weapons": ["Water Jet"],
 		"abilities": ["Tidal Wave", "Healing Waters"],
 		"armor": ["Water Shield"]
+	},
+	"mimic": {
+		"weapons": ["Unarmed strike"],
+		"abilities": ["Transmorph", "Adhesive Bite"],
+		"armor": ["Natural Armor"]
 	}
 }
 

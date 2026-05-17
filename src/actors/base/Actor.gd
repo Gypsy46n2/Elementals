@@ -345,9 +345,6 @@ func _apply_initial_visibility() -> void:
 			weapon_component.set_spotted(false)
 
 func reveal() -> void:
-	if visual_component and not visual_component.is_spotted:
-		print("[Perception] REVEAL: '", name, "' is now visible.")
-	
 	if visual_component:
 		visual_component.is_spotted = true
 		visual_component.set_alpha(1.0)
@@ -358,8 +355,6 @@ func reveal() -> void:
 ## The perceived actor's reveal() method is called to make them visible to the player.
 func _on_actor_perceived(perceived_actor: Node3D) -> void:
 	if perceived_actor and is_instance_valid(perceived_actor):
-		if is_controlled:
-			print("[Perception] SIGNAL: Player actor perceived '", perceived_actor.name, "'. Triggering reveal.")
 		perceived_actor.reveal()
 
 func is_ally(other: Node) -> bool:

@@ -1,7 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://c6f3j8k2m7l1n"]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/actors/types/ScarecrowDummy.gd" id="1_scarecrow"]
-[ext_resource type="Texture2D" uid="uid://b7l8j9k0m1n2p" path="res://assets/generated/scarecrow_dummy_frame_0_1776823787.png" id="2_texture"]
+[ext_resource type="Texture2D" path="res://assets/generated/scarecrow_dummy_frame_0_1776823787.png" id="2_texture"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_scare"]
 radius = 0.4

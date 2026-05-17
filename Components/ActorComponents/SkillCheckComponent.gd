@@ -5,6 +5,7 @@ extends Node
 ## Decouples the dice rolling and success logic from individual actions.
 
 var _owner_actor: Node
+@export var enable_roll_logs: bool = false
 
 func setup(p_actor: Node) -> void:
 	_owner_actor = p_actor
@@ -26,7 +27,7 @@ func perform_check(total_mod: float, difficulty: float, check_name: String = "Ch
 		"is_critical": d20 == 20
 	}
 	
-	if _owner_actor:
+	if _owner_actor and enable_roll_logs:
 		var vs_text: String = ""
 		if opponent:
 			vs_text = " vs [%s]" % opponent.name

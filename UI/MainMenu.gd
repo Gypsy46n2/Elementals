@@ -23,6 +23,7 @@ const ACTOR_SCENES: Dictionary = {
 	"water": "res://scenes/actors/WaterActor.tscn",
 	"goat": "res://scenes/actors/GoatActor.tscn",
 	"goblin": "res://scenes/actors/GoblinMinion.tscn",
+	"mimic": "res://scenes/actors/MimicActor.tscn",
 	"scarecrow": "res://scenes/actors/ScarecrowDummy.tscn"
 }
 
@@ -60,6 +61,11 @@ func _init() -> void:
 			"weapons": ["Water Jet"],
 			"abilities": ["Tidal Wave", "Healing Waters"],
 			"armor": ["Water Shield"]
+		},
+		"mimic": {
+			"weapons": ["Unarmed strike"],
+			"abilities": ["Transmorph", "Adhesive Bite"],
+			"armor": ["Natural Armor"]
 		}
 	}
 
@@ -201,7 +207,7 @@ func _populate_character_cards() -> void:
 			saved_armor = gs.selected_armor_index
 		
 		card.call_deferred("setup",
-			actor_name.capitalize(),
+			actor_name,
 			Array(equipment.get("weapons", [])),
 			Array(equipment.get("abilities", [])),
 			Array(equipment.get("armor", [])),

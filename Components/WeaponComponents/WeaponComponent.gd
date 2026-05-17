@@ -35,6 +35,9 @@ var current_ammo: int = -1:
 			weapon_data.current_ammo = v
 		ammo_changed.emit(current_ammo, weapon_data.max_ammo if weapon_data else -1)
 
+const NET_WEAPON_NAME := "Net"
+const NET_THROW_IMPACT_RADIUS: float = 2.4
+
 ## Initializes the weapon component and links it to an Actor.
 func setup(actor: Actor) -> void:
 	_owner_actor = actor
@@ -80,6 +83,8 @@ func _on_global_weapon_selected(p_weapon: WeaponData) -> void:
 ## Updates the weapon's current WeaponData and refreshes its visuals.
 func _on_weapon_selected(p_weapon: WeaponData) -> void:
 	weapon_data = p_weapon
+	if _owner_actor and _owner_actor.is_controlled and weapon_data:
+		print("[Weapon] ", _owner_actor.name, " equipped ", weapon_data.name)
 
 func on_control_changed(controlled: bool) -> void:
 	pass  # Don't override weapon selection on control change
@@ -191,6 +196,10 @@ func update_attack_direction(target_position: Vector3) -> void:
 ## If a weapon is equipped, it swings/fires the weapon.
 ## Otherwise, it falls back to the actor's projectile component if available.
 func launch_projectile_at(target_position: Vector3) -> void:
+	if _is_net_weapon():
+		use_net_close_at(target_position)
+		return
+	
 	if weapon_data and weapon_data.name != "Unarmed strike":
 		swing(target_position)
 	elif _owner_actor and _owner_actor.projectile_component:
@@ -200,10 +209,18 @@ func launch_projectile_at(target_position: Vector3) -> void:
 
 ## Initiates a secondary attack (typically throwing the current weapon).
 func secondary_attack_at(target_position: Vector3) -> void:
+	if _is_net_weapon():
+		throw_net_capture_at(target_position)
+		return
+	
 	secondary_attack(target_position)
 
 ## Forces the current weapon to be thrown, regardless of its default behavior.
 func throw_weapon_at(target_position: Vector3) -> void:
+	if _is_net_weapon():
+		throw_net_capture_at(target_position)
+		return
+	
 	secondary_attack(target_position, true)
 
 ## Attacks the specified target position using the most appropriate attack mode.
@@ -211,9 +228,24 @@ func throw_weapon_at(target_position: Vector3) -> void:
 ## For all other weapons (melee, ranged, thrown with 1 ammo), performs a standard attack.
 ## Returns true if the attack was initiated, false if on cooldown or otherwise unable to attack.
 func attack_target(target_position: Vector3) -> bool:
+	if _is_net_weapon():
+		return use_net_close_at(target_position)
+	
 	if weapon_data and weapon_data.is_thrown and current_ammo > 1:
 		return secondary_attack(target_position, true)
 	return swing(target_position)
+
+func use_net_close_at(target_position: Vector3) -> bool:
+	if not _is_net_weapon():
+		_emit_net_hint("Equip Net to capture.")
+		return false
+	return _execute_net_capture(target_position, false)
+
+func throw_net_capture_at(target_position: Vector3) -> bool:
+	if not _is_net_weapon():
+		_emit_net_hint("Equip Net to throw-capture.")
+		return false
+	return _execute_net_capture(target_position, true)
 
 func _can_attack() -> bool:
 	if not _owner_actor or is_on_cooldown() or _owner_actor.is_stunned() or weapon_data == null:
@@ -224,6 +256,81 @@ func _can_attack() -> bool:
 		return false
 		
 	return true
+
+func _can_use_net(consume_net: bool) -> bool:
+	if not _owner_actor or is_on_cooldown() or _owner_actor.is_stunned() or weapon_data == null:
+		return false
+	if consume_net and current_ammo <= 0:
+		return false
+	return true
+
+func _execute_net_capture(target_pos: Vector3, consume_net: bool) -> bool:
+	if not _is_net_weapon():
+		return false
+	if not _can_use_net(consume_net):
+		if consume_net and current_ammo <= 0:
+			print("[Net] No nets left to throw.")
+		return false
+	
+	_cooldown = weapon_data.cooldown
+	update_attack_direction(target_pos)
+	attack_performed.emit(target_pos)
+	
+	if _swoosh_player:
+		_swoosh_player.play()
+	if _visual_component:
+		_visual_component.animate_throw(weapon_data.cooldown, current_ammo)
+	
+	if consume_net and current_ammo > 0:
+		current_ammo -= 1
+	
+	var herd_manager := get_node_or_null("/root/HerdManager")
+	if herd_manager == null:
+		print("[Net] HerdManager not found. Capture unavailable.")
+		return false
+	
+	var result: Dictionary = {}
+	if consume_net and herd_manager.has_method("throw_net_at"):
+		result = herd_manager.call("throw_net_at", _owner_actor, target_pos, _get_net_throw_range(), NET_THROW_IMPACT_RADIUS)
+	elif not consume_net and herd_manager.has_method("use_net_close"):
+		# Close capture should prioritize the nearest valid target around the player.
+		result = herd_manager.call("use_net_close", _owner_actor, target_pos, false, _get_net_close_range())
+	
+	var attempted: bool = bool(result.get("attempted", false))
+	var success: bool = bool(result.get("success", false))
+	var roll: int = int(result.get("roll", 0))
+	var chance: float = float(result.get("chance", 0.0))
+	var reason: String = String(result.get("reason", ""))
+	
+	if attempted:
+		print("[Net] Attempt resolved: success=%s roll=%d chance=%.2f reason=%s" % [str(success), roll, chance, reason])
+	else:
+		print("[Net] Attempt did not resolve: %s" % reason)
+	
+	return attempted
+
+func _is_net_weapon() -> bool:
+	if weapon_data == null:
+		return false
+	var clean_name: String = weapon_data.name.to_lower().strip_edges()
+	return clean_name == NET_WEAPON_NAME.to_lower() or clean_name.contains("net")
+
+func _emit_net_hint(text: String) -> void:
+	print("[Net] ", text)
+	if has_node("/root/QuestEvents"):
+		QuestEvents.message(text)
+
+func _get_net_close_range() -> float:
+	if weapon_data:
+		return maxf(1.8, weapon_data.effective_range)
+	return 2.6
+
+func _get_net_throw_range() -> float:
+	if weapon_data:
+		if weapon_data.range_max > 0:
+			return float(weapon_data.range_max) * 0.8
+		return maxf(8.0, weapon_data.effective_range * 2.0)
+	return 12.0
 
 ## Initiates an attack towards the specified target position.
 func swing(target_pos: Vector3) -> bool:

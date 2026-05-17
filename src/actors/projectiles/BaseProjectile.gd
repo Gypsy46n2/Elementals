@@ -167,7 +167,6 @@ func _pick_up(actor: Actor) -> void:
 	# Deal "ripping out" damage to host if alive
 	if is_instance_valid(_host_actor) and _host_actor.is_inside_tree() and not _host_actor.is_dead:
 		var pull_damage: int = randi_range(2, 5)
-		print("[Projectile] Dealing ", pull_damage, " pull-out damage to ", _host_actor.name)
 		_host_actor.take_damage(float(pull_damage), "normal", -_direction)
 
 	
@@ -232,15 +231,24 @@ func _process_falling(delta: float) -> void:
 	
 ## Callback for projectile collision. Determines what the projectile hit and how to respond.
 func _on_body_entered(body: Node3D) -> void:
-	if _is_stuck or body == caster:
+	if _is_stuck:
+		return
+	if not is_instance_valid(body):
+		return
+	if is_instance_valid(caster) and body == caster:
 		return
 	
-	var can_damage: bool = body is Actor or body.has_method("take_damage") or DamageComponent.find_health_component(body)
+	var can_damage: bool = body is Actor or body.has_method("take_damage") or DamageComponent.find_health_component(body) != null
 	if can_damage:
 		var final_target: Node3D = body
 		if body is Actor and body.ability_component:
 			var attacker: Actor = caster if caster is Actor else null
-			final_target = body.ability_component.get_attack_target(attacker)
+			var redirected_target: Variant = body.ability_component.get_attack_target(attacker)
+			if redirected_target is Node3D and is_instance_valid(redirected_target):
+				final_target = redirected_target
+		if not is_instance_valid(final_target):
+			_stick()
+			return
 			
 		_apply_hit_damage(final_target)
 		_stick(final_target if final_target is Actor else null)
@@ -249,6 +257,9 @@ func _on_body_entered(body: Node3D) -> void:
 
 ## Internal helper to apply damage to a target upon impact.
 func _apply_hit_damage(body: Node3D) -> void:
+	if not is_instance_valid(body):
+		return
+
 	# Check for elemental immunity
 	if body is Actor and body.element_type == element_type:
 		return

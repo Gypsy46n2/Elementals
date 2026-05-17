@@ -40,12 +40,13 @@ const FULL_OPACITY: float = 1.0
 
 ## Minimum opacity for lerped transitions.
 const MIN_OPACITY: float = 0.1
+@export var enable_debug_logs: bool = false
 
 func _ready() -> void:
 	# Register with the tree spawner to receive foliage references
 	_setup_player_reference()
 	_setup_enemy_detection()
-	print("VisibilityManager: Ready - foliage_map size: ", _foliage_opacity_map.size())
+	_log_debug("VisibilityManager: Ready - foliage_map size: %d" % _foliage_opacity_map.size())
 
 
 func _process(delta: float) -> void:
@@ -88,7 +89,7 @@ func register_tree(tree: Node3D) -> void:
 		elif child is CSGCylinder3D and child.name.begins_with("TrunkSegment"):
 			register_foliage(child, true)
 			count += 1
-	print("VisibilityManager: Registered tree '", tree.name, "' with ", count, " foliage/trunk nodes. Total in map: ", _foliage_opacity_map.size())
+	_log_debug("VisibilityManager: Registered tree '%s' with %d foliage/trunk nodes. Total in map: %d" % [tree.name, count, _foliage_opacity_map.size()])
 
 
 ## Unregisters all foliage nodes from a HarvestableTree.
@@ -298,12 +299,8 @@ func _is_foliage_occluding_visible_actor(foliage: Node) -> bool:
 		)
 		
 		if foliage_rect.intersects(actor_rect):
-			if randf() < 0.02:  # Rare debug output
-				print("VisibilityManager: Occlusion detected! Foliage '", foliage.name, "' blocking actor '", actor.name if actor else "unknown", "'")
 			return true
 	
-	if randf() < 0.005:  # Very rare debug output to show checking is happening
-		print("VisibilityManager: Checked foliage '", foliage.name, "' - no occlusion. Foliage_radius=", foliage_radius)
 	return false
 
 
@@ -315,7 +312,7 @@ func _get_foliage_radius(foliage: Node) -> float:
 	return 1.0
 
 
-func _get_foliage_screen_aabb(foliage: Node, pos: Vector3, radius: float) -> Rect2:
+func _get_foliage_screen_aabb(_foliage: Node, pos: Vector3, radius: float) -> Rect2:
 	if not is_instance_valid(_camera):
 		return Rect2()
 	
@@ -337,11 +334,10 @@ func _set_target_opacity(foliage: Node, target: float) -> void:
 
 func _apply_foliage_opacity(foliage: Node, opacity: float) -> void:
 	if foliage is CSGShape3D:
-		var mat := foliage.get_surface_override_material(0) as ShaderMaterial
-		if not mat:
-			mat = foliage.material as ShaderMaterial
+		var mat := foliage.material as ShaderMaterial
 		if mat:
 			mat.set_shader_parameter("current_opacity", opacity)
-			# Debug: print occasionally to avoid spam
-			if randf() < 0.01:  # ~1% of frames
-				print("VisibilityManager: Set opacity ", opacity, " on ", foliage.name)
+
+func _log_debug(message: String) -> void:
+	if enable_debug_logs:
+		print(message)

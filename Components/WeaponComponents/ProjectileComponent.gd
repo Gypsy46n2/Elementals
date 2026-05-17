@@ -29,9 +29,16 @@ func prev_attack_pattern() -> void:
 	_on_pattern_changed()
 
 func _on_pattern_changed() -> void:
-	print(_actor.name, " switched to ", AttackPattern.keys()[current_attack_pattern], " pattern.")
-	if _actor.get("is_controlled") and _actor.get("_arena_grid"):
-		_actor.get("_arena_grid").call("_update_ui")
+	if _actor == null:
+		return
+	var arena_value: Variant = _actor.get("_arena_grid")
+	if not bool(_actor.get("is_controlled")):
+		return
+	if not (arena_value is ArenaGrid):
+		return
+	var arena: ArenaGrid = arena_value as ArenaGrid
+	if arena.ui_component and arena.ui_component.has_method("update_for_actor") and _actor is Actor:
+		arena.ui_component.call("update_for_actor", _actor)
 
 func launch_projectile_at(target_position: Vector3, mana_comp: ManaComponent = null) -> void:
 	if not _actor.get("_arena_grid"):
