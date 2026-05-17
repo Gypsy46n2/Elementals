@@ -7,10 +7,7 @@
 class_name BaseProjectile
 extends Area3D
 
-# --- Signals ---
-signal expired
-	
-	# --- Constants ---
+# --- Constants ---
 const GRAVITY = 9.8
 const FALL_Y_THRESHOLD = -20.0 # Safety net
 	
@@ -68,7 +65,7 @@ func _ready() -> void:
 func initialize(arena: ArenaGrid, p_caster: Node3D, p_caster_position: Vector3, _effect_range: float, direction: Vector3, velocity: float, max_charges: int, projectile_lifetime: float, projectile_max_range: float = 45.0, p_damage: float = -1.0) -> void:
 	_arena = arena
 	caster = p_caster
-	_start_position = global_transform.origin
+	_start_position = p_caster_position
 	_direction = direction.normalized()
 	
 	# Rotate to face direction

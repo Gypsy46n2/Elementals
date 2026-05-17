@@ -86,7 +86,7 @@ func _on_weapon_selected(p_weapon: WeaponData) -> void:
 	if _owner_actor and _owner_actor.is_controlled and weapon_data:
 		print("[Weapon] ", _owner_actor.name, " equipped ", weapon_data.name)
 
-func on_control_changed(controlled: bool) -> void:
+func on_control_changed(_controlled: bool) -> void:
 	pass  # Don't override weapon selection on control change
 
 ## Adds ammo to the current weapon or equips it if the actor is unarmed.

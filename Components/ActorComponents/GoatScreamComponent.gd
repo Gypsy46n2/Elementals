@@ -48,7 +48,7 @@ func _should_respond(source_actor: Actor, source_pos: Vector3) -> bool:
 	return true
 
 ## Override: Delegate actual scream to the cooldown-protected method.
-func _execute_response(source_actor: Actor, source_pos: Vector3) -> void:
+func _execute_response(_source_actor: Actor, _source_pos: Vector3) -> void:
 	_scream()
 
 func _scream() -> void:
@@ -57,7 +57,10 @@ func _scream() -> void:
 	if player and player.stream:
 		player.play()
 	_show_scream_visual()
-	actor.emit_signal("screamed", actor.global_position)
+	if actor.has_method("emit_screamed"):
+		actor.emit_screamed(actor.global_position)
+	else:
+		actor.emit_signal("screamed", actor.global_position)
 
 func _show_scream_visual() -> void:
 	var sprite := Sprite3D.new()

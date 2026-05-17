@@ -21,7 +21,6 @@ signal screamed(position: Vector3)
 var scream_component: GoatScreamComponent
 
 @onready var _whack_player: AudioStreamPlayer3D = get_node_or_null("WhackPlayer")
-@onready var _swoosh_player: AudioStreamPlayer3D = get_node_or_null("SwooshPlayer")
 
 var goat_data: GoatData:
 	get: return _data as GoatData
@@ -51,7 +50,7 @@ func _ready() -> void:
 	# Configure goat-specific communication (uses the "screamed" signal)
 	if communication_component:
 		communication_component.broadcast_signal_name = &"screamed"
-		communication_component.range = 15.0
+		communication_component.communication_range = 15.0
 		communication_component.probability = 0.25
 
 
@@ -113,6 +112,9 @@ func _physics_process(delta: float) -> void:
 func _play_whack() -> void:
 	if _whack_player:
 		_whack_player.play()
+
+func emit_screamed(position: Vector3) -> void:
+	screamed.emit(position)
 
 func _show_thwak_visual(pos: Vector3) -> void:
 	## Displays a "THWAK!" comic book style popup at the collision point.

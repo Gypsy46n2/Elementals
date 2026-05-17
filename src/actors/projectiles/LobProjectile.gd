@@ -23,7 +23,7 @@ func initialize_lob(arena: ArenaGrid, p_caster: Node3D, caster_position: Vector3
 	# Adjust peak height based on distance
 	_peak_height = max(2.0, _total_distance * 0.4)
 
-func _move_projectile(delta: float) -> void:
+func _move_projectile(_delta: float) -> void:
 	var progress = (_elapsed * speed) / _total_distance
 	if progress >= 1.0:
 		_land()

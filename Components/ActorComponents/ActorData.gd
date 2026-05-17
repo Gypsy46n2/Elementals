@@ -84,7 +84,7 @@ enum Gender { MALE, FEMALE }
 		stats_changed.emit()
 
 ## Override in subclasses to create offspring with proper genetic mixing
-func create_offspring(partner: ActorData) -> ActorData:
+func create_offspring(_partner: ActorData) -> ActorData:
 	push_error("ActorData.create_offspring() must be overridden by subclass")
 	return null
 

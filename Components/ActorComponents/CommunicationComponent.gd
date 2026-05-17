@@ -6,7 +6,7 @@ extends Node
 
 @export_group("Communication Settings")
 ## Maximum distance at which other actors can receive this communication.
-@export var range: float = 15.0
+@export var communication_range: float = 15.0
 ## Probability (0.0-1.0) that this actor will respond to a received communication.
 @export var probability: float = 0.25
 ## Minimum delay before responding to a received communication.
@@ -43,16 +43,16 @@ func _get_broadcast_position() -> Vector3:
 
 ## Override in subclasses to add conditions for whether this actor can respond.
 ## Return false to prevent response entirely.
-func _can_respond_to(source_pos: Vector3) -> bool:
+func _can_respond_to(_source_pos: Vector3) -> bool:
 	return true
 
 ## Override in subclasses to add additional checks before responding.
 ## Return false to skip the response.
-func _should_respond(source_actor: Actor, source_pos: Vector3) -> bool:
+func _should_respond(_source_actor: Actor, _source_pos: Vector3) -> bool:
 	return true
 
 ## Override in subclasses to define the actual response behavior.
-func _execute_response(source_actor: Actor, source_pos: Vector3) -> void:
+func _execute_response(_source_actor: Actor, _source_pos: Vector3) -> void:
 	pass
 
 ## Call this when the actor wants to initiate communication.
@@ -85,7 +85,7 @@ func try_respond_to(source_pos: Vector3, source_component: CommunicationComponen
 		return
 	
 	# Check range
-	if source_pos.distance_to(actor.global_position) >= range:
+	if source_pos.distance_to(actor.global_position) >= communication_range:
 		return
 	
 	# Check probability
@@ -109,7 +109,7 @@ func try_respond_to(source_pos: Vector3, source_component: CommunicationComponen
 	var timer := actor.get_tree().create_timer(delay)
 	timer.timeout.connect(_on_response_timer_timeout.bind(source_actor, source_pos, source_component))
 
-func _on_response_timer_timeout(source_actor: Actor, source_pos: Vector3, source_component: CommunicationComponent) -> void:
+func _on_response_timer_timeout(source_actor: Actor, source_pos: Vector3, _source_component: CommunicationComponent) -> void:
 	_pending_response_count -= 1
 	pending_responses = max(0, pending_responses - 1)
 	

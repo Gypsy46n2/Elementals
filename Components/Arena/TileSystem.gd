@@ -75,7 +75,7 @@ func _process_tile(tile: HexTileData, check_time: float) -> void:
 		TileConstants.Type.PUDDLE:
 			_process_puddle(tile, check_time)
 
-func _process_fire(tile: HexTileData, check_time: float) -> void:
+func _process_fire(tile: HexTileData, _check_time: float) -> void:
 	# Fire has two events: spread at 4s, extinguish at 5s
 	if not tile.fire_spread_triggered and tile.fire_duration >= 4.0:
 		tile.fire_spread_triggered = true
@@ -90,7 +90,7 @@ func _process_fire(tile: HexTileData, check_time: float) -> void:
 	else:
 		_schedule_tile(tile)
 
-func _process_mud(tile: HexTileData, check_time: float) -> void:
+func _process_mud(tile: HexTileData, _check_time: float) -> void:
 	if arena._has_adjacent_grass(tile):
 		if tile.mud_duration >= 5.0:
 			arena.set_tile_state(tile, TileConstants.State.GRASS)
@@ -102,7 +102,7 @@ func _process_mud(tile: HexTileData, check_time: float) -> void:
 		tile.mud_duration = 0.0
 		check_activeness(tile)
 
-func _process_puddle(tile: HexTileData, check_time: float) -> void:
+func _process_puddle(tile: HexTileData, _check_time: float) -> void:
 	var dirt_neighbor = arena._get_adjacent_dirt(tile)
 	if dirt_neighbor:
 		if tile.puddle_duration >= 5.0:

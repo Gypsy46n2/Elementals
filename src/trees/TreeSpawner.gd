@@ -188,8 +188,8 @@ func _spawn_tree_now(tile: HexTileData, blueprint: Resource) -> Node3D:
 func _get_center_tile() -> HexTileData:
 	var w: int = _arena._grid_width_clamped()
 	var h: int = _arena._grid_height_clamped()
-	var cx: int = w / 2
-	var cy: int = h / 2
+	var cx: int = int(w * 0.5)
+	var cy: int = int(h * 0.5)
 	return _arena.get_tile_at_grid_coords(cx, cy)
 
 
@@ -220,7 +220,7 @@ func _get_hex_distance(a: HexTileData, b: HexTileData) -> int:
 	var dq: int = a.axial_coords.x - b.axial_coords.x
 	var dr: int = a.axial_coords.y - b.axial_coords.y
 	var ds: int = (-a.axial_coords.x - a.axial_coords.y) - (-b.axial_coords.x - b.axial_coords.y)
-	return (abs(dq) + abs(dr) + abs(ds)) / 2
+	return int((abs(dq) + abs(dr) + abs(ds)) * 0.5)
 
 
 ## Creates and returns the default biome if none assigned.

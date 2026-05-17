@@ -6,7 +6,6 @@ var _retarget_timer: float = 0.0
 var _retarget_interval: float = 1.0
 var _cached_neighbors: Array[HexTileData] = []
 var _sort_ascending: bool = true  # true = seeking player, false = repelling
-var _last_player_pos: Vector3 = Vector3.ZERO
 
 func enter() -> void:
 	_retarget_timer = 0.0

@@ -28,7 +28,6 @@ var state_machine: ActorStateMachine
 
 var _active_obstacles: Array[Dictionary] = []
 var _nearby_cliffs: Array[HexTileData] = []
-var _perception_trigger: Dictionary = {}
 
 func _ready() -> void:
 	_rng.randomize()
